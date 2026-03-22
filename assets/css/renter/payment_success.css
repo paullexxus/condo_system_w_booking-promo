@@ -1,0 +1,223 @@
+/* BookIT Payment Success Styles */
+
+body {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.confirmation-container {
+    max-width: 500px;
+    width: 100%;
+}
+
+.confirmation-card {
+    background: white;
+    border-radius: 15px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    overflow: hidden;
+}
+
+.confirmation-header {
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    color: white;
+    padding: 40px;
+    text-align: center;
+}
+
+.confirmation-header .success-icon {
+    font-size: 64px;
+    margin-bottom: 20px;
+    animation: scaleIn 0.5s ease-out;
+}
+
+@keyframes scaleIn {
+    from {
+        transform: scale(0);
+        opacity: 0;
+    }
+    to {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+.confirmation-header h1 {
+    font-size: 28px;
+    margin: 0;
+    font-weight: bold;
+}
+
+.confirmation-body {
+    padding: 40px;
+}
+
+.confirmation-details {
+    background: #f8f9fa;
+    padding: 25px;
+    border-radius: 10px;
+    margin-bottom: 25px;
+}
+
+.detail-row {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 15px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.detail-row:last-child {
+    margin-bottom: 0;
+    border-bottom: none;
+    padding-bottom: 0;
+}
+
+.detail-label {
+    color: #666;
+    font-size: 14px;
+}
+
+.detail-value {
+    font-weight: bold;
+    color: #333;
+    text-align: right;
+}
+
+.detail-value.highlight {
+    color: #28a745;
+    font-size: 16px;
+}
+
+.next-steps {
+    background: #e8f4f8;
+    padding: 20px;
+    border-radius: 10px;
+    margin: 25px 0;
+}
+
+.next-steps h5 {
+    color: #0c5460;
+    font-weight: bold;
+    margin-bottom: 15px;
+}
+
+.next-steps ul {
+    margin: 0;
+    padding-left: 20px;
+}
+
+.next-steps li {
+    color: #0c5460;
+    margin-bottom: 8px;
+    font-size: 14px;
+}
+
+.receipt-section {
+    border-top: 2px dashed #ddd;
+    padding-top: 20px;
+    margin-top: 20px;
+}
+
+.receipt-section h6 {
+    color: #666;
+    font-weight: bold;
+    margin-bottom: 15px;
+    text-transform: uppercase;
+    font-size: 12px;
+}
+
+.receipt-item {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 10px;
+    font-size: 14px;
+}
+
+.receipt-total {
+    display: flex;
+    justify-content: space-between;
+    border-top: 1px solid #ddd;
+    padding-top: 10px;
+    margin-top: 10px;
+    font-weight: bold;
+    color: #28a745;
+}
+
+.action-buttons {
+    display: flex;
+    gap: 10px;
+    margin-top: 30px;
+}
+
+.btn-primary-custom {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border: none;
+    color: white;
+    padding: 12px 30px;
+    border-radius: 8px;
+    font-weight: bold;
+    flex: 1;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.btn-primary-custom:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+    color: white;
+    text-decoration: none;
+}
+
+.btn-secondary-custom {
+    background: #6c757d;
+    border: none;
+    color: white;
+    padding: 12px 30px;
+    border-radius: 8px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.btn-secondary-custom:hover {
+    background: #5a6268;
+    color: white;
+    text-decoration: none;
+}
+
+.download-receipt {
+    text-align: center;
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid #ddd;
+}
+
+.download-receipt a {
+    color: #667eea;
+    text-decoration: none;
+    font-weight: bold;
+    font-size: 14px;
+}
+
+.download-receipt a:hover {
+    text-decoration: underline;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .confirmation-body {
+        padding: 25px;
+    }
+    
+    .confirmation-header h1 {
+        font-size: 22px;
+    }
+    
+    .action-buttons {
+        flex-direction: column;
+    }
+}

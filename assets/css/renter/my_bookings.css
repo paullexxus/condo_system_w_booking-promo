@@ -1,0 +1,30 @@
+.booking-card {
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    transition: transform 0.3s ease;
+    margin-bottom: 20px;
+}
+.booking-card:hover {
+    transform: translateY(-2px);
+}
+.status-badge {
+    padding: 5px 15px;
+    border-radius: 20px;
+    font-weight: bold;
+    font-size: 0.9rem;
+}
+.status-confirmed { background: #d4edda; color: #155724; }
+.status-pending { background: #fff3cd; color: #856404; }
+.status-checked_in { background: #cce5ff; color: #004085; }
+.status-checked_out { background: #e2e3e5; color: #383d41; }
+.status-cancelled { background: #f8d7da; color: #721c24; }
+
+.payment-badge {
+    padding: 3px 10px;
+    border-radius: 15px;
+    font-size: 0.8rem;
+}
+.payment-paid { background: #d4edda; color: #155724; }
+.payment-pending { background: #fff3cd; color: #856404; }
+.payment-partial { background: #cce5ff; color: #004085; }
+.payment-refunded { background: #e2e3e5; color: #383d41; }

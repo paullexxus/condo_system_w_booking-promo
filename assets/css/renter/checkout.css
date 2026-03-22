@@ -1,0 +1,204 @@
+/* BookIT Checkout Styles */
+
+body {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    padding: 40px 20px;
+}
+
+.checkout-container {
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+.checkout-card {
+    background: white;
+    border-radius: 15px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    overflow: hidden;
+    margin-bottom: 30px;
+}
+
+.checkout-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 30px;
+    text-align: center;
+}
+
+.checkout-header h1 {
+    font-size: 28px;
+    font-weight: bold;
+    margin: 0;
+}
+
+.checkout-body {
+    padding: 40px;
+}
+
+.booking-summary {
+    background: #f8f9fa;
+    border-left: 4px solid #667eea;
+    padding: 20px;
+    border-radius: 5px;
+    margin-bottom: 30px;
+}
+
+.booking-summary h5 {
+    color: #667eea;
+    font-weight: bold;
+    margin-bottom: 15px;
+}
+
+.booking-item {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 12px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.booking-item:last-child {
+    border-bottom: none;
+}
+
+.booking-item-label {
+    color: #666;
+    font-size: 14px;
+}
+
+.booking-item-value {
+    font-weight: 600;
+    color: #333;
+}
+
+.pricing-breakdown {
+    background: #fff3cd;
+    padding: 15px;
+    border-radius: 5px;
+    margin-top: 15px;
+}
+
+.pricing-breakdown .row {
+    margin-bottom: 10px;
+}
+
+.pricing-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+}
+
+.pricing-row.total {
+    border-top: 2px solid #ffc107;
+    padding-top: 12px;
+    margin-top: 12px;
+    font-weight: bold;
+    font-size: 18px;
+    color: #333;
+}
+
+.payment-methods-section {
+    margin-top: 40px;
+}
+
+.payment-methods-section h3 {
+    color: #333;
+    font-weight: bold;
+    margin-bottom: 25px;
+    padding-bottom: 15px;
+    border-bottom: 2px solid #667eea;
+}
+
+.payment-method-card {
+    border: 2px solid #dee2e6;
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 15px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.payment-method-card:hover {
+    border-color: #667eea;
+    box-shadow: 0 5px 15px rgba(102, 126, 234, 0.2);
+    transform: translateY(-2px);
+}
+
+.payment-method-card.selected {
+    border-color: #667eea;
+    background: #f0f4ff;
+    box-shadow: 0 5px 20px rgba(102, 126, 234, 0.3);
+}
+
+.payment-method-card input[type="radio"] {
+    margin-right: 15px;
+}
+
+.payment-method-name {
+    font-weight: bold;
+    color: #333;
+    margin-bottom: 5px;
+    font-size: 16px;
+}
+
+.payment-method-desc {
+    color: #666;
+    font-size: 14px;
+    margin-bottom: 8px;
+}
+
+.payment-method-fee {
+    color: #667eea;
+    font-weight: bold;
+    font-size: 13px;
+}
+
+.terms-checkbox {
+    margin-top: 30px;
+    padding: 15px;
+    background: #f0f4ff;
+    border-radius: 5px;
+}
+
+.action-button {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border: none;
+    color: white;
+    padding: 12px 40px;
+    border-radius: 8px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+    margin-top: 20px;
+    width: 100%;
+}
+
+.action-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+}
+
+.action-button:active {
+    transform: translateY(0);
+}
+
+.alert-custom {
+    border-radius: 8px;
+    margin-bottom: 20px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .checkout-body {
+        padding: 20px;
+    }
+    
+    .checkout-header h1 {
+        font-size: 22px;
+    }
+    
+    .payment-method-card {
+        padding: 15px;
+    }
+}

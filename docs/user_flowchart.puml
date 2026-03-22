@@ -1,0 +1,66 @@
+@startuml
+' User Flow — BookIT (simplified)
+skinparam dpi 150
+left to right direction
+title BookIT — Main User Flows
+
+actor Renter as R
+actor Manager as M
+actor Admin as A
+actor "Payment Gateway" as PGW
+actor "Google OAuth" as GAuth
+actor "SMTP / Email" as SMTP
+
+start
+
+partition "Renter Flow" {
+  :Browse Units;
+  if (Has account?) then (no)
+    :Register (email/password);
+    :Verify & create account;
+  else (yes)
+    :Login (email/password) or
+    -> GAuth : Login with Google
+  endif
+
+  :Select Unit / Dates;
+  :Request Reservation (pending);
+  if (Requires payment?) then (yes)
+    -> PGW : Process Payment
+    PGW --> :Payment success/fail
+    if (success) then (ok)
+      :Reservation confirmed;
+    else (fail)
+      :Notify payment failure;
+      stop
+    endif
+  else (no)
+    :Reservation pending approval;
+  endif
+
+  -> SMTP : Send confirmation/receipt
+  :View My Bookings / Notifications;
+}
+
+partition "Manager/Admin Flow" {
+  :Login;
+  :View Reservations;
+  if (Approve reservation?) then (approve)
+    :Approve -> Reservation status = confirmed;
+    -> SMTP : Send approval email
+  else (cancel)
+    :Cancel -> Reservation status = cancelled;
+    -> SMTP : Send cancellation email
+  endif
+  :Manage Units / Branches
+}
+
+stop
+
+note right
+  - Renter: browser-based user
+  - Manager/Admin: internal staff users
+  - Payment Gateway handles card data (do not store locally)
+end note
+
+@enduml

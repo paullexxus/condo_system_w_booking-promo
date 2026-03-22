@@ -1,0 +1,90 @@
+@startuml
+' BookIT — Clear Data Flow Diagram (numbered DFD)
+"""\nMore explicit, numbered flows to make data movement and responsibilities clearer.\n"""
+
+skinparam dpi 150
+skinparam shadowing false
+hide footbox
+
+title BookIT — Data Flow Diagram (Clear)
+
+left to right direction
+
+' Actors / External Entities
+actor "Renter (Browser)" as Renter
+actor "Manager (Browser)" as Manager
+actor "Admin (Browser)" as Admin
+
+actor "Google OAuth" as OAuthProvider
+actor "Payment Gateway" as PGW
+actor "SMTP / Email Service" as SMTP
+
+' Application Processes
+rectangle "[P1] Public UI" as P1 #DDFFDD
+rectangle "[P2] Auth Service" as P2 #FFFFCC
+rectangle "[P3] Reservation Service" as P3 #FFEECC
+rectangle "[P4] Payment Service" as P4 #FFE0E0
+rectangle "[P5] Notifications Service" as P5 #E0F0FF
+rectangle "[P6] Admin/Manager UI" as P6 #F0E0FF
+
+' Data Stores
+database "(D1) Users" as D1
+database "(D2) Reservations" as D2
+database "(D3) Payments" as D3
+database "(D4) Units & Branches" as D4
+folder "(D5) File Storage (uploads/)" as D5
+
+' --- Numbered flows (labels explain direction and data)
+Renter --> P1 : (1) Browse request (filters)
+P1 --> D4 : (2) Read units & availability
+P1 --> P2 : (3) Login / Register request (credentials)
+P2 --> D1 : (4) Read/Write user record (hash pw, roles)
+P1 -> OAuthProvider : (5) OAuth redirect (Google Sign-in)
+OAuthProvider --> P2 : (6) OAuth user info
+P1 --> P3 : (7) Create reservation request (user_id, unit_id, dates)
+P3 --> D2 : (8) Insert reservation (status=pending)
+P3 --> D4 : (9) Check/update unit availability
+P3 --> P4 : (10) Request payment (if required)
+P4 --> PGW : (11) Process payment (tokenized card)
+PGW --> P4 : (12) Payment result (success/fail)
+P4 --> D3 : (13) Record transaction (tx_id, status)
+P3 --> P5 : (14) Trigger notification (reservation pending/confirmed)
+P5 --> SMTP : (15) Send email (welcome/receipt/approval)
+P5 --> D2 : (16) Write in-app notification (notifications table)
+P1 --> D5 : (17) Upload profile picture / retrieve image
+
+' Manager/Admin flows
+Manager --> P6 : (18) Login / view branch reservations
+P6 --> D2 : (19) Read reservations for branch
+P6 --> P3 : (20) Approve / Cancel reservation (update)
+P3 --> D2 : (21) Update reservation status (confirmed/cancelled)
+P3 --> P5 : (22) Trigger approval/cancellation notification
+
+' Data reads for reporting
+Admin --> P6 : (23) Request reports
+P6 --> D1 : (24) Read users for admin report
+P6 --> D2 : (25) Read reservations for analytics
+
+' Notes / trust boundaries
+note right of PGW
+  External payment gateway — handles card data.
+  Do NOT store raw card details in local DB.
+end note
+
+note right of SMTP
+  SMTP config lives in `config/email.php` (use secrets in prod).
+end note
+
+note left of D1
+  Local MySQL on WAMP
+  Stores PII: users, reservations, payments, notifications
+end note
+
+' Legend with numbered descriptions
+legend right
+  1..25 : Numbered data flows (see labels in diagram)
+  Processes: P1..P6
+  Data stores: D1..D5
+endlegend
+
+@enduml

@@ -1,0 +1,61 @@
+.booking-form-container {
+        background: white;
+        border-radius: 15px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        padding: 2rem;
+        /* Default: behave like a normal flow element on small screens */
+        position: relative;
+        top: auto;
+        width: 100%;
+        max-width: 100%;
+    }
+
+/* On larger viewports keep the booking panel fixed on the right side of the window */
+@media (min-width: 992px) {
+    .booking-form-container {
+        position: fixed;
+        top: 100px;
+        right: 24px;
+        width: 340px; /* adjust as needed to match the sidebar width */
+        max-width: 340px;
+        z-index: 1050;
+    }
+
+    /* Ensure the surrounding content has enough right padding so content doesn't hide under fixed panel */
+    .browse-left { margin-right: 400px; }
+}
+/* Small-screen override: ensure the sidebar remains in normal flow */
+@media (max-width: 991px) {
+    .booking-form-container { position: relative !important; width: auto !important; right: auto !important; top: auto !important; }
+    .browse-left { margin-right: 0 !important; }
+}
+    
+    .unit-card {
+        border: 1px solid #e9ecef;
+        border-radius: 10px;
+        padding: 1.5rem;
+        margin-bottom: 1rem;
+        transition: all 0.3s ease;
+    }
+    
+    .unit-card:hover {
+        border-color: var(--gold-color);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+    
+    .amenity-badge {
+        background: var(--accent-color);
+        color: white;
+        padding: 0.5rem 1rem;
+        border-radius: 25px;
+        margin: 0.25rem;
+        display: inline-block;
+        font-size: 0.9rem;
+    }
+    
+    .stat-number-sm {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--primary-color);
+        margin-bottom: 0.5rem;
+    }

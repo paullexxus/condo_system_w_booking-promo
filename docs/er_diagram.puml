@@ -1,0 +1,120 @@
+@startuml
+' ER Diagram for BookIT (simplified)
+skinparam linetype ortho
+
+entity "users" as users {
+  *user_id : int
+  --
+  full_name
+  email
+  role
+}
+
+entity "branches" as branches {
+  *branch_id : int
+  --
+  branch_name
+  city
+}
+
+entity "units" as units {
+  *unit_id : int
+  --
+  unit_number
+  branch_id
+  host_id
+}
+
+entity "amenities" as amenities {
+  *amenity_id : int
+  --
+  amenity_name
+  branch_id
+}
+
+entity "reservations" as reservations {
+  *reservation_id : int
+  --
+  user_id
+  unit_id
+  branch_id
+  status
+}
+
+entity "amenity_bookings" as amenity_bookings {
+  *booking_id : int
+  --
+  user_id
+  amenity_id
+}
+
+entity "payments" as payments {
+  *payment_id : int
+  --
+  reservation_id
+  amenity_booking_id
+  user_id
+}
+
+entity "notifications" as notifications {
+  *notification_id : int
+  --
+  user_id
+}
+
+entity "reviews" as reviews {
+  *review_id : int
+  --
+  user_id
+  unit_id
+  branch_id
+}
+
+entity "payment_sources" as payment_sources {
+  *id : int
+  --
+  user_id
+  source_id_paymongo
+}
+
+entity "user_bank_accounts" as user_bank_accounts {
+  *account_id : int
+  --
+  user_id
+}
+
+entity "user_payment_methods" as user_payment_methods {
+  *method_id : int
+  --
+  user_id
+}
+
+entity "otp_verifications" as otp_verifications {
+  *id : int
+  --
+  user_id
+  otp_code (hashed)
+  purpose
+}
+
+' Relationships
+users ||--o{ branches : "may be host_of"
+branches ||--o{ units : "has"
+branches ||--o{ amenities : "has"
+units ||--o{ reservations : "booked_in"
+users ||--o{ reservations : "makes"
+users ||--o{ amenity_bookings : "books"
+amenities ||--o{ amenity_bookings : "booked_in"
+reservations ||--o{ payments : "has"
+amenity_bookings ||--o{ payments : "has"
+users ||--o{ payments : "pays"
+users ||--o{ notifications : "receives"
+users ||--o{ reviews : "writes"
+units ||--o{ reviews : "reviewed"
+branches ||--o{ reviews : "reviewed_at"
+users ||--o{ payment_sources : "owns"
+users ||--o{ user_bank_accounts : "owns"
+users ||--o{ user_payment_methods : "owns"
+users ||--o{ otp_verifications : "requests"
+
+@enduml

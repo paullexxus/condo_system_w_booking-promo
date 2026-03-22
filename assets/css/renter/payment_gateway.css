@@ -1,0 +1,236 @@
+/* BookIT Payment Gateway Styles */
+
+body {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.payment-container {
+    max-width: 500px;
+    width: 100%;
+}
+
+.payment-card {
+    background: white;
+    border-radius: 15px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    overflow: hidden;
+}
+
+.payment-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 30px;
+    text-align: center;
+}
+
+.payment-header h1 {
+    font-size: 24px;
+    font-weight: bold;
+    margin: 0;
+}
+
+.payment-header p {
+    margin: 10px 0 0 0;
+    opacity: 0.9;
+}
+
+.payment-body {
+    padding: 40px;
+}
+
+.payment-amount {
+    text-align: center;
+    margin: 30px 0;
+}
+
+.payment-amount .amount {
+    font-size: 48px;
+    font-weight: bold;
+    color: #333;
+    margin: 15px 0;
+}
+
+.payment-amount .currency {
+    font-size: 24px;
+    color: #667eea;
+}
+
+.payment-info {
+    background: #f8f9fa;
+    padding: 20px;
+    border-radius: 8px;
+    margin: 25px 0;
+}
+
+.payment-info-row {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 10px;
+    font-size: 14px;
+}
+
+.payment-info-row:last-child {
+    margin-bottom: 0;
+}
+
+.payment-info-label {
+    color: #666;
+}
+
+.payment-info-value {
+    font-weight: bold;
+    color: #333;
+}
+
+.payment-method-display {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    background: #e8f4f8;
+    padding: 15px;
+    border-radius: 8px;
+    margin: 20px 0;
+}
+
+.payment-method-display i {
+    font-size: 32px;
+    color: #667eea;
+}
+
+.payment-method-display .info h5 {
+    margin: 0;
+    color: #333;
+}
+
+.payment-method-display .info p {
+    margin: 5px 0 0;
+    color: #666;
+    font-size: 13px;
+}
+
+.processing-steps {
+    list-style: none;
+    padding: 0;
+    margin: 25px 0;
+}
+
+.processing-steps li {
+    padding: 10px 0;
+    padding-left: 35px;
+    position: relative;
+    color: #666;
+    font-size: 14px;
+}
+
+.processing-steps li::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 12px;
+    width: 20px;
+    height: 20px;
+    background: #667eea;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 12px;
+}
+
+.processing-steps li.done::before {
+    content: '✓';
+    background: #28a745;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.processing-steps li.active::before {
+    animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        box-shadow: 0 0 0 0 rgba(102, 126, 234, 0.7);
+    }
+    50% {
+        box-shadow: 0 0 0 10px rgba(102, 126, 234, 0);
+    }
+}
+
+.action-buttons {
+    display: flex;
+    gap: 10px;
+    margin-top: 30px;
+}
+
+.btn-success-payment {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border: none;
+    color: white;
+    padding: 12px 30px;
+    border-radius: 8px;
+    font-weight: bold;
+    flex: 1;
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+
+.btn-success-payment:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+}
+
+.btn-cancel-payment {
+    background: #6c757d;
+    border: none;
+    color: white;
+    padding: 12px 30px;
+    border-radius: 8px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.btn-cancel-payment:hover {
+    background: #5a6268;
+}
+
+.error-message {
+    background: #f8d7da;
+    color: #721c24;
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    border-left: 4px solid #f5c6cb;
+}
+
+.success-message {
+    background: #d4edda;
+    color: #155724;
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    border-left: 4px solid #c3e6cb;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .payment-body {
+        padding: 25px;
+    }
+    
+    .payment-amount .amount {
+        font-size: 36px;
+    }
+    
+    .action-buttons {
+        flex-direction: column;
+    }
+}

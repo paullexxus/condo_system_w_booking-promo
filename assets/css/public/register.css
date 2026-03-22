@@ -1,0 +1,314 @@
+body {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+.register-container {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+.register-card {
+    background: white;
+    border-radius: 20px;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+    overflow: hidden;
+    max-width: 900px;
+    width: 100%;
+}
+.register-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 40px;
+    text-align: center;
+}
+.register-body {
+    padding: 40px;
+}
+.form-floating {
+    margin-bottom: 20px;
+    position: relative;
+}
+.form-floating > .form-control {
+    border-radius: 10px;
+    border: 2px solid #e9ecef;
+    padding: 1rem 0.75rem;
+    padding-right: 45px; /* Space for eye icon */
+}
+.form-floating > .form-control:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+}
+.form-floating > label {
+    color: #6c757d;
+    padding-left: 0.75rem;
+}
+
+/* Password Input Group Styles */
+.password-input-group {
+    position: relative;
+}
+.password-toggle {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: #6c757d;
+    cursor: pointer;
+    z-index: 5;
+    padding: 5px;
+    border-radius: 4px;
+    transition: all 0.3s ease;
+}
+.password-toggle:hover {
+    color: #495057;
+    background-color: #f8f9fa;
+}
+.password-toggle:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.25);
+}
+.form-floating > .form-control:focus ~ .password-toggle {
+    color: #667eea;
+}
+
+/* Password Requirements Styles */
+.password-requirements {
+    background: #f8f9fa;
+    border-radius: 10px;
+    padding: 20px;
+    margin: 15px 0;
+    border: 1px solid #e9ecef;
+}
+.password-requirements h6 {
+    color: #495057;
+    font-weight: 600;
+    margin-bottom: 15px;
+    font-size: 0.9rem;
+}
+.requirement {
+    display: flex;
+    align-items: center;
+    margin-bottom: 8px;
+    font-size: 0.8rem;
+    transition: all 0.3s ease;
+}
+.requirement.valid {
+    color: #198754;
+}
+.requirement.invalid {
+    color: #6c757d;
+}
+.requirement i {
+    margin-right: 10px;
+    width: 16px;
+    text-align: center;
+    font-size: 0.8rem;
+}
+.requirement.valid i {
+    color: #198754;
+}
+.requirement.invalid i {
+    color: #dc3545;
+}
+
+/* Password Strength Meter */
+.password-strength {
+    margin-top: 10px;
+    font-size: 0.875rem;
+}
+.strength-weak { 
+    color: #dc3545; 
+    font-weight: 600;
+}
+.strength-medium { 
+    color: #ffc107; 
+    font-weight: 600;
+}
+.strength-strong { 
+    color: #28a745; 
+    font-weight: 600;
+}
+
+/* Button Styles */
+.btn-register {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border: none;
+    border-radius: 10px;
+    padding: 12px 30px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    transition: all 0.3s ease;
+    margin-top: 10px;
+}
+.btn-register:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+}
+.btn-register:active {
+    transform: translateY(0);
+}
+
+/* Alert Styles */
+.alert {
+    border-radius: 10px;
+    border: none;
+    padding: 15px 20px;
+    margin-bottom: 20px;
+}
+.alert-danger {
+    background-color: #f8d7da;
+    color: #721c24;
+    border-left: 4px solid #dc3545;
+}
+.alert-success {
+    background-color: #d1edff;
+    color: #0c5460;
+    border-left: 4px solid #117a8b;
+}
+
+/* Link Styles */
+.login-link {
+    color: #667eea;
+    text-decoration: none;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+.login-link:hover {
+    color: #764ba2;
+    text-decoration: underline;
+}
+
+/* Feature List Styles */
+.feature-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+.feature-list li {
+    padding: 12px 0;
+    color: #6c757d;
+    border-bottom: 1px solid #f8f9fa;
+    display: flex;
+    align-items: center;
+}
+.feature-list li:last-child {
+    border-bottom: none;
+}
+.feature-list li i {
+    color: #28a745;
+    margin-right: 15px;
+    font-size: 1.1rem;
+}
+
+/* Form Focus States */
+.form-control:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .register-container {
+        padding: 10px;
+    }
+    .register-body {
+        padding: 30px 20px;
+    }
+    .form-floating > .form-control {
+        padding-right: 40px;
+    }
+    .password-toggle {
+        right: 10px;
+    }
+}
+
+@media (max-width: 576px) {
+    .register-body {
+        padding: 20px 15px;
+    }
+    .password-requirements {
+        padding: 15px;
+    }
+    .requirement {
+        font-size: 0.75rem;
+    }
+}
+
+/* Animation for Requirements */
+@keyframes requirementValid {
+    0% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.05);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
+.requirement.valid {
+    animation: requirementValid 0.3s ease;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+    width: 8px;
+}
+::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+::-webkit-scrollbar-thumb {
+    background: #667eea;
+    border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: #764ba2;
+}
+
+/* Loading State for Button */
+.btn-register:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* Password Match Indicator */
+.password-match {
+    color: #198754;
+    font-size: 0.8rem;
+    margin-top: 5px;
+}
+.password-mismatch {
+    color: #dc3545;
+    font-size: 0.8rem;
+    margin-top: 5px;
+}
+
+/* Enhanced Form Controls */
+.form-floating > .form-control:not(:placeholder-shown) ~ label {
+    color: #667eea;
+    font-weight: 500;
+}
+
+/* Focus states for accessibility */
+.password-toggle:focus-visible {
+    outline: 2px solid #667eea;
+    outline-offset: 2px;
+}
+
+/* High contrast support */
+@media (prefers-contrast: high) {
+    .password-toggle {
+        border: 1px solid currentColor;
+    }
+    .requirement.valid {
+        font-weight: bold;
+    }
+}

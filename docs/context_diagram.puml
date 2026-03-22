@@ -1,0 +1,54 @@
+@startuml
+' BookIT context diagram (portrait)
+
+top to bottom direction
+skinparam dpi 150
+skinparam shadowing false
+skinparam rectangle {
+  BackgroundColor #F8F9FB
+  BorderColor #2B7BE4
+}
+
+actor "Renter\n(Browser)" as Renter
+actor "Manager\n(Browser)" as Manager
+actor "Admin\n(Browser)" as Admin
+
+rectangle "BookIT Web App\n(PHP on WAMP)" as App {
+  node "Public UI" as UI
+  node "Auth & Sessions" as Auth
+  node "Reservations & Units" as Reservations
+  node "Payments Module" as Payments
+  node "Notifications / Email" as Notifications
+}
+
+database "MySQL\n(condo_rental_reservation_db)" as DB
+cloud "Google OAuth" as OAuth
+cloud "SMTP (Gmail)" as SMTP
+cloud "Payment Gateway" as PGW
+folder "File Storage\n/uploads" as FS
+
+' User -> App interactions (top-down)
+Renter -> UI : Browse, Register\nLogin, Reserve, Pay\nUpload profile pic
+Manager -> UI : Login, Manage units\nView bookings
+Admin -> UI : Manage branches\nManage admins/settings
+
+' App internal flows
+UI --> Auth : login / register / session
+Auth --> DB : users (password hashes, roles)
+Reservations --> DB : reservations, availability
+Payments --> PGW : process payment\n(credit card / bank transfer)
+Payments --> DB : record payments
+Notifications --> SMTP : send emails\n(welcome, receipts, reminders)
+App ..> OAuth : Google sign-in flow
+App --> FS : store/serve uploads\n(profile pictures)
+
+note left of DB
+  Local MySQL on WAMP
+  Stores: users, reservations, payments, branches
+end note
+
+note right of App
+  Runs on Windows WAMP\nSession-based auth\nPasswords hashed with password_hash()
+end note
+
+@enduml

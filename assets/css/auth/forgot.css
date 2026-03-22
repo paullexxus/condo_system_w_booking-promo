@@ -1,0 +1,43 @@
+/* Simple styles for forgot password flow */
+body { 
+    background: #f5f7fa; 
+    font-family: Arial, sans-serif; 
+}
+.auth-container { 
+    display:flex; 
+    align-items:center; 
+    justify-content:center; 
+    min-height:100vh; 
+    padding:20px; 
+}
+.auth-card { 
+    width:100%; 
+    max-width:420px; 
+    background:white; 
+    padding:28px; 
+    border-radius:8px; 
+    box-shadow:0 8px 30px rgba(99,102,241,0.08); 
+}
+.auth-card h2 { 
+    margin-bottom:6px; 
+    color:#333; 
+}
+.auth-card p { 
+    color:#666; 
+    margin-bottom:18px; 
+}
+.auth-card .form-label { 
+    font-weight:600; 
+}
+.auth-card .btn-primary { 
+    background:#667eea; 
+    border-color:#667eea; 
+}
+.auth-card a { 
+    color:#667eea; 
+}
+@media (max-width:480px) { 
+    .auth-card{
+        padding:18px
+    } 
+}

@@ -1,0 +1,63 @@
+/* Renter modern UI overrides - sleek cards, filters, buttons */
+:root{
+    --primary-color:#2b6cb0;
+    --accent-color:#f6ad55;
+    --muted:#6b7280;
+    --card-radius:12px;
+    --glass: rgba(255,255,255,0.75);
+}
+
+body {
+    background: linear-gradient(180deg,#f7f9fc 0%, #eef2f7 100%);
+    color: #111827;
+    font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+}
+
+/* Navbar tweaks */
+.navbar-brand { font-weight:700; letter-spacing:0.2px; }
+.navbar { box-shadow: 0 4px 18px rgba(15,23,42,0.06); }
+
+/* Hero */
+.hero-section { background: linear-gradient(90deg, rgba(43,108,176,0.9), rgba(118,75,162,0.9)); padding:120px 0; border-bottom-left-radius:20px; border-bottom-right-radius:20px; }
+.hero-section h1, .hero-section p { color: white; text-shadow: 0 2px 8px rgba(0,0,0,0.15); }
+
+/* Cards */
+.card { border-radius: var(--card-radius); }
+.unit-card { background: linear-gradient(180deg, #fff, var(--glass)); border: none; transition: transform .18s ease, box-shadow .18s ease; }
+.unit-card:hover { transform: translateY(-6px); box-shadow: 0 18px 40px rgba(2,6,23,0.08); }
+
+.unit-image-container { border-radius: 8px; overflow: hidden; }
+
+.luxury-price .price-amount { font-weight: 800; font-size: 1.4rem; color: var(--primary-color); }
+.luxury-price .price-period { color: var(--muted); font-size:0.9rem; margin-left:8px; }
+
+.btn-luxury { background: linear-gradient(135deg,#667eea 0%,#764ba2 100%); color: white; border-radius: 10px; padding: 10px 18px; border: none; }
+.btn-luxury:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(102,126,234,0.18); }
+.btn-outline-luxury { border-radius:10px; border:1px solid rgba(102,126,234,0.18); color: #2d2d2d; }
+
+.amenity-badge { background: rgba(43,108,176,0.9); color: #fff; padding:6px 12px; border-radius:20px; font-size:0.85rem; }
+
+/* Booking card and summary */
+.booking-form-container { background: linear-gradient(180deg,#fff,#fbfdff); border-radius:12px; box-shadow: 0 10px 32px rgba(2,6,23,0.06); }
+
+.status-badge { padding:6px 10px; border-radius:12px; font-size:0.85rem; }
+.status-awaiting_approval { background: #fff7ed; color:#92400e; }
+.status-approved { background: #ecfdf5; color:#065f46; }
+.status-confirmed { background: #eef2ff; color:#4c1d95; }
+
+.booking-card .card-header { background: transparent; border-bottom:none; }
+
+/* My bookings action buttons spacing */
+.booking-card .btn { border-radius:8px; }
+
+/* Responsive tweaks */
+@media (max-width: 768px){
+    .hero-section { padding: 60px 0; }
+    .unit-card { margin-bottom: 1.2rem; }
+}
+
+/* Small utilities */
+.text-muted-small { color: #6b7280; font-size: 0.95rem; }
+
+/* Filter panel */
+.filter-panel { background: white; border-radius: 12px; padding:12px; box-shadow: 0 8px 28px rgba(2,6,23,0.04); }

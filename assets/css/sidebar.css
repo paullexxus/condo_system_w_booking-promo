@@ -1,0 +1,264 @@
+@import url('admin/admin-common.css');
+/* Sidebar Styles */
+.sidebar {
+    background: linear-gradient(180deg, #2c3e50 0%, #34495e 100%);
+    color: white;
+    height: 100vh;
+    position: fixed;
+    left: 0;
+    top: 0;
+    width: 280px;
+    z-index: 1000;
+    box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+    display: flex;
+    flex-direction: column;
+}
+
+.brand {
+    padding: 1.5rem 1.5rem 1rem;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+    text-align: center;
+}
+
+.brand i {
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
+    color: #3498db;
+}
+
+.brand span {
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: white;
+    display: block;
+}
+
+.sidebar-menu {
+    flex: 1;
+    padding: 1rem 0;
+    overflow-y: auto;
+}
+
+.sidebar-menu ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.sidebar-menu li {
+    margin: 0.2rem 0;
+}
+
+.sidebar-menu a {
+    color: rgba(255,255,255,0.8);
+    text-decoration: none;
+    padding: 0.8rem 1.5rem;
+    display: flex;
+    align-items: center;
+    transition: all 0.3s ease;
+    border-left: 4px solid transparent;
+}
+
+.sidebar-menu a:hover {
+    background: rgba(255,255,255,0.1);
+    color: white;
+    border-left-color: #3498db;
+}
+
+.sidebar-menu a.active {
+    background: rgba(52, 152, 219, 0.2);
+    color: white;
+    border-left-color: #3498db;
+}
+
+.sidebar-menu i {
+    width: 20px;
+    margin-right: 0.8rem;
+    font-size: 1rem;
+}
+
+.sidebar-menu span {
+    font-weight: 500;
+}
+
+/* Sidebar Profile */
+.sidebar-profile {
+    padding: 1.5rem;
+    border-top: 1px solid rgba(255,255,255,0.1);
+    background: rgba(0,0,0,0.2);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.profile-info {
+    display: flex;
+    align-items: center;
+    flex: 1;
+}
+
+.profile-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 0.8rem;
+}
+
+.profile-avatar i {
+    font-size: 1.5rem;
+    color: rgba(255,255,255,0.8);
+}
+
+.profile-details {
+    display: flex;
+    flex-direction: column;
+}
+
+.profile-name {
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: white;
+}
+
+.profile-role {
+    font-size: 0.8rem;
+    color: rgba(255,255,255,0.7);
+}
+
+.logout-btn {
+    color: rgba(255,255,255,0.7);
+    text-decoration: none;
+    padding: 0.5rem;
+    border-radius: 6px;
+    transition: all 0.3s ease;
+}
+
+.logout-btn:hover {
+    color: white;
+    background: rgba(255,255,255,0.1);
+}
+
+/* Main Content Adjustment */
+.main-content {
+    margin-left: 280px;
+    min-height: 100vh;
+    background: #f8f9fa;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .sidebar {
+        width: 70px;
+        overflow: hidden;
+    }
+    
+    .brand span,
+    .sidebar-menu span,
+    .profile-details {
+        display: none;
+    }
+    
+    .brand {
+        padding: 1rem 0.5rem;
+    }
+    
+    .brand i {
+        margin-bottom: 0;
+        font-size: 1.5rem;
+    }
+    
+    .sidebar-menu a {
+        padding: 0.8rem;
+        justify-content: center;
+    }
+    
+    .sidebar-menu i {
+        margin-right: 0;
+        font-size: 1.2rem;
+    }
+    
+    .profile-info {
+        justify-content: center;
+    }
+    
+    .profile-avatar {
+        margin-right: 0;
+    }
+    
+    .main-content {
+        margin-left: 70px;
+    }
+}
+
+@media (max-width: 576px) {
+    .sidebar {
+        width: 100%;
+        height: auto;
+        position: relative;
+    }
+    
+    .sidebar-menu {
+        max-height: 300px;
+    }
+    
+    .main-content {
+        margin-left: 0;
+    }
+    
+    .brand span {
+        display: block;
+    }
+    
+    .sidebar-menu span {
+        display: inline;
+    }
+    
+    .profile-details {
+        display: flex;
+    }
+}
+
+/* Scrollbar for Sidebar */
+.sidebar-menu::-webkit-scrollbar {
+    width: 4px;
+}
+
+.sidebar-menu::-webkit-scrollbar-track {
+    background: rgba(255,255,255,0.1);
+}
+
+.sidebar-menu::-webkit-scrollbar-thumb {
+    background: rgba(255,255,255,0.3);
+    border-radius: 2px;
+}
+
+.sidebar-menu::-webkit-scrollbar-thumb:hover {
+    background: rgba(255,255,255,0.5);
+}
+/* Active state styles */
+.sidebar-menu a.active {
+    background: rgba(52, 152, 219, 0.2);
+    color: white;
+    border-left-color: #3498db;
+    position: relative;
+}
+
+.sidebar-menu a.active::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 3px;
+    height: 70%;
+    background: #3498db;
+    border-radius: 0 2px 2px 0;
+}
+
+.sidebar-menu a.active i {
+    color: #3498db;
+}

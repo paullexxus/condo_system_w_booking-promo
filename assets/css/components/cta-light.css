@@ -1,0 +1,50 @@
+/* Light-mode CTA card inspired by Tailwind dark hero but adapted for a bright site */
+.cta-section {
+  padding: 3.5rem 0;
+}
+.cta-card {
+  background: linear-gradient(180deg, #ffffff 0%, #fbfbfd 100%);
+  border: 1px solid rgba(16,24,40,0.04);
+  box-shadow: 0 10px 30px rgba(15,23,42,0.06);
+  border-radius: 14px;
+  padding: 3rem 2.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.25rem;
+}
+.cta-card .cta-text h2 {
+  font-size: 2rem;
+  margin: 0 0 0.5rem 0;
+  color: #0f172a; /* slate-900 */
+}
+.cta-card .cta-text p {
+  margin: 0;
+  color: #475569; /* slate-500 */
+}
+.cta-actions { display:flex; gap: .75rem; align-items: center; }
+
+/* Light luxury button variant */
+.btn-luxury {
+  background: linear-gradient(90deg,#6366f1 0%, #8b5cf6 100%);
+  color: #fff;
+  border: none;
+  padding: 0.6rem 1rem;
+  border-radius: 8px;
+  box-shadow: 0 8px 20px rgba(99,102,241,0.18);
+}
+.btn-luxury:hover { transform: translateY(-2px); box-shadow: 0 14px 32px rgba(99,102,241,0.18); }
+
+.btn-outline-luxury {
+  background: transparent;
+  border: 1px solid rgba(15,23,42,0.06);
+  color: #0f172a;
+  padding: 0.56rem 0.9rem;
+  border-radius: 8px;
+}
+
+/* Responsive: stack on small screens */
+@media (max-width: 767px) {
+  .cta-card { flex-direction: column; text-align:center; }
+  .cta-actions { justify-content:center; width:100%; }
+}

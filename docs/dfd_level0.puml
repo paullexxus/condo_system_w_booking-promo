@@ -1,0 +1,39 @@
+@startuml
+' BookIT — DFD Level 0 (Context)
+skinparam dpi 150
+skinparam shadowing false
+title BookIT — DFD Level 0 (Context)
+
+left to right direction
+
+actor "Renter (Browser)" as Renter
+actor "Manager (Browser)" as Manager
+actor "Admin (Browser)" as Admin
+
+actor "Google OAuth" as OAuth
+actor "Payment Gateway" as PGW
+actor "SMTP / Email Service" as SMTP
+
+rectangle "BookIT System (P0)" as P0 {
+  database "MySQL Database" as DB
+  folder "File Storage (uploads/)" as FS
+}
+
+' User interactions
+Renter -> P0 : Browse units, Register, Login, Reserve, Upload profile pic
+Manager -> P0 : Login, Manage units, Approve/Cancel bookings
+Admin -> P0 : Manage branches, admins, reports
+
+' External integrations
+P0 -> OAuth : OAuth sign-in / exchange code
+P0 -> PGW : Payment processing (card tokenization handled by gateway)
+P0 -> SMTP : Send transactional emails (confirmations, receipts)
+P0 -> DB : Read/Write users, reservations, payments, units, branches
+P0 -> FS : Store / Serve uploaded files (profile pictures)
+
+note right of P0
+  Single-process context diagram (system boundary)
+  Use this for high-level overviews to stakeholders.
+end note
+
+@enduml

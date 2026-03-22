@@ -1,0 +1,71 @@
+@startuml
+' BookIT — DFD Level 1 (Decomposed)
+skinparam dpi 150
+skinparam shadowing false
+title BookIT — DFD Level 1 (Decomposition of P0)
+
+left to right direction
+
+actor "Renter (Browser)" as Renter
+actor "Manager (Browser)" as Manager
+actor "Admin (Browser)" as Admin
+actor "Google OAuth" as OAuth
+actor "Payment Gateway" as PGW
+actor "SMTP / Email Service" as SMTP
+
+' Application Processes (decomposed)
+rectangle "[P1] Auth Service" as P1 #FFFFCC
+rectangle "[P2] Reservation Service" as P2 #FFEECC
+rectangle "[P3] Payment Service" as P3 #FFE0E0
+rectangle "[P4] Notifications Service" as P4 #E0F0FF
+rectangle "[P5] Admin/Manager UI" as P5 #F0E0FF
+
+' Data Stores
+database "(D1) Users" as D1
+database "(D2) Reservations" as D2
+database "(D3) Payments" as D3
+database "(D4) Units & Branches" as D4
+folder "(D5) File Storage (uploads/)" as D5
+
+' Level-1 flows (examples)
+Renter -> P1 : (1) Login/Register (credentials)
+P1 -> D1 : (2) Read/Write user record (password hash, role)
+P1 -> OAuth : (3) OAuth exchange (Google sign-in)
+OAuth -> P1 : (4) OAuth user info
+
+Renter -> P2 : (5) Search units / Create reservation request
+P2 -> D4 : (6) Read units & availability
+P2 -> D2 : (7) Create reservation (status=pending)
+P2 -> P3 : (8) Initiate payment (if required)
+
+P3 -> PGW : (9) Process payment (tokenized card)
+PGW -> P3 : (10) Payment result
+P3 -> D3 : (11) Record transaction (tx_id, status)
+P3 -> P2 : (12) Inform reservation of payment result
+
+P2 -> P4 : (13) Trigger notification (pending/confirmed/cancelled)
+P4 -> SMTP : (14) Send email (confirmation/receipt)
+P4 -> D2 : (15) Write in-app notification (notifications table)
+
+P5 -> D2 : (16) Read reservations (manager/admin view)
+P5 -> P2 : (17) Approve/Cancel reservation
+P2 -> D2 : (18) Update reservation status
+P2 -> P4 : (19) Trigger approval/cancellation notification
+
+P1 -> D5 : (20) Store/Retrieve profile images
+
+note right of PGW
+  External payment provider — card data should be tokenized by PGW.
+end note
+
+note right of SMTP
+  SMTP configured in `config/email.php` (use secrets manager in prod).
+end note
+
+legend right
+  Processes: P1..P5
+  Data stores: D1..D5
+  Numbered arrows show major data flows for common use-cases.
+endlegend
+
+@enduml
