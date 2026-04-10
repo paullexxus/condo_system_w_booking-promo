@@ -1,11 +1,11 @@
-﻿@import url('admin-common.css');
+@import url('admin-common.css');
 
 @import url('../sidebar-common.css');
 /* unit_management.css - Enhanced Modern Styling */
 
 /* Main Content Styles */
 .content {
-    margin-left: 280px;
+    margin-left: var(--sidebar-width, 280px);
     padding: 30px;
     min-height: 100vh;
     background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
@@ -533,31 +533,6 @@
 @media (max-width: 1200px) {
     .search-form {
         grid-template-columns: 1fr 1fr;
-    }
-}
-
-@media (max-width: 992px) {
-    .sidebar {
-        width: 80px;
-    }
-    
-    .brand span, .sidebar-menu a span {
-        display: none;
-    }
-    
-    .sidebar-menu i {
-        margin-right: 0;
-        width: auto;
-        font-size: 1.3em;
-    }
-    
-    .content {
-        margin-left: 80px;
-        padding: 20px;
-    }
-    
-    .profile-details {
-        display: none;
     }
 }
 

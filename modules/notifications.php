@@ -163,264 +163,168 @@ function createGmailUrl($subject, $message, $recipient = '') {
         </div>
     </nav>
 
-    <div class="max-w-7xl mx-auto px-4 py-12">
-                </div>
+    <!-- Main Content Container -->
+    <div class="max-w-3xl mx-auto px-4 pt-10 pb-24">
+        
+        <!-- Page Header Section -->
+        <div class="flex flex-col md:flex-row md:items-end justify-between border-b border-gray-100 pb-6 mb-6">
+            <div>
+                <h1 class="text-3xl md:text-4xl font-bold text-gray-900 tracking-tight mb-2">Notifications</h1>
+                <p class="text-gray-500 font-medium text-lg">Stay updated with your bookings and reservations.</p>
             </div>
-        </nav>
-
-        <div class="container mt-4">
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <h2>
-                    <i class="fas fa-bell"></i> Notifications
-                    <?php if ($unreadCount['count'] > 0): ?>
-                        <span class="badge bg-danger"><?php echo $unreadCount['count']; ?></span>
-                    <?php endif; ?>
-                </h2>
-                
-                <div class="d-flex gap-2">
-                    <?php if ($unreadCount['count'] > 0): ?>
-                        <form method="POST" class="d-inline">
-                            <button type="submit" name="mark_all_read" class="btn btn-outline-primary">
-                                <i class="fas fa-check-double"></i> Mark All as Read
-                            </button>
-                        </form>
-                    <?php endif; ?>
-                    <a href="../public/index.php" class="btn btn-outline-secondary">
-                        <i class="fas fa-home"></i> Back to Home
-                    </a>
-                </div>
+            
+            <?php if ($unreadCount['count'] > 0): ?>
+            <div class="mt-4 md:mt-0">
+                <form method="POST">
+                    <button type="submit" name="mark_all_read" class="text-sm font-bold text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 py-2 px-4 rounded-xl transition-colors">
+                        <i class="fas fa-check-double mr-1"></i> Mark all as read
+                    </button>
+                </form>
             </div>
-
-            <!-- Messages -->
-            <?php if ($message): ?>
-                <div class="alert alert-success alert-dismissible fade show" role="alert">
-                    <i class="fas fa-check-circle"></i> <?php echo $message; ?>
-                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                </div>
-            <?php endif; ?>
-
-            <?php if ($error): ?>
-                <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                    <i class="fas fa-exclamation-circle"></i> <?php echo $error; ?>
-                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                </div>
-            <?php endif; ?>
-
-            <!-- Notifications List -->
-            <?php if (mysqli_num_rows($notifications) > 0): ?>
-                <div class="row">
-                    <div class="col-md-8">
-                        <?php while ($notification = mysqli_fetch_assoc($notifications)): 
-                            $gmail_url = createGmailUrl(
-                                $notification['title'],
-                                $notification['message'],
-                                $_SESSION['email']
-                            );
-                        ?>
-                            <div class="card notification-card <?php echo $notification['is_read'] ? 'read' : 'unread'; ?>">
-                                <div class="card-body">
-                                    <div class="d-flex align-items-start">
-                                        <div class="notification-icon icon-<?php echo $notification['type']; ?> me-3">
-                                            <?php
-                                            $icons = [
-                                                'booking' => 'fas fa-calendar-check',
-                                                'payment' => 'fas fa-credit-card',
-                                                'reminder' => 'fas fa-clock',
-                                                'system' => 'fas fa-cog',
-                                                'alert' => 'fas fa-exclamation-triangle'
-                                            ];
-                                            $icon = $icons[$notification['type']] ?? 'fas fa-bell';
-                                            echo '<i class="' . $icon . '"></i>';
-                                            ?>
-                                        </div>
-                                        
-                                        <div class="flex-grow-1">
-                                            <div class="d-flex justify-content-between align-items-start">
-                                                <h6 class="card-title mb-1">
-                                                    <?php echo htmlspecialchars($notification['title']); ?>
-                                                    <?php if (!$notification['is_read']): ?>
-                                                        <span class="notification-badge" title="Unread">!</span>
-                                                    <?php endif; ?>
-                                                </h6>
-                                                <div class="dropdown">
-                                                    <button class="btn btn-sm btn-outline-secondary dropdown-toggle" 
-                                                            type="button" data-bs-toggle="dropdown">
-                                                        <i class="fas fa-ellipsis-v"></i>
-                                                    </button>
-                                                    <ul class="dropdown-menu">
-                                                        <?php if (!$notification['is_read']): ?>
-                                                            <li>
-                                                                <form method="POST" class="d-inline">
-                                                                    <input type="hidden" name="notification_id" value="<?php echo $notification['notification_id']; ?>">
-                                                                    <button type="submit" name="mark_read" class="dropdown-item">
-                                                                        <i class="fas fa-check"></i> Mark as Read
-                                                                    </button>
-                                                                </form>
-                                                            </li>
-                                                        <?php endif; ?>
-                                                        <li>
-                                                            <a href="<?php echo $gmail_url; ?>" target="_blank" class="dropdown-item">
-                                                                <i class="fab fa-google"></i> Open in Gmail
-                                                            </a>
-                                                        </li>
-                                                        <li><hr class="dropdown-divider"></li>
-                                                        <li>
-                                                            <form method="POST" class="d-inline" 
-                                                                  onsubmit="return confirm('Are you sure you want to delete this notification?')">
-                                                                <input type="hidden" name="notification_id" value="<?php echo $notification['notification_id']; ?>">
-                                                                <button type="submit" name="delete_notification" class="dropdown-item text-danger">
-                                                                    <i class="fas fa-trash"></i> Delete
-                                                                </button>
-                                                            </form>
-                                                        </li>
-                                                    </ul>
-                                                </div>
-                                            </div>
-                                            
-                                            <p class="card-text"><?php echo htmlspecialchars($notification['message']); ?></p>
-                                            
-                                            <div class="action-buttons">
-                                                <a href="<?php echo $gmail_url; ?>" 
-                                                   target="_blank" 
-                                                   class="btn gmail-btn btn-sm"
-                                                   onclick="markAsReadOnGmail(<?php echo $notification['notification_id']; ?>)">
-                                                    <i class="fab fa-google"></i> Open in Gmail
-                                                </a>
-                                                
-                                                <button class="btn btn-outline-info btn-sm" 
-                                                        onclick="copyToClipboard('<?php echo addslashes($notification['message']); ?>')">
-                                                    <i class="fas fa-copy"></i> Copy Message
-                                                </button>
-                                                
-                                                <?php if (!$notification['is_read']): ?>
-                                                    <form method="POST" class="d-inline">
-                                                        <input type="hidden" name="notification_id" value="<?php echo $notification['notification_id']; ?>">
-                                                        <button type="submit" name="mark_read" class="btn btn-success btn-sm">
-                                                            <i class="fas fa-check"></i> Mark Read
-                                                        </button>
-                                                    </form>
-                                                <?php endif; ?>
-                                            </div>
-                                            
-                                            <div class="d-flex justify-content-between align-items-center mt-2">
-                                                <small class="text-muted">
-                                                    <i class="fas fa-clock"></i> <?php echo formatDate($notification['created_at']); ?>
-                                                </small>
-                                                <small class="text-muted">
-                                                    <i class="fas fa-paper-plane"></i> <?php echo ucfirst($notification['sent_via']); ?>
-                                                </small>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        <?php endwhile; ?>
-                    </div>
-                    
-                    <!-- Notification Stats & Quick Actions -->
-                    <div class="col-md-4">
-                        <div class="card">
-                            <div class="card-header">
-                                <h5><i class="fas fa-chart-pie"></i> Notification Stats</h5>
-                            </div>
-                            <div class="card-body">
-                                <?php
-                                $stats = mysqli_query($conn, "
-                                    SELECT type, COUNT(*) as count 
-                                    FROM notifications 
-                                    WHERE user_id = " . $_SESSION['user_id'] . " 
-                                    GROUP BY type
-                                ");
-                                ?>
-                                
-                                <?php while ($stat = mysqli_fetch_assoc($stats)): ?>
-                                    <div class="d-flex justify-content-between align-items-center mb-2">
-                                        <span>
-                                            <?php
-                                            $icon = $icons[$stat['type']] ?? 'fas fa-bell';
-                                            echo '<i class="' . $icon . ' me-1"></i>';
-                                            echo ucfirst($stat['type']);
-                                            ?>
-                                        </span>
-                                        <span class="badge bg-primary"><?php echo $stat['count']; ?></span>
-                                    </div>
-                                <?php endwhile; ?>
-                                
-                                <hr>
-                                
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <span><strong>Total Notifications:</strong></span>
-                                    <span class="badge bg-success"><?php echo mysqli_num_rows($notifications); ?></span>
-                                </div>
-                                
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <span><strong>Unread:</strong></span>
-                                    <span class="badge bg-danger"><?php echo $unreadCount['count']; ?></span>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <!-- Quick Actions -->
-                        <div class="card mt-3">
-                            <div class="card-header">
-                                <h6><i class="fas fa-bolt"></i> Quick Actions</h6>
-                            </div>
-                            <div class="card-body">
-                                <?php if ($_SESSION['role'] == 'renter'): ?>
-                                    <a href="../renter/reserve_unit.php" class="btn btn-primary btn-sm w-100 mb-2">
-                                        <i class="fas fa-plus"></i> New Reservation
-                                    </a>
-                                    <a href="../renter/my_bookings.php" class="btn btn-info btn-sm w-100 mb-2">
-                                        <i class="fas fa-calendar-check"></i> View Bookings
-                                    </a>
-                                    <a href="../renter/profile.php" class="btn btn-success btn-sm w-100">
-                                        <i class="fas fa-user"></i> My Profile
-                                    </a>
-                                <?php else: ?>
-                                    <a href="<?php echo SITE_URL; ?>/admin/admin_dashboard.php" class="btn btn-primary btn-sm w-100 mb-2">
-                                        <i class="fas fa-tachometer-alt"></i> Dashboard
-                                    </a>
-                                    <a href="<?php echo SITE_URL; ?>/admin/manage_branch.php" class="btn btn-success btn-sm w-100">
-                                        <i class="fas fa-building"></i> Manage Branches
-                                    </a>
-                                <?php endif; ?>
-                            </div>
-                        </div>
-
-                        <!-- Gmail Quick Access -->
-                        <div class="card mt-3">
-                            <div class="card-header">
-                                <h6><i class="fab fa-google"></i> Gmail Quick Access</h6>
-                            </div>
-                            <div class="card-body">
-                                <a href="https://mail.google.com/mail/u/0/#inbox" target="_blank" class="btn btn-danger btn-sm w-100 mb-2">
-                                    <i class="fab fa-google"></i> Open Gmail Inbox
-                                </a>
-                                <a href="https://mail.google.com/mail/u/0/#compose" target="_blank" class="btn btn-outline-danger btn-sm w-100">
-                                    <i class="fas fa-pen"></i> Compose New Email
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            <?php else: ?>
-                <div class="text-center py-5">
-                    <i class="fas fa-bell-slash fa-3x text-muted mb-3"></i>
-                    <h5>No Notifications</h5>
-                    <p class="text-muted">You don't have any notifications yet.</p>
-                    <div class="mt-3">
-                        <?php if ($_SESSION['role'] == 'renter'): ?>
-                            <a href="../renter/reserve_unit.php" class="btn btn-primary me-2">
-                                <i class="fas fa-plus"></i> Make Reservation
-                            </a>
-                        <?php endif; ?>
-                        <a href="../public/index.php" class="btn btn-outline-secondary">
-                            <i class="fas fa-home"></i> Back to Home
-                        </a>
-                    </div>
-                </div>
             <?php endif; ?>
         </div>
+
+        <!-- Notification Tabs (Future-ready) -->
+        <div class="mb-8 overflow-x-auto hide-scrollbar">
+            <ul class="flex whitespace-nowrap gap-8 border-b border-gray-200">
+                <li>
+                    <a href="#" class="inline-block pb-4 text-blue-600 border-b-2 border-blue-600 font-bold text-base px-1">All</a>
+                </li>
+                <li>
+                    <a href="#" class="inline-block pb-4 text-gray-500 hover:text-gray-900 font-semibold text-base px-1 transition-colors">Bookings</a>
+                </li>
+                <li>
+                    <a href="#" class="inline-block pb-4 text-gray-500 hover:text-gray-900 font-semibold text-base px-1 transition-colors">Payments</a>
+                </li>
+                <li>
+                    <a href="#" class="inline-block pb-4 text-gray-500 hover:text-gray-900 font-semibold text-base px-1 transition-colors">Messages</a>
+                </li>
+            </ul>
+        </div>
+
+        <!-- Alerts -->
+        <?php if ($message): ?>
+            <div class="bg-green-50 border border-green-200 text-green-700 px-6 py-4 rounded-xl mb-6 shadow-sm flex items-center justify-between">
+                <span class="font-medium"><i class="fas fa-check-circle mr-2"></i> <?php echo $message; ?></span>
+                <button type="button" onclick="this.parentElement.style.display='none'" class="text-green-500 hover:text-green-700"><i class="fas fa-times"></i></button>
+            </div>
+        <?php endif; ?>
+        <?php if ($error): ?>
+            <div class="bg-red-50 border border-red-200 text-red-700 px-6 py-4 rounded-xl mb-6 shadow-sm flex items-center justify-between">
+                <span class="font-medium"><i class="fas fa-exclamation-circle mr-2"></i> <?php echo $error; ?></span>
+                <button type="button" onclick="this.parentElement.style.display='none'" class="text-red-500 hover:text-red-700"><i class="fas fa-times"></i></button>
+            </div>
+        <?php endif; ?>
+
+        <!-- Content Area -->
+        <?php if (mysqli_num_rows($notifications) > 0): ?>
+            <div class="bg-white rounded-[24px] shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-gray-100 overflow-hidden">
+                <?php while ($notification = mysqli_fetch_assoc($notifications)): ?>
+                    <!-- Notification Item -->
+                    <div class="p-6 md:p-8 border-b border-gray-100 last:border-b-0 hover:bg-gray-50 transition-colors flex gap-5 <?php echo !$notification['is_read'] ? 'bg-blue-50/40' : ''; ?>">
+                        
+                        <!-- Small icon avatar -->
+                        <div class="shrink-0 w-14 h-14 rounded-full flex items-center justify-center text-2xl <?php 
+                            $types = [
+                                'booking' => 'bg-green-100 text-green-600', 
+                                'payment' => 'bg-blue-100 text-blue-600', 
+                                'reminder' => 'bg-orange-100 text-orange-600', 
+                                'system' => 'bg-gray-100 text-gray-600'
+                            ];
+                            echo $types[$notification['type']] ?? 'bg-blue-100 text-blue-600';
+                        ?>">
+                            <?php 
+                            $icons = [
+                                'booking' => 'fas fa-calendar-check', 
+                                'payment' => 'fas fa-credit-card', 
+                                'reminder' => 'fas fa-clock', 
+                                'system' => 'fas fa-cog'
+                            ];
+                            echo '<i class="' . ($icons[$notification['type']] ?? 'fas fa-bell') . '"></i>';
+                            ?>
+                        </div>
+                        
+                        <!-- Details -->
+                        <div class="flex-grow min-w-0">
+                            <div class="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-2 gap-1 sm:gap-4">
+                                <h4 class="font-bold text-gray-900 text-lg leading-tight">
+                                    <?php echo htmlspecialchars($notification['title']); ?>
+                                </h4>
+                                <!-- Small timestamp on the right -->
+                                <span class="shrink-0 text-sm font-semibold text-gray-400 whitespace-nowrap hidden sm:block">
+                                    <?php echo date('M j, g:i a', strtotime($notification['created_at'])); ?>
+                                </span>
+                            </div>
+                            
+                            <!-- Notification message text -->
+                            <p class="text-gray-600 text-base leading-relaxed mb-4">
+                                <?php echo htmlspecialchars($notification['message']); ?>
+                            </p>
+                            
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center gap-4">
+                                    <?php if (!$notification['is_read']): ?>
+                                    <form method="POST" class="inline">
+                                        <input type="hidden" name="notification_id" value="<?php echo $notification['notification_id']; ?>">
+                                        <button type="submit" name="mark_read" class="text-sm font-bold text-blue-600 hover:text-blue-800">
+                                            Mark as read
+                                        </button>
+                                    </form>
+                                    <!-- Mobile dots indicator for unread -->
+                                    <span class="inline-block w-2.5 h-2.5 bg-blue-600 rounded-full sm:hidden"></span>
+                                    <?php endif; ?>
+                                    
+                                    <form method="POST" class="inline">
+                                        <input type="hidden" name="notification_id" value="<?php echo $notification['notification_id']; ?>">
+                                        <button type="submit" name="delete_notification" class="text-sm font-bold text-gray-400 hover:text-red-500 transition-colors" onclick="return confirm('Delete this notification?')">
+                                            Delete
+                                        </button>
+                                    </form>
+                                </div>
+                                
+                                <span class="shrink-0 text-xs font-semibold text-gray-400 whitespace-nowrap sm:hidden">
+                                    <?php echo date('M j, g:i a', strtotime($notification['created_at'])); ?>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                <?php endwhile; ?>
+            </div>
+            
+            <div class="mt-8 text-center">
+                <a href="../public/index.php" class="inline-flex items-center gap-2 text-gray-500 hover:text-blue-600 font-semibold transition-colors">
+                    <i class="fas fa-arrow-left"></i> Back to Home
+                </a>
+            </div>
+
+        <?php else: ?>
+            <!-- Empty State Card -->
+            <div class="bg-white rounded-[24px] shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-gray-100 p-12 md:p-20 flex flex-col items-center justify-center text-center mt-4">
+                
+                <div class="w-24 h-24 bg-gray-50 rounded-full flex items-center justify-center mb-6">
+                    <i class="fas fa-bell-slash text-4xl text-gray-300"></i>
+                </div>
+                
+                <h3 class="text-2xl md:text-3xl font-bold text-gray-900 mb-4">No notifications yet</h3>
+                <p class="text-gray-500 max-w-sm mb-10 text-lg leading-relaxed">
+                    You’ll see updates here when you start making reservations and bookings.
+                </p>
+                
+                <?php if ($_SESSION['role'] == 'renter'): ?>
+                <a href="../public/browse_units.php" class="py-4 px-8 rounded-xl bg-blue-600 text-white font-bold hover:bg-blue-700 shadow-[0_8px_20px_rgb(37,99,235,0.25)] transition-all transform hover:-translate-y-0.5 inline-block mb-6 w-full sm:w-auto">
+                    Browse Listings / Make Reservation
+                </a>
+                <?php else: ?>
+                <a href="<?php echo SITE_URL; ?>/admin/admin_dashboard.php" class="py-4 px-8 rounded-xl bg-blue-600 text-white font-bold hover:bg-blue-700 shadow-[0_8px_20px_rgb(37,99,235,0.25)] transition-all transform hover:-translate-y-0.5 inline-block mb-6 w-full sm:w-auto">
+                    Go to Dashboard
+                </a>
+                <?php endif; ?>
+                
+                <a href="../public/index.php" class="text-gray-500 hover:text-blue-600 font-bold transition-colors">
+                    Back to Home
+                </a>
+            </div>
+        <?php endif; ?>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>

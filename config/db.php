@@ -205,8 +205,12 @@ if (!function_exists('execute_query')) {
 if (!function_exists('close_connection')) {
     function close_connection() {
         global $conn;
-        if ($conn) {
-            $conn->close();
+        if ($conn instanceof mysqli) {
+            try {
+                @$conn->close();
+            } catch (Throwable $e) {
+                // Connection may already be closed; safely ignore
+            }
         }
     }
 }

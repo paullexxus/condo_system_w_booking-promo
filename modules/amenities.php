@@ -1,12 +1,9 @@
 <?php
-session_start();
+require_once '../includes/session.php'; // Includes constants and starts session correctly
 require_once '../config/db.php';
 
 // Check if user is logged in and has appropriate role
-if (!isset($_SESSION['user_id']) || ($_SESSION['role'] != 'admin' && $_SESSION['role'] != 'host')) {
-    header("Location: ../public/login.php");
-    exit();
-}
+checkRole(['admin', 'host']);
 
 $user_id = $_SESSION['user_id'];
 $user_role = $_SESSION['role'];

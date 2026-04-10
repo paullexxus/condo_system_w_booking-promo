@@ -11,9 +11,9 @@ $featuredBranches = mysqli_query($conn, "
     SELECT b.*, 
            COUNT(DISTINCT u.unit_id) as unit_count, 
            COUNT(DISTINCT r.reservation_id) as booking_count,
-           MIN(u.monthly_rate) as min_price,
-           MAX(u.monthly_rate) as max_price,
-           AVG(u.monthly_rate) as avg_price
+           MIN(IF(u.pricing_type = 'daily', u.monthly_rate, u.monthly_rate / 30)) as min_price,
+           MAX(IF(u.pricing_type = 'daily', u.monthly_rate, u.monthly_rate / 30)) as max_price,
+           AVG(IF(u.pricing_type = 'daily', u.monthly_rate, u.monthly_rate / 30)) as avg_price
     FROM branches b 
     LEFT JOIN units u ON b.branch_id = u.branch_id AND u.is_available = 1 AND (u.approval_status = 'approved' OR u.approval_status IS NULL)
     LEFT JOIN reservations r ON b.branch_id = r.branch_id AND r.status = 'confirmed'
@@ -422,6 +422,10 @@ $hostEngagementRate = ($totalHosts['total'] > 0 && $totalUnits['total'] > 0) ? r
             background: var(--primary);
         }
 
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+
         /* Loading animation */
         @keyframes pulse {
             0%, 100% {
@@ -503,8 +507,8 @@ $hostEngagementRate = ($totalHosts['total'] > 0 && $totalUnits['total'] > 0) ? r
                         Properties
                         <span class="absolute bottom-0 left-0 w-0 h-1 bg-gradient-to-r from-blue-500 to-orange-500 group-hover:w-full smooth-transition"></span>
                     </a>
-                    <a href="#about" class="text-gray-600 hover:text-gray-900 smooth-transition font-500 relative group">
-                        About
+                    <a href="#features" class="text-gray-600 hover:text-gray-900 smooth-transition font-500 relative group">
+                        Features
                         <span class="absolute bottom-0 left-0 w-0 h-1 bg-gradient-to-r from-blue-500 to-orange-500 group-hover:w-full smooth-transition"></span>
                     </a>
                 </div>
@@ -604,12 +608,12 @@ $hostEngagementRate = ($totalHosts['total'] > 0 && $totalUnits['total'] > 0) ? r
                     </div>
                     <div class="text-left">
                         <label class="block text-gray-700 font-600 mb-3 text-sm uppercase tracking-wide">Number of Guests</label>
-                        <select class="booking-input w-full">
-                            <option selected>1 Guest</option>
-                            <option>2 Guests</option>
-                            <option>3 Guests</option>
-                            <option>4 Guests</option>
-                            <option>5+ Guests</option>
+                        <select class="booking-input w-full" id="guestsBooking">
+                            <option value="1" selected>1 Guest</option>
+                            <option value="2">2 Guests</option>
+                            <option value="3">3 Guests</option>
+                            <option value="4">4 Guests</option>
+                            <option value="5">5+ Guests</option>
                         </select>
                     </div>
                     <button class="btn-modern btn-luxury-primary w-full justify-center text-base py-4" onclick="handleSearch()">
@@ -643,84 +647,6 @@ $hostEngagementRate = ($totalHosts['total'] > 0 && $totalUnits['total'] > 0) ? r
             }
         }
     </style>
-
-    <!-- About Section - Modern Design -->
-    <section id="about" class="py-24 bg-white relative overflow-hidden">
-        <div class="absolute top-0 right-0 w-96 h-96 bg-blue-50 rounded-full -mr-48 -mt-48 opacity-50"></div>
-        <div class="max-w-6xl mx-auto px-4 relative z-10">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-16 items-center">
-                <div>
-                    <div class="section-title mb-12">
-                        <h2 class="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
-                           Condo Rentals Made Simple
-                        </h2>
-                    </div>
-                    <p class="text-lg text-gray-600 mb-6 leading-relaxed">
-                        BookIT is your trusted platform for finding and booking condominiums across the Philippines. 
-                        We connect you with properties, ensuring a seamless experience from search to check-in.
-                    </p>
-                    <p class="text-lg text-gray-600 mb-8 leading-relaxed">
-                        Whether you're looking for a weekend getaway, a business stay, or a long-term rental, 
-                        our curated selection of high-quality properties meets every need.
-                    </p>
-                    
-                    <!-- Quick Features List -->
-                    <div class="grid grid-cols-2 gap-4 mb-8">
-                        <div class="flex items-center gap-3">
-                            <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                                <i class="fas fa-check text-blue-600 font-bold"></i>
-                            </div>
-                            <span class="text-gray-700 font-500">Verified Properties</span>
-                        </div>
-                        <div class="flex items-center gap-3">
-                            <div class="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center">
-                                <i class="fas fa-check text-orange-600 font-bold"></i>
-                            </div>
-                            <span class="text-gray-700 font-500">Secure Payments</span>
-                        </div>
-                        <div class="flex items-center gap-3">
-                            <div class="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
-                                <i class="fas fa-check text-green-600 font-bold"></i>
-                            </div>
-                            <span class="text-gray-700 font-500">24/7 Support</span>
-                        </div>
-                        <div class="flex items-center gap-3">
-                            <div class="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center">
-                                <i class="fas fa-check text-red-600 font-bold"></i>
-                            </div>
-                            <span class="text-gray-700 font-500">Best Rates</span>
-                        </div>
-                    </div>
-
-                    <button class="btn-modern btn-luxury-primary text-lg">
-                        Learn More <i class="fas fa-arrow-right"></i>
-                    </button>
-                </div>
-                <div class="relative">
-                    <div class="image-container shadow-lg">
-                        <img src="../assets/images/branches/condoBGC.jpg" alt="Luxury Condo" class="rounded-2xl">
-                        <div class="image-overlay">
-                            <button class="w-20 h-20 bg-white rounded-full flex items-center justify-center hover:bg-orange-500 hover:text-white smooth-transition shadow-lg">
-                                <i class="fas fa-play text-2xl ml-1"></i>
-                            </button>
-                        </div>
-                    </div>
-                    <!-- Floating Card -->
-                    <div class="absolute -bottom-10 -left-10 bg-white rounded-2xl p-6 shadow-lg max-w-xs border-t-4 border-orange-500">
-                        <div class="flex items-center gap-4">
-                            <div class="w-16 h-16 bg-gradient-to-br from-blue-500 to-orange-500 rounded-xl flex items-center justify-center">
-                                <i class="fas fa-star text-white text-2xl"></i>
-                            </div>
-                            <div>
-                                <p class="text-3xl font-bold text-gray-900">4.9★</p>
-                                <p class="text-gray-600 text-sm">2,500+ Reviews</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
 
     <!-- Statistics Section -->
     <section class="py-24 bg-gradient-dark text-white relative overflow-hidden">
@@ -904,7 +830,16 @@ $hostEngagementRate = ($totalHosts['total'] > 0 && $totalUnits['total'] > 0) ? r
             </div>
 
             <?php if (mysqli_num_rows($featuredBranches) > 0): ?>
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <div class="relative group/carousel">
+                    <!-- Carousel Buttons -->
+                    <button class="absolute left-[-20px] top-1/2 transform -translate-y-1/2 bg-white rounded-full w-12 h-12 shadow-lg flex items-center justify-center z-20 text-gray-800 hover:bg-blue-500 hover:text-white smooth-transition opacity-0 group-hover/carousel:opacity-100 hidden md:flex" onclick="scrollCarousel(-1)">
+                        <i class="fas fa-chevron-left text-xl"></i>
+                    </button>
+                    <button class="absolute right-[-20px] top-1/2 transform -translate-y-1/2 bg-white rounded-full w-12 h-12 shadow-lg flex items-center justify-center z-20 text-gray-800 hover:bg-blue-500 hover:text-white smooth-transition opacity-0 group-hover/carousel:opacity-100 hidden md:flex" onclick="scrollCarousel(1)">
+                        <i class="fas fa-chevron-right text-xl"></i>
+                    </button>
+
+                    <div class="flex overflow-x-auto gap-8 pb-8 pt-4 px-2 -mx-2 snap-x snap-mandatory hide-scrollbar" id="propertiesContainer" style="scrollbar-width: none; -ms-overflow-style: none;">
                     <?php while ($branch = mysqli_fetch_assoc($featuredBranches)): 
                         // Select branch image
                         $branch_images = [
@@ -947,7 +882,7 @@ $hostEngagementRate = ($totalHosts['total'] > 0 && $totalUnits['total'] > 0) ? r
                             $reviewsCount = $branch['booking_count'] > 0 ? intval($branch['booking_count'] * 0.6) : 0;
                         }
                     ?>
-                        <div class="card-modern shadow-soft shadow-hover overflow-hidden h-full flex flex-col group">
+                        <div class="card-modern shadow-soft shadow-hover overflow-hidden h-full flex flex-col group snap-start shrink-0 w-full md:w-[calc(50%-1rem)] lg:w-[calc(33.333%-1.333rem)]">
                             <!-- Premium Image Container -->
                             <div class="relative h-80 overflow-hidden bg-gray-200">
                                 <img src="<?php echo file_exists($image_path) ? $image_path : $default_image; ?>" 
@@ -1065,6 +1000,7 @@ $hostEngagementRate = ($totalHosts['total'] > 0 && $totalUnits['total'] > 0) ? r
                             </div>
                         </div>
                     <?php endwhile; ?>
+                    </div>
                 </div>
 
                 <!-- View All Properties Button -->
@@ -1158,7 +1094,7 @@ $hostEngagementRate = ($totalHosts['total'] > 0 && $totalUnits['total'] > 0) ? r
                         <li><a href="browse_units.php" class="text-gray-400 hover:text-white smooth-transition flex items-center gap-2"><i class="fas fa-arrow-right text-orange-500 text-xs"></i> Browse Properties</a></li>
                         <li><a href="#features" class="text-gray-400 hover:text-white smooth-transition flex items-center gap-2"><i class="fas fa-arrow-right text-orange-500 text-xs"></i> Features</a></li>
                         <li><a href="be_host.php" class="text-gray-400 hover:text-white smooth-transition flex items-center gap-2"><i class="fas fa-arrow-right text-orange-500 text-xs"></i> Become a Host</a></li>
-                        <li><a href="#about" class="text-gray-400 hover:text-white smooth-transition flex items-center gap-2"><i class="fas fa-arrow-right text-orange-500 text-xs"></i> About Us</a></li>
+                        <li><a href="#features" class="text-gray-400 hover:text-white smooth-transition flex items-center gap-2"><i class="fas fa-arrow-right text-orange-500 text-xs"></i> Features</a></li>
                     </ul>
                 </div>
 
@@ -1213,9 +1149,15 @@ $hostEngagementRate = ($totalHosts['total'] > 0 && $totalUnits['total'] > 0) ? r
         function handleSearch() {
             const checkIn = document.getElementById('checkInBooking').value;
             const checkOut = document.getElementById('checkOutBooking').value;
+            const guests = document.getElementById('guestsBooking')?.value || '1';
             
             if (checkIn && checkOut) {
-                window.location.href = `browse_units.php?check_in=${checkIn}&check_out=${checkOut}`;
+                const params = new URLSearchParams({
+                    check_in: checkIn,
+                    check_out: checkOut,
+                    guests: guests
+                });
+                window.location.href = `browse_units.php?${params.toString()}`;
             } else {
                 alert('Please select both check-in and check-out dates');
             }
@@ -1289,6 +1231,16 @@ $hostEngagementRate = ($totalHosts['total'] > 0 && $totalUnits['total'] > 0) ? r
             el.style.opacity = '0';
             observer.observe(el);
         });
+
+        // Carousel scrolling functionality
+        function scrollCarousel(direction) {
+            const container = document.getElementById('propertiesContainer');
+            let scrollAmount = container.clientWidth;
+            if (window.innerWidth >= 1024) scrollAmount = container.clientWidth / 3;
+            else if (window.innerWidth >= 768) scrollAmount = container.clientWidth / 2;
+            
+            container.scrollBy({ left: direction * scrollAmount, behavior: 'smooth' });
+        }
     </script>
 </body>
 </html>

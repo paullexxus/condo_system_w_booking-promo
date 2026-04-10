@@ -96,7 +96,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 // Get all reservations for this host - FIXED: Use prepared statement
-$all_reservations = get_multiple_results("
+$all_reservations = get_multiple_results(
+    <<<'SQL'
     SELECT 
         r.*,
         u.unit_number,
@@ -110,11 +111,13 @@ $all_reservations = get_multiple_results("
     INNER JOIN users us ON r.user_id = us.user_id
     WHERE (u.host_id = ? OR b.host_id = ?)
     ORDER BY r.check_in_date DESC
-", [$host_id, $host_id]);
+    SQL,
+    [$host_id, $host_id]
+);
 
 // Get counts by status - FIXED: Use prepared statement
 $status_counts = [];
-$statuses = ['awaiting_approval', 'confirmed', 'checked_in', 'completed', 'cancelled'];
+$statuses = ['pending', 'confirmed', 'checked_in', 'completed', 'cancelled'];
 foreach ($statuses as $status) {
     $count_result = get_single_result(
         "SELECT COUNT(*) as cnt FROM reservations r 
@@ -127,7 +130,8 @@ foreach ($statuses as $status) {
 }
 
 // Get upcoming check-ins - FIXED: Use prepared statement
-$upcoming_checkins = get_multiple_results("
+$upcoming_checkins = get_multiple_results(
+    <<<'SQL'
     SELECT 
         r.*,
         u.unit_number,
@@ -138,12 +142,14 @@ $upcoming_checkins = get_multiple_results("
     INNER JOIN branches b ON r.branch_id = b.branch_id
     INNER JOIN users us ON r.user_id = us.user_id
     WHERE (u.host_id = ? OR b.host_id = ?)
-    AND r.status IN ('confirmed')
-    AND DATE(r.check_in_date) = CURDATE()
+      AND r.status IN ('confirmed')
+      AND DATE(r.check_in_date) = CURDATE()
     ORDER BY r.check_in_date ASC
-", [$host_id, $host_id]);
+    SQL,
+    [$host_id, $host_id]
+);
 
-$page_title = 'Reservations';
+$page_title = 'Bookings & Reservations';
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -430,7 +436,7 @@ $page_title = 'Reservations';
         
         <div class="content">
             <div class="page-header">
-                <h1><i class="fas fa-calendar-check"></i> Reservations</h1>
+                <h1><i class="fas fa-calendar-check"></i> Bookings & Reservations</h1>
             </div>
             
             <!-- Success/Error Message -->
@@ -482,7 +488,7 @@ $page_title = 'Reservations';
                     </div>
                 <?php else: ?>
                     <?php foreach ($all_reservations as $res): ?>
-                    <div class="reservation-card" data-status="<?php echo $res['status']; ?>">
+                    <div class="reservation-card" id="reservation-<?php echo $res['reservation_id']; ?>" data-status="<?php echo $res['status']; ?>">
                         <div class="reservation-header">
                             <div class="reservation-unit">
                                 <?php echo htmlspecialchars($res['unit_type']); ?>
@@ -528,7 +534,7 @@ $page_title = 'Reservations';
                         </div>
                         
                         <div class="action-buttons">
-                            <?php if ($res['status'] === 'awaiting_approval'): ?>
+                            <?php if ($res['status'] === 'pending'): ?>
                                 <form method="POST" style="display:inline; flex: 1;">
                                     <input type="hidden" name="reservation_id" value="<?php echo $res['reservation_id']; ?>">
                                     <input type="hidden" name="action" value="approve">
@@ -659,6 +665,35 @@ $page_title = 'Reservations';
                 form.submit();
             }
         }
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            // Check if there's a view parameter in URL
+            const urlParams = new URLSearchParams(window.location.search);
+            const viewId = urlParams.get('view');
+            
+            if (viewId) {
+                const card = document.getElementById('reservation-' + viewId);
+                if (card) {
+                    // Highlight the card
+                    card.style.boxShadow = '0 0 15px rgba(52, 152, 219, 0.6)';
+                    card.style.border = '2px solid #3498db';
+                    card.style.transform = 'translateY(-5px)';
+                    card.style.transition = 'all 0.4s ease';
+                    
+                    // Scroll to it
+                    setTimeout(() => {
+                        card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }, 500);
+                    
+                    // Remove the highlight after a few seconds
+                    setTimeout(() => {
+                        card.style.boxShadow = '';
+                        card.style.border = '';
+                        card.style.transform = '';
+                    }, 4000);
+                }
+            }
+        });
     </script>
 </body>
 </html>

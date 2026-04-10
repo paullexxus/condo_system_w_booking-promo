@@ -44,7 +44,7 @@ $revenue_stats = $result ? $result : ['total_revenue' => 0, 'completed_revenue' 
 
 // Get upcoming reservations (next 7 days)
 $upcoming_reservations = get_multiple_results("
-    SELECT r.*, u.unit_number, u.unit_type, rs.full_name as renter_name
+    SELECT r.*, u.unit_name, u.unit_number, u.unit_type, rs.full_name as renter_name
     FROM reservations r
     INNER JOIN units u ON r.unit_id = u.unit_id
     INNER JOIN users rs ON r.user_id = rs.user_id
@@ -110,14 +110,26 @@ $last_12_months_revenue = get_multiple_results("
     ORDER BY DATE_FORMAT(r.check_in_date, '%Y-%m')
 ");
 
-// Get host units for quick access
+// Get host units for quick access (with latest unit image)
 $host_units = get_multiple_results("
-    SELECT * FROM units WHERE host_id = $host_id ORDER BY created_at DESC LIMIT 8
+    SELECT 
+        u.*,
+        (
+            SELECT ui.image_path
+            FROM unit_images ui
+            WHERE ui.unit_id = u.unit_id
+            ORDER BY ui.created_at DESC
+            LIMIT 1
+        ) AS unit_image
+    FROM units u
+    WHERE u.host_id = $host_id
+    ORDER BY u.created_at DESC
+    LIMIT 8
 ");
 
 // Get recent bookings
 $recent_bookings = get_multiple_results("
-    SELECT r.*, u.unit_number, u.unit_type, rs.full_name as renter_name
+    SELECT r.*, u.unit_name, u.unit_number, u.unit_type, rs.full_name as renter_name
     FROM reservations r
     INNER JOIN units u ON r.unit_id = u.unit_id
     INNER JOIN users rs ON r.user_id = rs.user_id
@@ -238,7 +250,7 @@ $recent_bookings = get_multiple_results("
                     ?>
                     <div class="reservation-item">
                         <div class="reservation-info">
-                            <h6><?php echo htmlspecialchars($reservation['unit_name']); ?> #<?php echo $reservation['unit_number']; ?></h6>
+                            <h6><?php echo htmlspecialchars($reservation['unit_name'] ?? ''); ?> #<?php echo $reservation['unit_number']; ?></h6>
                             <p class="text-muted"><?php echo htmlspecialchars($reservation['renter_name']); ?></p>
                             <small class="date-range">
                                 <i class="fas fa-calendar"></i> 
@@ -298,13 +310,17 @@ $recent_bookings = get_multiple_results("
                 ?>
                 <div class="unit-card">
                     <div class="unit-image">
-                        <i class="fas fa-home"></i>
+                        <?php if (!empty($unit['unit_image'])): ?>
+                            <img src="<?php echo htmlspecialchars($unit['unit_image']); ?>" alt="<?php echo htmlspecialchars($unit['unit_name'] ?: ('Unit ' . $unit['unit_number'])); ?>">
+                        <?php else: ?>
+                            <i class="fas fa-home"></i>
+                        <?php endif; ?>
                         <span class="unit-status <?php echo $unit['is_available'] ? 'available' : 'occupied'; ?>">
                             <?php echo $unit['is_available'] ? 'Available' : 'Occupied'; ?>
                         </span>
                     </div>
                     <div class="unit-details">
-                        <h6><?php echo htmlspecialchars($unit['unit_name']); ?></h6>
+                        <h6><?php echo htmlspecialchars($unit['unit_name'] ?? ''); ?></h6>
                         <p class="unit-number">Unit #<?php echo htmlspecialchars($unit['unit_number']); ?></p>
                         <p class="unit-type"><?php echo htmlspecialchars($unit['unit_type']); ?></p>
                         <div class="unit-rate">
@@ -334,7 +350,7 @@ $recent_bookings = get_multiple_results("
         <div class="bookings-section">
             <div class="section-header">
                 <h5 class="section-title"><i class="fas fa-list"></i> Recent Bookings</h5>
-                <a href="reservation_management.php" class="view-all">View All →</a>
+                <a href="reservations.php" class="view-all">View All →</a>
             </div>
             <div class="table-card">
                 <table class="table table-hover">
@@ -356,7 +372,7 @@ $recent_bookings = get_multiple_results("
                         ?>
                         <tr>
                             <td>
-                                <strong><?php echo htmlspecialchars($booking['unit_name']); ?></strong>
+                                <strong><?php echo htmlspecialchars($booking['unit_name'] ?? ''); ?></strong>
                                 <br><small class="text-muted">#<?php echo $booking['unit_number']; ?></small>
                             </td>
                             <td><?php echo htmlspecialchars($booking['renter_name']); ?></td>
@@ -682,7 +698,7 @@ $recent_bookings = get_multiple_results("
     }
 
     function viewReservationDetails(reservationId) {
-        window.location.href = `reservation_management.php?view=${reservationId}`;
+        window.location.href = `reservations.php?view=${reservationId}`;
     }
 
     function editUnit(unitId) {

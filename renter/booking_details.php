@@ -20,7 +20,7 @@ if ($bookingId <= 0) {
 
 // Get booking details
 $booking = get_single_result(
-    "SELECT r.*, u.unit_number, u.unit_type, u.monthly_rate, u.description as unit_description,
+    "SELECT r.*, u.unit_number, u.unit_type, u.monthly_rate, u.pricing_type, u.description as unit_description,
             b.branch_name, b.branch_address,
             renter.full_name, renter.email, renter.phone
      FROM reservations r 
@@ -333,8 +333,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['upload_receipt'])) {
                             <div class="detail-value"><?php echo ucwords(str_replace('_', ' ', $booking['unit_type'])); ?></div>
                         </div>
                         <div class="detail-item">
-                            <div class="detail-label">Monthly Rate</div>
-                            <div class="detail-value">₱<?php echo number_format($booking['monthly_rate'], 2); ?></div>
+                            <div class="detail-label">Base Rate</div>
+                            <div class="detail-value">₱<?php echo number_format($booking['monthly_rate'], 2); ?> / <?php echo ($booking['pricing_type'] ?? 'monthly') === 'monthly' ? 'month' : 'night'; ?></div>
                         </div>
                     </div>
                 </div>
@@ -391,12 +391,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['upload_receipt'])) {
                 <h4><i class="fas fa-receipt me-2"></i>Pricing Breakdown</h4>
                 <div class="pricing-box">
                     <div class="pricing-row">
-                        <span>Unit Rate (<?php echo calculateDays($booking['check_in_date'], $booking['check_out_date']); ?> nights × ₱<?php echo number_format($booking['monthly_rate'], 2); ?>/month)</span>
-                        <span>₱<?php echo number_format(($booking['total_amount'] - $booking['security_deposit']) * 0.85, 2); ?></span>
-                    </div>
-                    <div class="pricing-row">
-                        <span>Service Fee</span>
-                        <span>₱<?php echo number_format(($booking['total_amount'] - $booking['security_deposit']) * 0.15, 2); ?></span>
+                        <span>Unit Rate & Addons</span>
+                        <span>₱<?php echo number_format($booking['total_amount'] - ($booking['security_deposit'] ?? 0), 2); ?></span>
                     </div>
                     <div class="pricing-row">
                         <span>Security Deposit (Refundable)</span>

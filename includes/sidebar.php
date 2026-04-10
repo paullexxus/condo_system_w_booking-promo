@@ -35,6 +35,7 @@ function isActivePattern($menu_key, $current_page) {
         'Dashboard' => ['admin_dashboard.php'],
         'Branch Management' => ['manage_branch.php', 'add_branch.php', 'edit_branch.php'],
         'User Management' => ['user_management.php', 'add_user.php', 'edit_user.php'],
+        'Host Verifications' => ['host_verifications.php'],
         'Unit Management' => ['unit_management.php', 'add_unit.php', 'edit_unit.php', 'pending_units.php'],
         'Reservation Management' => ['reservations.php', 'reservation_details.php'],
         'Payment Management' => ['payment_management.php', 'payment_details.php'],
@@ -150,6 +151,13 @@ function isActivePattern($menu_key, $current_page) {
                     </a>
                 </li>
                 <li>
+                    <a href="<?php echo SITE_URL; ?>/admin/host_verifications.php" 
+                       class="<?php echo isActivePattern('Host Verifications', $current_page) ? 'active' : ''; ?>">
+                        <i class="fas fa-id-card-alt"></i> 
+                        <span>Host Verifications</span>
+                    </a>
+                </li>
+                <li>
                     <a href="<?php echo SITE_URL; ?>/admin/unit_management.php" 
                        class="<?php echo isActivePattern('Unit Management', $current_page) && $current_page !== 'pending_units.php' ? 'active' : ''; ?>">
                         <i class="fas fa-home"></i> 
@@ -182,6 +190,13 @@ function isActivePattern($menu_key, $current_page) {
                        class="<?php echo isActivePattern('Amenity Management', $current_page) ? 'active' : ''; ?>">
                         <i class="fas fa-swimming-pool"></i> 
                         <span>Amenity Management</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="<?php echo SITE_URL; ?>/admin/bookings_promos.php" 
+                       class="<?php echo $current_page === 'bookings_promos.php' ? 'active' : ''; ?>">
+                        <i class="fas fa-ticket-alt"></i> 
+                        <span>Bookings & Promos</span>
                     </a>
                 </li>
                 <li>

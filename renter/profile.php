@@ -280,7 +280,7 @@ if ($hasProfilePictureColumn && !empty($userData['profile_picture'])) {
         <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
         <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
-<body>
+<body class="bg-gray-50 text-gray-800">
     <!-- Renter Navbar: only Be a Host + Profile dropdown -->
     <nav class="navbar navbar-expand-lg navbar-dark bg-primary fixed-top">
         <div class="container">
@@ -325,221 +325,171 @@ if ($hasProfilePictureColumn && !empty($userData['profile_picture'])) {
         </div>
     </nav>
 
-    <div class="container">
-        <div class="profile-container">
-            <!-- Profile Header -->
-            <div class="profile-header">
-                <div class="profile-avatar" onclick="<?php echo $hasProfilePictureColumn ? 'document.getElementById(\'profilePictureInput\').click()' : 'alert(\'Profile picture feature not available\')'; ?>">
-                    <img src="<?php echo $profilePicture; ?>" alt="Profile Picture" id="profileImage">
-                    <?php if ($hasProfilePictureColumn): ?>
-                    <div class="upload-overlay">
-                        <i class="fas fa-camera"></i>
-                    </div>
-                    <?php endif; ?>
+    <!-- Main Content -->
+    <div class="max-w-4xl mx-auto px-4 pt-32 pb-16">
+        
+        <!-- Alerts -->
+        <?php if ($message): ?>
+            <div class="bg-green-50 border border-green-200 text-green-700 px-6 py-4 rounded-xl mb-8 flex items-center justify-between shadow-sm">
+                <div class="flex items-center gap-3">
+                    <i class="fas fa-check-circle text-green-500 text-xl"></i>
+                    <span class="font-medium"><?php echo $message; ?></span>
                 </div>
-                <h2><?php echo $_SESSION['fullname']; ?></h2>
-                <p class="mb-0"><?php echo ucfirst($_SESSION['role']); ?></p>
-                
-                <!-- Hidden file input -->
+                <button type="button" onclick="this.parentElement.style.display='none'" class="text-green-500 hover:text-green-700">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        <?php endif; ?>
+
+        <?php if ($error): ?>
+            <div class="bg-red-50 border border-red-200 text-red-700 px-6 py-4 rounded-xl mb-8 flex items-center justify-between shadow-sm">
+                <div class="flex items-center gap-3">
+                    <i class="fas fa-exclamation-circle text-red-500 text-xl"></i>
+                    <span class="font-medium"><?php echo $error; ?></span>
+                </div>
+                <button type="button" onclick="this.parentElement.style.display='none'" class="text-red-500 hover:text-red-700">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        <?php endif; ?>
+
+        <!-- Card 1 — Profile Header -->
+        <div class="bg-white rounded-[24px] shadow-[0_8px_30px_rgb(0,0,0,0.04)] p-10 mb-8 flex flex-col items-center text-center relative overflow-hidden border border-gray-100">
+            <!-- Decorative Background Element -->
+            <div class="absolute top-0 left-0 w-full h-32 bg-gradient-to-r from-blue-50 to-indigo-50"></div>
+            
+            <!-- Avatar -->
+            <div class="relative z-10 mb-4 group cursor-pointer" onclick="<?php echo $hasProfilePictureColumn ? 'document.getElementById(\'profilePictureInput\').click()' : 'alert(\'Profile picture feature not available\')'; ?>">
+                <div class="w-32 h-32 rounded-full border-4 border-white shadow-md overflow-hidden bg-white">
+                    <img src="<?php echo $profilePicture; ?>" alt="Profile Picture" id="profileImage" class="w-full h-full object-cover">
+                </div>
                 <?php if ($hasProfilePictureColumn): ?>
-                <form method="POST" enctype="multipart/form-data" class="file-upload-form">
-                    <input type="file" id="profilePictureInput" name="profile_picture" accept="image/*" onchange="this.form.submit()">
-                </form>
+                <div class="absolute inset-0 bg-black bg-opacity-40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                    <i class="fas fa-camera text-white text-2xl"></i>
+                </div>
                 <?php endif; ?>
             </div>
+            
+            <!-- Hidden file input -->
+            <?php if ($hasProfilePictureColumn): ?>
+            <form method="POST" enctype="multipart/form-data" class="hidden" id="profilePicForm">
+                <input type="file" id="profilePictureInput" name="profile_picture" accept="image/*" onchange="document.getElementById('profilePicForm').submit()">
+            </form>
+            <?php endif; ?>
+            
+            <h2 class="text-3xl font-bold text-gray-900 mb-1 z-10"><?php echo htmlspecialchars($_SESSION['fullname']); ?></h2>
+            <p class="text-gray-500 font-medium mb-8 z-10 text-lg"><?php echo ucfirst($_SESSION['role']); ?></p>
+            
+            <!-- Action Buttons -->
+            <div class="flex flex-wrap justify-center gap-4 z-10 w-full">
+                <a href="#account-info" class="flex-1 min-w-[200px] max-w-[220px] py-3 px-6 rounded-xl bg-blue-50 text-blue-600 font-semibold hover:bg-blue-100 transition-colors flex items-center justify-center gap-2">
+                    <i class="fas fa-user-edit"></i> Edit Profile
+                </a>
+                <button type="button" data-bs-toggle="modal" data-bs-target="#passwordModal" class="flex-1 min-w-[200px] max-w-[220px] py-3 px-6 rounded-xl bg-gray-50 text-gray-700 font-semibold hover:bg-gray-100 transition-colors flex items-center justify-center gap-2 border border-gray-200">
+                    <i class="fas fa-lock"></i> Change Password
+                </button>
+                <button type="button" onclick="<?php echo $hasProfilePictureColumn ? 'document.getElementById(\'profilePictureInput\').click()' : 'alert(\'Profile picture feature not available\')'; ?>" class="flex-1 min-w-[200px] max-w-[220px] py-3 px-6 rounded-xl bg-gray-50 text-gray-700 font-semibold hover:bg-gray-100 transition-colors flex items-center justify-center gap-2 border border-gray-200">
+                    <i class="fas fa-camera"></i> Change Picture
+                </button>
+            </div>
+        </div>
 
-            <!-- Profile Content -->
-            <div class="profile-content">
-                <!-- Messages -->
-                <?php if ($message): ?>
-                    <div class="alert alert-success alert-dismissible fade show" role="alert">
-                        <i class="fas fa-check-circle me-2"></i><?php echo $message; ?>
-                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                    </div>
-                <?php endif; ?>
-
-                <?php if ($error): ?>
-                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                        <i class="fas fa-exclamation-circle me-2"></i><?php echo $error; ?>
-                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                    </div>
-                <?php endif; ?>
-
-                <!-- Tabs -->
-                <ul class="nav nav-tabs" id="profileTabs" role="tablist">
-                    <li class="nav-item" role="presentation">
-                        <button class="nav-link active" id="profile-tab" data-bs-toggle="tab" data-bs-target="#profile" type="button" role="tab">
-                            <i class="fas fa-user-edit me-2"></i>Edit Profile
-                        </button>
-                    </li>
-                    <li class="nav-item" role="presentation">
-                        <button class="nav-link" id="password-tab" data-bs-toggle="tab" data-bs-target="#password" type="button" role="tab">
-                            <i class="fas fa-lock me-2"></i>Change Password
-                        </button>
-                    </li>
-                    <li class="nav-item" role="presentation">
-                        <button class="nav-link <?php echo !$hasProfilePictureColumn ? 'feature-disabled' : ''; ?>" id="picture-tab" data-bs-toggle="tab" data-bs-target="#picture" type="button" role="tab">
-                            <i class="fas fa-camera me-2"></i>Profile Picture
-                            <?php if (!$hasProfilePictureColumn): ?>
-                                <span class="badge bg-warning ms-1">!</span>
-                            <?php endif; ?>
-                        </button>
-                    </li>
-                </ul>
-
-                <div class="tab-content" id="profileTabsContent">
-                    <!-- Edit Profile Tab -->
-                    <div class="tab-pane fade show active" id="profile" role="tabpanel">
-                        <form method="POST">
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <label class="form-label">Full Name</label>
-                                    <input type="text" class="form-control" name="fullname" 
-                                           value="<?php echo $userData['full_name']; ?>" required>
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label">Email Address</label>
-                                    <input type="email" class="form-control" name="email" 
-                                           value="<?php echo $userData['email']; ?>" required>
-                                </div>
-                            </div>
-                            
-                            <div class="row">
-                                <?php if ($hasPhoneColumn): ?>
-                                <div class="col-md-6">
-                                    <label class="form-label">Phone Number</label>
-                                    <input type="tel" class="form-control" name="phone" 
-                                           value="<?php echo $userData['phone'] ?? ''; ?>" 
-                                           placeholder="Enter phone number">
-                                </div>
-                                <?php endif; ?>
-                                
-                                <?php if ($hasAddressColumn): ?>
-                                <div class="col-md-<?php echo $hasPhoneColumn ? '6' : '12'; ?>">
-                                    <label class="form-label">Address</label>
-                                    <input type="text" class="form-control" name="address" 
-                                           value="<?php echo $userData['address'] ?? ''; ?>" 
-                                           placeholder="Enter your address">
-                                </div>
-                                <?php endif; ?>
-                            </div>
-                            
-                            <div class="row mt-3">
-                                <div class="col-12">
-                                    <button type="submit" name="update_profile" class="btn btn-primary">
-                                        <i class="fas fa-save me-2"></i>Update Profile
-                                    </button>
-                                </div>
-                            </div>
-                        </form>
+        <!-- Card 2 — Account Information -->
+        <div id="account-info" class="bg-white rounded-[24px] shadow-[0_8px_30px_rgb(0,0,0,0.04)] p-10 border border-gray-100 scroll-mt-24">
+            <div class="mb-8 border-b border-gray-100 pb-6 flex justify-between items-center flex-wrap gap-4">
+                <div>
+                    <h3 class="text-2xl font-bold text-gray-900 mb-2">Account Information</h3>
+                    <p class="text-gray-500">Manage your personal details and contact information.</p>
+                </div>
+                <div class="text-right">
+                    <div class="text-xs text-gray-400 font-medium uppercase tracking-wider mb-1">User ID</div>
+                    <div class="text-sm text-gray-700 font-semibold bg-gray-50 px-3 py-1 rounded-lg border border-gray-100">#<?php echo $userData['user_id']; ?></div>
+                </div>
+            </div>
+            
+            <form method="POST">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-8">
+                    <!-- Left Column -->
+                    <div class="space-y-8">
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">Full Name</label>
+                            <input type="text" name="fullname" value="<?php echo htmlspecialchars($userData['full_name']); ?>" required
+                                   class="w-full px-5 py-4 rounded-xl bg-gray-50 border-none focus:ring-2 focus:ring-blue-500 text-gray-900 font-medium transition-shadow outline-none">
+                        </div>
+                        
+                        <?php if ($hasPhoneColumn): ?>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">Phone Number</label>
+                            <input type="tel" name="phone" value="<?php echo htmlspecialchars($userData['phone'] ?? ''); ?>" placeholder="+63 9xx xxx xxxx"
+                                   class="w-full px-5 py-4 rounded-xl bg-gray-50 border-none focus:ring-2 focus:ring-blue-500 text-gray-900 font-medium transition-shadow outline-none">
+                        </div>
+                        <?php endif; ?>
                     </div>
 
-                    <!-- Change Password Tab -->
-                    <div class="tab-pane fade" id="password" role="tabpanel">
-                        <form method="POST">
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <label class="form-label">Current Password</label>
-                                    <input type="password" class="form-control" name="current_password" required>
-                                </div>
-                            </div>
-                            
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <label class="form-label">New Password</label>
-                                    <input type="password" class="form-control" name="new_password" required 
-                                           minlength="6" placeholder="At least 6 characters">
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label">Confirm New Password</label>
-                                    <input type="password" class="form-control" name="confirm_password" required 
-                                           minlength="6">
-                                </div>
-                            </div>
-                            
-                            <div class="row mt-3">
-                                <div class="col-12">
-                                    <button type="submit" name="change_password" class="btn btn-primary">
-                                        <i class="fas fa-key me-2"></i>Change Password
-                                    </button>
-                                </div>
-                            </div>
-                        </form>
-                    </div>
-
-                    <!-- Profile Picture Tab -->
-                    <div class="tab-pane fade" id="picture" role="tabpanel">
-                        <?php if ($hasProfilePictureColumn): ?>
-                            <div class="current-picture">
-                                <h6>Current Profile Picture</h6>
-                                <?php if (!empty($userData['profile_picture'])): ?>
-                                    <img src="<?php echo $profilePicture; ?>" alt="Current Profile Picture">
-                                <?php else: ?>
-                                    <img src="<?php echo $profilePicture; ?>" alt="Default Profile Picture">
-                                    <p class="text-muted mt-2">No profile picture set</p>
-                                <?php endif; ?>
-                            </div>
-                            
-                            <form method="POST" enctype="multipart/form-data">
-                                <div class="mb-3">
-                                    <label class="form-label">Upload New Profile Picture</label>
-                                    <input type="file" class="form-control" name="profile_picture" accept="image/*" required>
-                                    <div class="form-text">
-                                        Supported formats: JPG, JPEG, PNG, GIF. Maximum size: 5MB.
-                                    </div>
-                                </div>
-                                
-                                <button type="submit" class="btn btn-primary">
-                                    <i class="fas fa-upload me-2"></i>Upload Picture
-                                </button>
-                            </form>
-                            
-                            <?php if (!empty($userData['profile_picture'])): ?>
-                                <form method="POST" class="mt-3">
-                                    <input type="hidden" name="remove_picture" value="1">
-                                    <button type="submit" class="btn btn-outline-danger" onclick="return confirm('Are you sure you want to remove your profile picture?')">
-                                        <i class="fas fa-trash me-2"></i>Remove Picture
-                                    </button>
-                                </form>
-                            <?php endif; ?>
-                        <?php else: ?>
-                            <div class="alert alert-info">
-                                <i class="fas fa-info-circle me-2"></i>
-                                Profile picture feature is currently disabled. Please run the SQL command above to enable this feature.
-                            </div>
+                    <!-- Right Column -->
+                    <div class="space-y-8">
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">Email Address</label>
+                            <input type="email" name="email" value="<?php echo htmlspecialchars($userData['email']); ?>" required
+                                   class="w-full px-5 py-4 rounded-xl bg-gray-50 border-none focus:ring-2 focus:ring-blue-500 text-gray-900 font-medium transition-shadow outline-none">
+                        </div>
+                        
+                        <?php if ($hasAddressColumn): ?>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">Address</label>
+                            <input type="text" name="address" value="<?php echo htmlspecialchars($userData['address'] ?? ''); ?>" placeholder="Enter your full address"
+                                   class="w-full px-5 py-4 rounded-xl bg-gray-50 border-none focus:ring-2 focus:ring-blue-500 text-gray-900 font-medium transition-shadow outline-none">
+                        </div>
                         <?php endif; ?>
                     </div>
                 </div>
+                
+                <div class="mt-12 flex justify-end">
+                    <button type="submit" name="update_profile" class="py-4 px-10 rounded-xl bg-blue-600 text-white font-bold hover:bg-blue-700 shadow-[0_8px_20px_rgb(37,99,235,0.25)] transition-all transform hover:-translate-y-0.5 outline-none">
+                        Update Profile
+                    </button>
+                </div>
+            </form>
+        </div>
+        
+        <!-- Back Link -->
+        <div class="mt-10 text-center">
+            <a href="../public/browse_units.php" class="inline-flex items-center gap-2 text-gray-500 hover:text-blue-600 font-medium transition-colors">
+                <i class="fas fa-arrow-left"></i> Back to Browse Units
+            </a>
+        </div>
+    </div>
 
-                <!-- Account Information -->
-                <div class="row mt-5">
-                    <div class="col-12">
-                        <h5 class="mb-4"><i class="fas fa-info-circle me-2"></i>Account Information</h5>
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="info-card">
-                                    <div class="info-label">User ID</div>
-                                    <div class="info-value">#<?php echo $userData['user_id']; ?></div>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="info-card">
-                                    <div class="info-label">Account Created</div>
-                                    <div class="info-value"><?php echo date('F j, Y', strtotime($userData['created_at'])); ?></div>
-                                </div>
-                            </div>
+    <!-- Change Password Modal -->
+    <div class="modal fade" id="passwordModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content rounded-2xl border-0 shadow-2xl overflow-hidden">
+                <div class="modal-header border-b border-gray-100 p-6 bg-white">
+                    <h5 class="modal-title font-bold text-xl text-gray-900">Change Password</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form method="POST">
+                    <div class="modal-body p-6 space-y-6 bg-white">
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">Current Password</label>
+                            <input type="password" name="current_password" required class="w-full px-5 py-4 rounded-xl bg-gray-50 border-none focus:ring-2 focus:ring-blue-500 text-gray-900 transition-shadow outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">New Password</label>
+                            <input type="password" name="new_password" required minlength="6" placeholder="At least 6 characters" class="w-full px-5 py-4 rounded-xl bg-gray-50 border-none focus:ring-2 focus:ring-blue-500 text-gray-900 transition-shadow outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">Confirm New Password</label>
+                            <input type="password" name="confirm_password" required minlength="6" class="w-full px-5 py-4 rounded-xl bg-gray-50 border-none focus:ring-2 focus:ring-blue-500 text-gray-900 transition-shadow outline-none">
                         </div>
                     </div>
-                </div>
-
-                <!-- Back Button -->
-                <div class="row mt-4">
-                    <div class="col-12">
-                        <a href="../public/browse_units.php" class="btn btn-outline-primary">
-                            <i class="fas fa-arrow-left me-2"></i>Back to Browse Units
-                        </a>
+                    <div class="modal-footer border-t border-gray-100 p-6 bg-gray-50 flex justify-end gap-3">
+                        <button type="button" class="py-3 px-6 rounded-xl bg-white border border-gray-200 text-gray-700 font-semibold hover:bg-gray-50 transition-colors outline-none shadow-sm" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" name="change_password" class="py-3 px-6 rounded-xl bg-blue-600 text-white font-bold hover:bg-blue-700 shadow-md shadow-blue-200 transition-all outline-none">
+                            Update Password
+                        </button>
                     </div>
-                </div>
+                </form>
             </div>
         </div>
     </div>

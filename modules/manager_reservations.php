@@ -1,5 +1,5 @@
 <?php
-session_start();
+require_once '../includes/session.php'; // Includes constants and starts session correctly
 
 // Define site URL if not defined
 if (!defined('SITE_URL')) {
@@ -202,39 +202,8 @@ if ($db_connected) {
 <link href="../assets/css/modules/reservations.css" rel="stylesheet">
 </head>
 <body>
-<!-- =================== SIDEBAR =================== -->
-<aside class="sidebar" id="sidebar">
-    <div class="brand">
-        <i class="fas fa-building"></i>
-        <span>BookIT Host</span>
-    </div>
-    <nav class="sidebar-menu">
-        <ul>
-            <li><a href="<?php echo SITE_URL; ?>/host/dashboard.php"><i class="fas fa-tachometer-alt"></i> <span>Dashboard</span></a></li>
-            <li><a href="<?php echo SITE_URL; ?>/host/my_units.php"><i class="fas fa-home"></i> <span>My Units</span></a></li>
-            <li><a href="<?php echo SITE_URL; ?>/modules/host_reservations.php" class="active"><i class="fas fa-calendar-check"></i> <span>Reservations</span></a></li>
-            <li><a href="<?php echo SITE_URL; ?>/host/payments.php"><i class="fas fa-credit-card"></i> <span>Payments</span></a></li>
-            <li><a href="<?php echo SITE_URL; ?>/host/calendar.php"><i class="fas fa-calendar-alt"></i> <span>Calendar</span></a></li>
-            <li><a href="<?php echo SITE_URL; ?>/host/reports.php"><i class="fas fa-chart-bar"></i> <span>Reports</span></a></li>
-        </ul>
-    </nav>
-
-    <!-- =================== PROFILE SECTION =================== -->
-    <div class="sidebar-profile">
-        <div class="profile-info">
-            <div class="profile-avatar">
-                <i class="fas fa-user-circle"></i>
-            </div>
-            <div class="profile-details">
-                <span class="profile-name"><?php echo htmlspecialchars($_SESSION['fullname']); ?></span>
-                <span class="profile-role">Property Host</span>
-            </div>
-        </div>
-        <a href="../public/logout.php" class="logout-btn">
-            <i class="fas fa-sign-out-alt"></i>
-        </a>
-    </div>
-</aside>
+<!-- Sidebar -->
+<?php include '../includes/sidebar.php'; ?>
 
 <!-- Main Content -->
 <div class="content">

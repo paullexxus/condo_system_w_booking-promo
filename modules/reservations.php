@@ -213,46 +213,8 @@ if ($db_connected && $user_role === 'admin') {
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
     <?php endif; ?>
-<!-- =================== SIDEBAR =================== -->
-<aside class="sidebar" id="sidebar">
-    <div class="brand">
-        <i class="fas fa-building"></i>
-        <span>BookIT <?php echo ucfirst($user_role); ?></span>
-    </div>
-    <nav class="sidebar-menu">
-        <ul>
-            <li><a href="<?php echo SITE_URL; ?>/admin/admin_dashboard.php"><i class="fas fa-tachometer-alt"></i> <span>Dashboard</span></a></li>
-            <?php if ($user_role === 'admin'): ?>
-            <li><a href="<?php echo SITE_URL; ?>/admin/manage_branch.php"><i class="fas fa-code-branch"></i><span>Branch Management</span></a></li>
-            <li><a href="<?php echo SITE_URL; ?>/admin/user_management.php"><i class="fas fa-users"></i> <span>User Management</span></a></li>
-            <?php endif; ?>
-            <li><a href="<?php echo SITE_URL; ?>/admin/unit_management.php"><i class="fas fa-home"></i> <span>Unit Management</span></a></li>
-            <li><a href="<?php echo SITE_URL; ?>/modules/reservations.php" class="active"><i class="fas fa-calendar-check"></i> <span>Reservation Management</span></a></li>
-            <li><a href="<?php echo SITE_URL; ?>/modules/payment_management.php"><i class="fas fa-credit-card"></i> <span>Payment Management</span></a></li>
-            <?php if ($user_role === 'admin'): ?>
-            <li><a href="<?php echo SITE_URL; ?>/admin/amenity_management.php"><i class="fas fa-swimming-pool"></i> <span>Amenity Management</span></a></li>
-            <li><a href="<?php echo SITE_URL; ?>/admin/reports.php"><i class="fas fa-chart-line"></i> <span>Reports</span></a></li>
-            <li><a href="<?php echo SITE_URL; ?>/admin/settings.php"><i class="fas fa-cog"></i> <span>Settings</span></a></li>
-            <?php endif; ?>
-        </ul>
-    </nav>
-
-    <!-- =================== PROFILE SECTION =================== -->
-    <div class="sidebar-profile">
-        <div class="profile-info">
-            <div class="profile-avatar">
-                <i class="fas fa-user-circle"></i>
-            </div>
-            <div class="profile-details">
-                <span class="profile-name"><?php echo htmlspecialchars($_SESSION['fullname'] ?? 'User'); ?></span>
-                <span class="profile-role"><?php echo htmlspecialchars(ucfirst($_SESSION['role'] ?? 'User')); ?></span>
-            </div>
-        </div>
-        <a href="../public/logout.php" class="logout-btn">
-            <i class="fas fa-sign-out-alt"></i>
-        </a>
-    </div>
-</aside>
+<!-- Sidebar -->
+<?php include '../includes/sidebar.php'; ?>
 
 <!-- Main Content -->
 <div class="content">

@@ -2,6 +2,16 @@
 include '../includes/public_session.php';
 include '../includes/functions.php';
 include '../includes/auth.php';
+include '../config/db.php';
+
+$app_status = null;
+if (isLoggedIn() && $_SESSION['role'] === 'renter') {
+    $user_id = (int)$_SESSION['user_id'];
+    $check_app = mysqli_query($conn, "SELECT status FROM host_applications WHERE user_id = $user_id ORDER BY created_at DESC LIMIT 1");
+    if ($row = mysqli_fetch_assoc($check_app)) {
+        $app_status = $row['status'];
+    }
+}
 ?>
 <!doctype html>
 <html lang="en">
@@ -172,9 +182,19 @@ include '../includes/auth.php';
                 <i class="fas fa-sign-in-alt"></i> Login
               </a>
             <?php else: ?>
-              <a href="../host/host_dashboard.php" class="btn-modern btn-luxury-primary text-lg px-10 py-4 bg-white text-blue-600 hover:bg-gray-100">
-                <i class="fas fa-tachometer-alt"></i> Go to Dashboard
-              </a>
+              <?php if ($_SESSION['role'] === 'renter' && !$app_status): ?>
+                <a href="host_register.php" class="btn-modern btn-luxury-primary text-lg px-10 py-4 bg-white text-blue-600 hover:bg-gray-100">
+                  <i class="fas fa-user-plus"></i> Register as Host
+                </a>
+              <?php elseif ($_SESSION['role'] === 'renter' && $app_status): ?>
+                <a href="../renter/my_application.php" class="btn-modern btn-luxury-primary text-lg px-10 py-4 bg-white text-blue-600 hover:bg-gray-100">
+                  <i class="fas fa-clipboard-list"></i> My Host Application
+                </a>
+              <?php else: ?>
+                <a href="../host/host_dashboard.php" class="btn-modern btn-luxury-primary text-lg px-10 py-4 bg-white text-blue-600 hover:bg-gray-100">
+                  <i class="fas fa-tachometer-alt"></i> Go to Dashboard
+                </a>
+              <?php endif; ?>
             <?php endif; ?>
           </div>
         </div>
@@ -241,9 +261,19 @@ include '../includes/auth.php';
           <i class="fas fa-user-plus"></i> Create Host Account
         </a>
       <?php else: ?>
-        <a href="../host/host_dashboard.php" class="btn-modern btn-luxury-primary text-lg px-12 py-4 bg-white text-gray-900 hover:bg-gray-100">
-          <i class="fas fa-arrow-right"></i> Go to Dashboard
-        </a>
+              <?php if ($_SESSION['role'] === 'renter' && !$app_status): ?>
+                <a href="host_register.php" class="btn-modern btn-luxury-primary text-lg px-12 py-4 bg-white text-gray-900 hover:bg-gray-100">
+                  <i class="fas fa-user-plus"></i> Create Host Account
+                </a>
+              <?php elseif ($_SESSION['role'] === 'renter' && $app_status): ?>
+                <a href="../renter/my_application.php" class="btn-modern btn-luxury-primary text-lg px-12 py-4 bg-white text-gray-900 hover:bg-gray-100">
+                  <i class="fas fa-clipboard-list"></i> My Host Application
+                </a>
+              <?php else: ?>
+                <a href="../host/host_dashboard.php" class="btn-modern btn-luxury-primary text-lg px-12 py-4 bg-white text-gray-900 hover:bg-gray-100">
+                  <i class="fas fa-arrow-right"></i> Go to Dashboard
+                </a>
+              <?php endif; ?>
       <?php endif; ?>
     </div>
   </div>

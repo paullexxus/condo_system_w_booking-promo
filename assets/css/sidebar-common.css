@@ -1,8 +1,12 @@
 /* sidebar-common.css - Unified Sidebar Styles (MASTER FILE - consolidates sidebar.css and sidebar-common.css) */
 
+:root {
+    --sidebar-width: 230px;
+}
+
 /* Sidebar Styles */
 .sidebar {
-    width: 280px;
+    width: var(--sidebar-width);
     height: 100vh;
     background: linear-gradient(180deg, #2c3e50 0%, #34495e 100%);
     color: white;
@@ -18,26 +22,45 @@
 }
 
 .brand {
-    padding: 25px 20px;
-    text-align: center;
+    padding: 16px 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    flex-wrap: nowrap;
     border-bottom: 1px solid rgba(255,255,255,0.1);
-    font-size: 1.4em;
+    font-size: 1rem;
     font-weight: 700;
+    line-height: 1.2;
     background: rgba(0,0,0,0.1);
     -webkit-backdrop-filter: blur(10px);
     backdrop-filter: blur(10px);
+    flex-shrink: 0;
 }
 
 .brand i {
-    margin-right: 12px;
+    margin: 0;
+    flex-shrink: 0;
+    width: 1.25em;
+    text-align: center;
     color: #3498db;
     text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    font-size: 1rem;
+}
+
+.brand span {
+    flex: 1;
+    min-width: 0;
+    text-align: center;
 }
 
 .sidebar-menu {
     flex: 1;
-    padding: 20px 0;
+    min-height: 0;
+    padding: 10px 0;
     overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
 }
 
 .sidebar-menu ul {
@@ -47,62 +70,99 @@
 }
 
 .sidebar-menu li {
-    margin: 8px 15px;
-    border-radius: 12px;
-    overflow: hidden;
-    transition: all 0.3s ease;
-}
-
-.sidebar-menu li:hover {
-    transform: translateX(5px);
+    margin: 0 8px 4px;
+    border-radius: 10px;
+    list-style: none;
 }
 
 .sidebar-menu a {
+    position: relative;
     display: flex;
     align-items: center;
-    padding: 14px 18px;
+    gap: 10px;
+    min-height: 40px;
+    padding: 8px 10px;
+    box-sizing: border-box;
     color: #bdc3c7;
     text-decoration: none;
-    transition: all 0.3s ease;
-    border-radius: 12px;
+    border-radius: 10px;
     font-weight: 500;
+    font-size: 0.86rem;
+    line-height: normal;
+    border: none; /* Prevent standard borders from causing layout shifts */
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    overflow: hidden;
+}
+
+/* Active indicator using pseudo-element to prevent any pixel shifting */
+.sidebar-menu a::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    height: 50%;
+    width: 4px;
+    border-radius: 0 4px 4px 0;
+    background-color: transparent;
+    transition: background-color 0.2s ease;
 }
 
 .sidebar-menu a:hover {
     background: rgba(52, 152, 219, 0.15);
-    color: #3498db;
-    transform: translateX(8px);
+    color: #fff;
+}
+
+.sidebar-menu a:focus-visible {
+    outline: 2px solid rgba(52, 152, 219, 0.8);
+    outline-offset: 2px;
 }
 
 .sidebar-menu a.active {
     background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
-    color: white;
-    box-shadow: 0 4px 20px rgba(52, 152, 219, 0.4);
-    transform: translateX(8px);
+    color: #fff;
+    box-shadow: 0 4px 15px rgba(52, 152, 219, 0.35);
 }
 
-.sidebar-menu i {
-    width: 22px;
-    margin-right: 15px;
-    text-align: center;
-    font-size: 1.2em;
-    transition: all 0.3s ease;
+.sidebar-menu a.active::before {
+    background-color: rgba(255, 255, 255, 0.85);
 }
 
-.sidebar-menu a.active i {
-    color: white;
+/* Icon column: fixed width so labels align perfectly */
+.sidebar-menu a > i {
+    flex-shrink: 0;
+    width: 18px;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.95rem;
+    color: inherit;
+    transition: transform 0.2s ease;
+}
+
+.sidebar-menu a:hover > i {
     transform: scale(1.1);
+}
+
+.sidebar-menu a > span {
+    flex: 1;
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 /* Profile Section */
 .sidebar-profile {
-    padding: 20px 15px;
+    padding: 12px 10px;
     border-top: 1px solid rgba(255,255,255,0.1);
     background: rgba(0,0,0,0.1);
     display: flex;
     align-items: center;
     justify-content: space-between;
     margin-top: auto;
+    flex-shrink: 0;
     -webkit-backdrop-filter: blur(10px);
     backdrop-filter: blur(10px);
 }
@@ -115,8 +175,8 @@
 }
 
 .profile-avatar {
-    width: 48px;
-    height: 48px;
+    width: 34px;
+    height: 34px;
     border-radius: 50%;
     background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
     display: flex;
@@ -128,7 +188,7 @@
 }
 
 .profile-avatar i {
-    font-size: 22px;
+    font-size: 16px;
 }
 
 .profile-details {
@@ -140,13 +200,13 @@
 .profile-name {
     font-weight: 600;
     color: white;
-    font-size: 15px;
+    font-size: 12px;
     margin-bottom: 3px;
 }
 
 .profile-role {
     color: #bdc3c7;
-    font-size: 12px;
+    font-size: 10px;
     text-transform: capitalize;
 }
 
@@ -159,14 +219,13 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 40px;
-    height: 40px;
+    width: 30px;
+    height: 30px;
 }
 
 .logout-btn:hover {
     color: #3498db;
     background: rgba(52, 152, 219, 0.15);
-    transform: scale(1.1);
     box-shadow: 0 2px 10px rgba(52, 152, 219, 0.3);
 }
 
@@ -202,24 +261,10 @@
     background: linear-gradient(135deg, #2980b9 0%, #21618c 100%);
 }
 
-/* Mobile Responsive */
+/* Slightly narrower sidebar on medium viewports; labels stay visible (no icon-only strip). */
 @media (max-width: 1200px) {
-    .sidebar {
-        width: 80px;
-    }
-    
-    .brand span, .sidebar-menu a span {
-        display: none;
-    }
-    
-    .sidebar-menu i {
-        margin-right: 0;
-        width: auto;
-        font-size: 1.3em;
-    }
-    
-    .profile-details {
-        display: none;
+    :root {
+        --sidebar-width: 210px;
     }
 }
 

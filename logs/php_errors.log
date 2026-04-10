@@ -2248,3 +2248,245 @@ Stack trace:
 [22-Mar-2026 14:05:25 Asia/Manila]   Params: ["BookIT manila","n\/A","manila","","",null]
 [22-Mar-2026 14:05:25 Asia/Manila]   execute_query() returned: TRUE
 [22-Mar-2026 14:05:25 Asia/Manila]   SUCCESS: Branch added!
+[22-Mar-2026 17:57:31 Asia/Manila] WARNING: Using test PayMongo keys. Set PAYMONGO_* in .env for proper configuration.
+[22-Mar-2026 17:57:46 Asia/Manila] WARNING: Using test PayMongo keys. Set PAYMONGO_* in .env for proper configuration.
+[22-Mar-2026 17:57:51 Asia/Manila] WARNING: Using test PayMongo keys. Set PAYMONGO_* in .env for proper configuration.
+[22-Mar-2026 18:10:37 Asia/Manila] PHP Warning:  include_once(../config/db.php): Failed to open stream: No such file or directory in C:\wamp64\www\BookIT\includes\functions.php on line 5
+[22-Mar-2026 18:10:37 Asia/Manila] PHP Stack trace:
+[22-Mar-2026 18:10:37 Asia/Manila] PHP   1. {main}() C:\wamp64\www\BookIT\includes\api\get_user_details.php:0
+[22-Mar-2026 18:10:37 Asia/Manila] PHP   2. include_once() C:\wamp64\www\BookIT\includes\api\get_user_details.php:7
+[22-Mar-2026 18:10:37 Asia/Manila] PHP Warning:  include_once(): Failed opening '../config/db.php' for inclusion (include_path='.;C:\php\pear') in C:\wamp64\www\BookIT\includes\functions.php on line 5
+[22-Mar-2026 18:10:37 Asia/Manila] PHP Stack trace:
+[22-Mar-2026 18:10:37 Asia/Manila] PHP   1. {main}() C:\wamp64\www\BookIT\includes\api\get_user_details.php:0
+[22-Mar-2026 18:10:37 Asia/Manila] PHP   2. include_once() C:\wamp64\www\BookIT\includes\api\get_user_details.php:7
+[22-Mar-2026 18:10:51 Asia/Manila] PHP Warning:  include_once(../config/db.php): Failed to open stream: No such file or directory in C:\wamp64\www\BookIT\includes\functions.php on line 5
+[22-Mar-2026 18:10:51 Asia/Manila] PHP Stack trace:
+[22-Mar-2026 18:10:51 Asia/Manila] PHP   1. {main}() C:\wamp64\www\BookIT\includes\api\get_user_details.php:0
+[22-Mar-2026 18:10:51 Asia/Manila] PHP   2. include_once() C:\wamp64\www\BookIT\includes\api\get_user_details.php:7
+[22-Mar-2026 18:10:51 Asia/Manila] PHP Warning:  include_once(): Failed opening '../config/db.php' for inclusion (include_path='.;C:\php\pear') in C:\wamp64\www\BookIT\includes\functions.php on line 5
+[22-Mar-2026 18:10:51 Asia/Manila] PHP Stack trace:
+[22-Mar-2026 18:10:51 Asia/Manila] PHP   1. {main}() C:\wamp64\www\BookIT\includes\api\get_user_details.php:0
+[22-Mar-2026 18:10:51 Asia/Manila] PHP   2. include_once() C:\wamp64\www\BookIT\includes\api\get_user_details.php:7
+[23-Mar-2026 14:48:49 Asia/Manila] === addBranch() called ===
+[23-Mar-2026 14:48:49 Asia/Manila]   branch_name: BookIT malabon
+[23-Mar-2026 14:48:49 Asia/Manila]   address: 153 sanciangco street
+[23-Mar-2026 14:48:49 Asia/Manila]   city: malabon
+[23-Mar-2026 14:48:49 Asia/Manila]   contact_number: 
+[23-Mar-2026 14:48:49 Asia/Manila]   email: 
+[23-Mar-2026 14:48:49 Asia/Manila]   host_id: NULL
+[23-Mar-2026 14:48:49 Asia/Manila]   SQL: INSERT INTO branches (branch_name, address, city, contact_number, email, host_id, is_active) 
+                VALUES (?, ?, ?, ?, ?, ?, 1)
+[23-Mar-2026 14:48:49 Asia/Manila]   Params count: 6
+[23-Mar-2026 14:48:49 Asia/Manila]   Params: ["BookIT malabon","153 sanciangco street","malabon","","",null]
+[23-Mar-2026 14:48:49 Asia/Manila]   execute_query() returned: TRUE
+[23-Mar-2026 14:48:49 Asia/Manila]   SUCCESS: Branch added!
+[23-Mar-2026 14:53:34 Asia/Manila] PHP Warning:  include_once(../config/db.php): Failed to open stream: No such file or directory in C:\wamp64\www\BookIT\includes\functions.php on line 5
+[23-Mar-2026 14:53:34 Asia/Manila] PHP Stack trace:
+[23-Mar-2026 14:53:34 Asia/Manila] PHP   1. {main}() C:\wamp64\www\BookIT\includes\api\get_user_details.php:0
+[23-Mar-2026 14:53:34 Asia/Manila] PHP   2. include_once() C:\wamp64\www\BookIT\includes\api\get_user_details.php:7
+[23-Mar-2026 14:53:34 Asia/Manila] PHP Warning:  include_once(): Failed opening '../config/db.php' for inclusion (include_path='.;C:\php\pear') in C:\wamp64\www\BookIT\includes\functions.php on line 5
+[23-Mar-2026 14:53:34 Asia/Manila] PHP Stack trace:
+[23-Mar-2026 14:53:34 Asia/Manila] PHP   1. {main}() C:\wamp64\www\BookIT\includes\api\get_user_details.php:0
+[23-Mar-2026 14:53:34 Asia/Manila] PHP   2. include_once() C:\wamp64\www\BookIT\includes\api\get_user_details.php:7
+[23-Mar-2026 14:56:45 Asia/Manila] Exception in execute_query: Unknown column 'sent_via' in 'field list'
+[23-Mar-2026 14:56:45 Asia/Manila] Exception in execute_query: Unknown column 'sent_via' in 'field list'
+[23-Mar-2026 14:58:12 Asia/Manila] WARNING: Using test PayMongo keys. Set PAYMONGO_* in .env for proper configuration.
+[23-Mar-2026 15:00:32 Asia/Manila] PHPMailer: Email sent to: paullexxusantonio@gmail.com
+[23-Mar-2026 15:06:57 Asia/Manila] PHP Warning:  Undefined array key "unit_name" in C:\wamp64\www\BookIT\host\host_dashboard.php on line 359
+[23-Mar-2026 15:06:57 Asia/Manila] PHP Stack trace:
+[23-Mar-2026 15:06:57 Asia/Manila] PHP   1. {main}() C:\wamp64\www\BookIT\host\host_dashboard.php:0
+[23-Mar-2026 15:06:57 Asia/Manila] PHP Deprecated:  htmlspecialchars(): Passing null to parameter #1 ($string) of type string is deprecated in C:\wamp64\www\BookIT\host\host_dashboard.php on line 359
+[23-Mar-2026 15:06:57 Asia/Manila] PHP Stack trace:
+[23-Mar-2026 15:06:57 Asia/Manila] PHP   1. {main}() C:\wamp64\www\BookIT\host\host_dashboard.php:0
+[23-Mar-2026 15:06:57 Asia/Manila] PHP   2. htmlspecialchars($string = NULL) C:\wamp64\www\BookIT\host\host_dashboard.php:359
+[23-Mar-2026 15:36:34 Asia/Manila] PHP Warning:  Undefined array key "unit_name" in C:\wamp64\www\BookIT\host\host_dashboard.php on line 359
+[23-Mar-2026 15:36:34 Asia/Manila] PHP Stack trace:
+[23-Mar-2026 15:36:34 Asia/Manila] PHP   1. {main}() C:\wamp64\www\BookIT\host\host_dashboard.php:0
+[23-Mar-2026 15:36:34 Asia/Manila] PHP Deprecated:  htmlspecialchars(): Passing null to parameter #1 ($string) of type string is deprecated in C:\wamp64\www\BookIT\host\host_dashboard.php on line 359
+[23-Mar-2026 15:36:34 Asia/Manila] PHP Stack trace:
+[23-Mar-2026 15:36:34 Asia/Manila] PHP   1. {main}() C:\wamp64\www\BookIT\host\host_dashboard.php:0
+[23-Mar-2026 15:36:34 Asia/Manila] PHP   2. htmlspecialchars($string = NULL) C:\wamp64\www\BookIT\host\host_dashboard.php:359
+[23-Mar-2026 15:36:57 Asia/Manila] PHP Warning:  Undefined array key "unit_name" in C:\wamp64\www\BookIT\host\host_dashboard.php on line 359
+[23-Mar-2026 15:36:57 Asia/Manila] PHP Stack trace:
+[23-Mar-2026 15:36:57 Asia/Manila] PHP   1. {main}() C:\wamp64\www\BookIT\host\host_dashboard.php:0
+[23-Mar-2026 15:36:57 Asia/Manila] PHP Deprecated:  htmlspecialchars(): Passing null to parameter #1 ($string) of type string is deprecated in C:\wamp64\www\BookIT\host\host_dashboard.php on line 359
+[23-Mar-2026 15:36:57 Asia/Manila] PHP Stack trace:
+[23-Mar-2026 15:36:57 Asia/Manila] PHP   1. {main}() C:\wamp64\www\BookIT\host\host_dashboard.php:0
+[23-Mar-2026 15:36:57 Asia/Manila] PHP   2. htmlspecialchars($string = NULL) C:\wamp64\www\BookIT\host\host_dashboard.php:359
+[23-Mar-2026 15:37:19 Asia/Manila] WARNING: Using test PayMongo keys. Set PAYMONGO_* in .env for proper configuration.
+[23-Mar-2026 15:37:28 Asia/Manila] PHP Warning:  Undefined array key "unit_name" in C:\wamp64\www\BookIT\host\host_dashboard.php on line 359
+[23-Mar-2026 15:37:28 Asia/Manila] PHP Stack trace:
+[23-Mar-2026 15:37:28 Asia/Manila] PHP   1. {main}() C:\wamp64\www\BookIT\host\host_dashboard.php:0
+[23-Mar-2026 15:37:28 Asia/Manila] PHP Deprecated:  htmlspecialchars(): Passing null to parameter #1 ($string) of type string is deprecated in C:\wamp64\www\BookIT\host\host_dashboard.php on line 359
+[23-Mar-2026 15:37:28 Asia/Manila] PHP Stack trace:
+[23-Mar-2026 15:37:28 Asia/Manila] PHP   1. {main}() C:\wamp64\www\BookIT\host\host_dashboard.php:0
+[23-Mar-2026 15:37:28 Asia/Manila] PHP   2. htmlspecialchars($string = NULL) C:\wamp64\www\BookIT\host\host_dashboard.php:359
+[23-Mar-2026 15:37:32 Asia/Manila] WARNING: Using test PayMongo keys. Set PAYMONGO_* in .env for proper configuration.
+[23-Mar-2026 15:38:15 Asia/Manila] PHP Warning:  Undefined array key "unit_name" in C:\wamp64\www\BookIT\host\host_dashboard.php on line 359
+[23-Mar-2026 15:38:15 Asia/Manila] PHP Stack trace:
+[23-Mar-2026 15:38:15 Asia/Manila] PHP   1. {main}() C:\wamp64\www\BookIT\host\host_dashboard.php:0
+[23-Mar-2026 15:38:15 Asia/Manila] PHP Deprecated:  htmlspecialchars(): Passing null to parameter #1 ($string) of type string is deprecated in C:\wamp64\www\BookIT\host\host_dashboard.php on line 359
+[23-Mar-2026 15:38:15 Asia/Manila] PHP Stack trace:
+[23-Mar-2026 15:38:15 Asia/Manila] PHP   1. {main}() C:\wamp64\www\BookIT\host\host_dashboard.php:0
+[23-Mar-2026 15:38:15 Asia/Manila] PHP   2. htmlspecialchars($string = NULL) C:\wamp64\www\BookIT\host\host_dashboard.php:359
+[23-Mar-2026 15:38:32 Asia/Manila] WARNING: Using test PayMongo keys. Set PAYMONGO_* in .env for proper configuration.
+[31-Mar-2026 07:43:26 Asia/Manila] PHP Warning:  Undefined array key "unit_name" in C:\wamp64\www\BookIT\host\host_dashboard.php on line 359
+[31-Mar-2026 07:43:27 Asia/Manila] PHP Stack trace:
+[31-Mar-2026 07:43:27 Asia/Manila] PHP   1. {main}() C:\wamp64\www\BookIT\host\host_dashboard.php:0
+[31-Mar-2026 07:43:27 Asia/Manila] PHP Deprecated:  htmlspecialchars(): Passing null to parameter #1 ($string) of type string is deprecated in C:\wamp64\www\BookIT\host\host_dashboard.php on line 359
+[31-Mar-2026 07:43:27 Asia/Manila] PHP Stack trace:
+[31-Mar-2026 07:43:27 Asia/Manila] PHP   1. {main}() C:\wamp64\www\BookIT\host\host_dashboard.php:0
+[31-Mar-2026 07:43:27 Asia/Manila] PHP   2. htmlspecialchars($string = NULL) C:\wamp64\www\BookIT\host\host_dashboard.php:359
+[31-Mar-2026 17:27:44 Asia/Manila] WARNING: Using test PayMongo keys. Set PAYMONGO_* in .env for proper configuration.
+[31-Mar-2026 17:30:35 Asia/Manila] WARNING: Using test PayMongo keys. Set PAYMONGO_* in .env for proper configuration.
+[31-Mar-2026 17:30:48 Asia/Manila] WARNING: Using test PayMongo keys. Set PAYMONGO_* in .env for proper configuration.
+[31-Mar-2026 17:57:44 Asia/Manila] Exception in execute_query: Unknown column 'sent_via' in 'field list'
+[31-Mar-2026 17:57:47 Asia/Manila] Exception in execute_query: Unknown column 'sent_via' in 'field list'
+[31-Mar-2026 18:04:15 Asia/Manila] Exception in execute_query: Unknown column 'sent_via' in 'field list'
+[31-Mar-2026 18:04:15 Asia/Manila] Exception in execute_query: Unknown column 'sent_via' in 'field list'
+[31-Mar-2026 18:04:22 Asia/Manila] Exception in execute_query: Unknown column 'sent_via' in 'field list'
+[31-Mar-2026 18:19:30 Asia/Manila] WARNING: Using test PayMongo keys. Set PAYMONGO_* in .env for proper configuration.
+[02-Apr-2026 12:59:01 Asia/Manila] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown database 'condo_rental_reservation_db' in C:\wamp64\www\BookIT\config\db.php:8
+Stack trace:
+#0 C:\wamp64\www\BookIT\config\db.php(8): mysqli->__construct('localhost', 'root', Object(SensitiveParameterValue), 'condo_rental_re...')
+#1 C:\wamp64\www\BookIT\public\login.php(17): include_once('C:\\wamp64\\www\\B...')
+#2 {main}
+  thrown in C:\wamp64\www\BookIT\config\db.php on line 8
+[02-Apr-2026 12:59:05 Asia/Manila] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown database 'condo_rental_reservation_db' in C:\wamp64\www\BookIT\config\db.php:8
+Stack trace:
+#0 C:\wamp64\www\BookIT\config\db.php(8): mysqli->__construct('localhost', 'root', Object(SensitiveParameterValue), 'condo_rental_re...')
+#1 C:\wamp64\www\BookIT\public\login.php(17): include_once('C:\\wamp64\\www\\B...')
+#2 {main}
+  thrown in C:\wamp64\www\BookIT\config\db.php on line 8
+[02-Apr-2026 12:59:08 Asia/Manila] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown database 'condo_rental_reservation_db' in C:\wamp64\www\BookIT\config\db.php:8
+Stack trace:
+#0 C:\wamp64\www\BookIT\config\db.php(8): mysqli->__construct('localhost', 'root', Object(SensitiveParameterValue), 'condo_rental_re...')
+#1 C:\wamp64\www\BookIT\public\login.php(17): include_once('C:\\wamp64\\www\\B...')
+#2 {main}
+  thrown in C:\wamp64\www\BookIT\config\db.php on line 8
+[02-Apr-2026 13:34:46 Asia/Manila] WARNING: Using test PayMongo keys. Set PAYMONGO_* in .env for proper configuration.
+[02-Apr-2026 13:34:51 Asia/Manila] Exception in execute_query: Unknown column 'sent_via' in 'field list'
+[02-Apr-2026 13:34:55 Asia/Manila] Exception in execute_query: Unknown column 'checked_in_by' in 'field list'
+[02-Apr-2026 13:34:55 Asia/Manila] Exception in execute_query: Unknown column 'sent_via' in 'field list'
+[02-Apr-2026 13:34:57 Asia/Manila] Exception in execute_query: Unknown column 'checked_in_by' in 'field list'
+[02-Apr-2026 13:34:57 Asia/Manila] Exception in execute_query: Unknown column 'sent_via' in 'field list'
+[02-Apr-2026 13:58:34 Asia/Manila] PHP Fatal error:  Uncaught Error: Class "mysqli" not found in C:\wamp64\www\BookIT\config\db.php:8
+Stack trace:
+#0 C:\wamp64\www\BookIT\setup_features_db.php(3): require_once()
+#1 {main}
+  thrown in C:\wamp64\www\BookIT\config\db.php on line 8
+[02-Apr-2026 18:27:35 Asia/Manila] Exception in execute_query: Unknown column 'sent_via' in 'field list'
+[02-Apr-2026 18:27:35 Asia/Manila] Exception in execute_query: Unknown column 'sent_via' in 'field list'
+[02-Apr-2026 18:59:44 Asia/Manila] PHP Fatal error:  Uncaught Error: Class "mysqli" not found in C:\wamp64\www\BookIT\config\db.php:8
+Stack trace:
+#0 C:\wamp64\www\BookIT\update_db_features2.php(2): require_once()
+#1 {main}
+  thrown in C:\wamp64\www\BookIT\config\db.php on line 8
+[07-Apr-2026 10:41:15 Asia/Manila] PHP Fatal error:  Uncaught Error: mysqli object is already closed in C:\wamp64\www\BookIT\config\db.php:209
+Stack trace:
+#0 C:\wamp64\www\BookIT\config\db.php(209): mysqli->close()
+#1 [internal function]: close_connection()
+#2 {main}
+  thrown in C:\wamp64\www\BookIT\config\db.php on line 209
+[07-Apr-2026 10:59:40 Asia/Manila] PHP Fatal error:  Uncaught Error: Class "mysqli" not found in C:\wamp64\www\BookIT\config\db.php:8
+Stack trace:
+#0 C:\wamp64\www\BookIT\check_schema.php(2): require_once()
+#1 {main}
+  thrown in C:\wamp64\www\BookIT\config\db.php on line 8
+[07-Apr-2026 11:07:38 Asia/Manila] PHP Fatal error:  Uncaught Error: Class "mysqli" not found in C:\wamp64\www\BookIT\config\db.php:8
+Stack trace:
+#0 C:\wamp64\www\BookIT\check_schema.php(2): include()
+#1 {main}
+  thrown in C:\wamp64\www\BookIT\config\db.php on line 8
+[07-Apr-2026 11:14:00 Asia/Manila] WARNING: Using test PayMongo keys. Set PAYMONGO_* in .env for proper configuration.
+[08-Apr-2026 21:52:31 Asia/Manila] PHP Fatal error:  Uncaught Error: Class "mysqli" not found in C:\wamp64\www\BookIT\config\db.php:8
+Stack trace:
+#0 C:\wamp64\www\BookIT\check_db.php(2): require_once()
+#1 {main}
+  thrown in C:\wamp64\www\BookIT\config\db.php on line 8
+[08-Apr-2026 21:54:09 Asia/Manila] PHP Fatal error:  Uncaught Error: Class "mysqli" not found in C:\wamp64\www\BookIT\config\db.php:8
+Stack trace:
+#0 C:\wamp64\www\BookIT\check_db2.php(2): require_once()
+#1 {main}
+  thrown in C:\wamp64\www\BookIT\config\db.php on line 8
+[08-Apr-2026 21:55:41 Asia/Manila] Exception in execute_query: Duplicate entry 'SAVE50' for key 'promos.promos_code_unique'
+[08-Apr-2026 22:42:48 Asia/Manila] WARNING: Using test PayMongo keys. Set PAYMONGO_* in .env for proper configuration.
+[08-Apr-2026 23:00:30 Asia/Manila] PHP Fatal error:  Uncaught Error: Class "mysqli" not found in C:\wamp64\www\BookIT\config\db.php:8
+Stack trace:
+#0 C:\wamp64\www\BookIT\test_cols.php(2): include()
+#1 {main}
+  thrown in C:\wamp64\www\BookIT\config\db.php on line 8
+[08-Apr-2026 23:01:18 Asia/Manila] PHP Fatal error:  Uncaught mysqli_sql_exception: Duplicate column name 'promo_code' in C:\wamp64\www\BookIT\alter_reservations.php:3
+Stack trace:
+#0 C:\wamp64\www\BookIT\alter_reservations.php(3): mysqli->query('ALTER TABLE res...')
+#1 {main}
+  thrown in C:\wamp64\www\BookIT\alter_reservations.php on line 3
+[08-Apr-2026 23:02:09 Asia/Manila] PHP Fatal error:  Uncaught Error: Class "mysqli" not found in C:\wamp64\www\BookIT\config\db.php:8
+Stack trace:
+#0 C:\wamp64\www\BookIT\alter_reservations.php(2): include()
+#1 {main}
+  thrown in C:\wamp64\www\BookIT\config\db.php on line 8
+[08-Apr-2026 23:03:07 Asia/Manila] PHP Fatal error:  Uncaught mysqli_sql_exception: Duplicate column name 'promo_code' in C:\wamp64\www\BookIT\alter_reservations.php:5
+Stack trace:
+#0 C:\wamp64\www\BookIT\alter_reservations.php(5): mysqli->query('ALTER TABLE res...')
+#1 {main}
+  thrown in C:\wamp64\www\BookIT\alter_reservations.php on line 5
+[09-Apr-2026 00:41:48 Asia/Manila] WARNING: Using test PayMongo keys. Set PAYMONGO_* in .env for proper configuration.
+[09-Apr-2026 00:46:23 Asia/Manila] PHP Fatal error:  Uncaught Error: Class "mysqli" not found in C:\wamp64\www\BookIT\config\db.php:8
+Stack trace:
+#0 C:\wamp64\www\BookIT\scripts\apply_pricing_schema.php(2): require_once()
+#1 {main}
+  thrown in C:\wamp64\www\BookIT\config\db.php on line 8
+[09-Apr-2026 00:58:56 Asia/Manila] Exception in execute_query: Unknown column 'sent_via' in 'field list'
+[09-Apr-2026 00:58:56 Asia/Manila] Exception in execute_query: Unknown column 'sent_via' in 'field list'
+[09-Apr-2026 01:08:11 Asia/Manila] PHP Fatal error:  Uncaught Error: Class "mysqli" not found in C:\wamp64\www\BookIT\config\db.php:8
+Stack trace:
+#0 Command line code(1): require()
+#1 {main}
+  thrown in C:\wamp64\www\BookIT\config\db.php on line 8
+[09-Apr-2026 01:16:01 Asia/Manila] Exception in execute_query: You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near 'IF NOT EXISTS otp_code VARCHAR(10) NULL, ADD COLUMN IF NOT EXISTS otp_expiry DAT' at line 1
+[09-Apr-2026 01:16:01 Asia/Manila] Exception in execute_query: Unknown column 'otp_code' in 'field list'
+[09-Apr-2026 08:50:10 Asia/Manila] PHP Fatal error:  Uncaught Error: Class "mysqli" not found in C:\wamp64\www\BookIT\config\db.php:8
+Stack trace:
+#0 Command line code(1): require()
+#1 {main}
+  thrown in C:\wamp64\www\BookIT\config\db.php on line 8
+[10-Apr-2026 00:09:05 Asia/Manila] WARNING: Using test PayMongo keys. Set PAYMONGO_* in .env for proper configuration.
+[10-Apr-2026 00:09:13 Asia/Manila] WARNING: Using test PayMongo keys. Set PAYMONGO_* in .env for proper configuration.
+[10-Apr-2026 00:09:27 Asia/Manila] WARNING: Using test PayMongo keys. Set PAYMONGO_* in .env for proper configuration.
+[10-Apr-2026 01:10:45 Asia/Manila] WARNING: Using test PayMongo keys. Set PAYMONGO_* in .env for proper configuration.
+[10-Apr-2026 02:58:23 Asia/Manila] PHP Fatal error:  Uncaught Error: Class "mysqli" not found in C:\wamp64\www\BookIT\config\db.php:8
+Stack trace:
+#0 C:\wamp64\www\BookIT\scratch\create_audit_logs.php(2): include_once()
+#1 {main}
+  thrown in C:\wamp64\www\BookIT\config\db.php on line 8
+[10-Apr-2026 03:07:09 Asia/Manila] PHP Fatal error:  Uncaught Error: Class "mysqli" not found in C:\wamp64\www\BookIT\config\db.php:8
+Stack trace:
+#0 C:\wamp64\www\BookIT\scratch\create_audit_logs.php(2): include_once()
+#1 {main}
+  thrown in C:\wamp64\www\BookIT\config\db.php on line 8
+[10-Apr-2026 03:38:12 Asia/Manila] Exception in execute_query: Unknown column 'sent_via' in 'field list'
+[10-Apr-2026 03:38:18 Asia/Manila] PHPMailer: Email sent to: yg@gmail.com
+[10-Apr-2026 03:39:48 Asia/Manila] PHPMailer: Email sent to: yg@gmail.com
+[10-Apr-2026 10:51:48 Asia/Manila] WARNING: Using test PayMongo keys. Set PAYMONGO_* in .env for proper configuration.
+[10-Apr-2026 10:52:20 Asia/Manila] WARNING: Using test PayMongo keys. Set PAYMONGO_* in .env for proper configuration.
+[10-Apr-2026 10:53:14 Asia/Manila] PHP Warning:  include_once(../config/db.php): Failed to open stream: No such file or directory in C:\wamp64\www\BookIT\includes\functions.php on line 5
+[10-Apr-2026 10:53:14 Asia/Manila] PHP Stack trace:
+[10-Apr-2026 10:53:14 Asia/Manila] PHP   1. {main}() C:\wamp64\www\BookIT\includes\api\get_user_details.php:0
+[10-Apr-2026 10:53:14 Asia/Manila] PHP   2. include_once() C:\wamp64\www\BookIT\includes\api\get_user_details.php:7
+[10-Apr-2026 10:53:14 Asia/Manila] PHP Warning:  include_once(): Failed opening '../config/db.php' for inclusion (include_path='.;C:\php\pear') in C:\wamp64\www\BookIT\includes\functions.php on line 5
+[10-Apr-2026 10:53:14 Asia/Manila] PHP Stack trace:
+[10-Apr-2026 10:53:14 Asia/Manila] PHP   1. {main}() C:\wamp64\www\BookIT\includes\api\get_user_details.php:0
+[10-Apr-2026 10:53:14 Asia/Manila] PHP   2. include_once() C:\wamp64\www\BookIT\includes\api\get_user_details.php:7
+[10-Apr-2026 10:55:25 Asia/Manila] PHPMailer: Email sent to: peterparker@gmail.com
+[10-Apr-2026 10:55:30 Asia/Manila] PHPMailer: Email sent to: peterparker@gmail.com
+[10-Apr-2026 10:55:35 Asia/Manila] PHPMailer: Email sent to: peterparker@gmail.com
+[10-Apr-2026 10:55:42 Asia/Manila] PHPMailer: Email sent to: peterparker@gmail.com
+[10-Apr-2026 10:57:03 Asia/Manila] PHPMailer: Email sent to: peterparker@gmail.com
+[10-Apr-2026 10:57:14 Asia/Manila] PHPMailer: Email sent to: peterparker@gmail.com
+[10-Apr-2026 10:57:25 Asia/Manila] PHPMailer: Email sent to: peterparker@gmail.com
+[10-Apr-2026 10:57:52 Asia/Manila] PHPMailer: Email sent to: peterparker@gmail.com
+[10-Apr-2026 10:58:06 Asia/Manila] PHPMailer: Email sent to: peterparker@gmail.com
+[10-Apr-2026 11:01:35 Asia/Manila] Exception in execute_query: Unknown column 'sent_via' in 'field list'
+[10-Apr-2026 11:01:39 Asia/Manila] PHPMailer: Email sent to: tonystark@gmail.com
+[10-Apr-2026 11:03:47 Asia/Manila] PHPMailer: Email sent to: tonystark@gmail.com

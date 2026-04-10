@@ -7,7 +7,7 @@
     padding: 30px;
     min-height: 100vh;
     background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-    margin-left: 280px;
+    margin-left: var(--sidebar-width, 280px);
 }
 
 /* Page Header */

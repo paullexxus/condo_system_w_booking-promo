@@ -299,7 +299,6 @@ async function editUser(userId) {
 // Show Edit Form
 function showEditForm(userData) {
     const formHtml = `
-        <input type="hidden" name="user_id" value="${userData.user_id}">
         <div class="row">
             <div class="col-md-6">
                 <div class="mb-3">

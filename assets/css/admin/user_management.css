@@ -1,4 +1,4 @@
-﻿/* user_management.css - User Management Specific Styles */
+/* user_management.css - User Management Specific Styles */
 /* Import common admin styles */
 @import url('admin-common.css');
 @import url('../sidebar-common.css');
@@ -10,7 +10,7 @@
 
 /* Main Content Area */
 .content {
-    margin-left: 280px;
+    margin-left: var(--sidebar-width, 280px);
     padding: 30px;
     min-height: 100vh;
     background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
@@ -18,47 +18,6 @@
 }
 
 /* Page header styles */
-
-.profile-name {
-    font-weight: 600;
-    color: white;
-    font-size: 14px;
-    margin-bottom: 2px;
-}
-
-.profile-role {
-    color: #bdc3c7;
-    font-size: 12px;
-    text-transform: capitalize;
-}
-
-.logout-btn {
-    color: #bdc3c7;
-    padding: 8px;
-    border-radius: 6px;
-    transition: all 0.3s ease;
-    text-decoration: none;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 36px;
-    height: 36px;
-}
-
-.logout-btn:hover {
-    color: #e74c3c;
-    background: rgba(231, 76, 60, 0.1);
-    transform: scale(1.1);
-}
-
-/* Main Content Styles */
-.content {
-    margin-left: 250px;
-    padding: 30px;
-    min-height: 100vh;
-    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-    transition: all 0.3s ease;
-}
 
 /* Page Header */
 .page-header {
@@ -140,39 +99,40 @@
 }
 
 /* Summary Cards */
+/* Summary Cards */
 .summary-cards {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-    gap: 25px;
-    margin-bottom: 30px;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 15px;
+    margin-bottom: 25px;
 }
 
 .card {
     background: white;
-    border-radius: 15px;
-    padding: 25px;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    border-radius: 12px;
+    padding: 15px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.06);
     display: flex;
     align-items: center;
-    gap: 20px;
+    gap: 12px;
     transition: all 0.3s ease;
     border: 1px solid rgba(0,0,0,0.05);
 }
 
 .card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 8px 30px rgba(0,0,0,0.12);
+    transform: translateY(-3px);
+    box-shadow: 0 6px 15px rgba(0,0,0,0.1);
 }
 
 .card-icon {
-    width: 60px;
-    height: 60px;
-    border-radius: 15px;
+    width: 42px;
+    height: 42px;
+    border-radius: 10px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 1.8em;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    font-size: 1.3em;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
 }
 
 .card:nth-child(1) .card-icon { 
@@ -202,16 +162,16 @@
 
 .card-info h3 {
     margin: 0;
-    font-size: 2em;
+    font-size: 1.5em;
     color: #2c3e50;
     font-weight: 700;
 }
 
 .card-info p {
-    margin: 8px 0 0 0;
+    margin: 3px 0 0 0;
     color: #7f8c8d;
-    font-size: 0.95em;
-    font-weight: 500;
+    font-size: 0.85em;
+    font-weight: 600;
 }
 
 /* Charts Section */
@@ -565,31 +525,6 @@ tr.suspended-user td {
     
     .charts-row {
         grid-template-columns: 1fr;
-    }
-}
-
-@media (max-width: 992px) {
-    .sidebar {
-        width: 70px;
-    }
-    
-    .brand span, .sidebar-menu a span {
-        display: none;
-    }
-    
-    .sidebar-menu i {
-        margin-right: 0;
-        width: auto;
-        font-size: 1.2em;
-    }
-    
-    .content {
-        margin-left: 70px;
-        padding: 20px;
-    }
-    
-    .profile-details {
-        display: none;
     }
 }
 

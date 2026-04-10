@@ -31,6 +31,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $price = sanitize_input($_POST['price']);
             $capacity = sanitize_input($_POST['capacity']);
             $status = sanitize_input($_POST['status'] ?? 'available');
+            $pricing_type = sanitize_input($_POST['pricing_type'] ?? 'monthly');
             
             // New unit details
             $sqm = isset($_POST['sqm']) && $_POST['sqm'] !== '' ? (float)$_POST['sqm'] : null;
@@ -83,9 +84,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $action_success = false;
                 } else {
                     // Insert unit with prepared statement (auto-approved so it's instantly visible to customers)
-                    $stmt = $conn->prepare("INSERT INTO units (unit_name, host_id, branch_id, description, monthly_rate, max_occupancy, is_available, approval_status, created_at, sqm, bed_type, num_beds, num_bathrooms, street_address, unit_number, city, latitude, longitude) VALUES (?, ?, ?, ?, ?, ?, ?, 'approved', NOW(), ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+                    $stmt = $conn->prepare("INSERT INTO units (unit_name, host_id, branch_id, description, monthly_rate, pricing_type, max_occupancy, is_available, approval_status, created_at, sqm, bed_type, num_beds, num_bathrooms, street_address, unit_number, city, latitude, longitude) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'approved', NOW(), ?, ?, ?, ?, ?, ?, ?, ?, ?)");
                     $is_available = ($status === 'available' ? 1 : 0);
-                    $stmt->bind_param("siisdiidsiisssdd", $unit_name, $host_id, $branch_id, $description, $price, $capacity, $is_available, $sqm, $bed_type, $num_beds, $num_bathrooms, $street_address, $unit_number, $city, $latitude, $longitude);
+                    $stmt->bind_param("siisdsiidsiisssdd", $unit_name, $host_id, $branch_id, $description, $price, $pricing_type, $capacity, $is_available, $sqm, $bed_type, $num_beds, $num_bathrooms, $street_address, $unit_number, $city, $latitude, $longitude);
 
                     if ($stmt->execute()) {
                         $unit_id = $stmt->insert_id;
@@ -132,6 +133,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $unit_name = sanitize_input($_POST['unit_name']);
             $description = sanitize_input($_POST['description'] ?? '');
             $price = sanitize_input($_POST['price']);
+            $pricing_type = sanitize_input($_POST['pricing_type'] ?? 'monthly');
             $capacity = sanitize_input($_POST['capacity']);
             $status = sanitize_input($_POST['status']);
             
@@ -156,6 +158,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     SET unit_name = ?, 
                         description = ?, 
                         monthly_rate = ?, 
+                        pricing_type = ?,
                         max_occupancy = ?,
                         is_available = ?,
                         sqm = ?,
@@ -171,7 +174,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     WHERE unit_id = ?
                 ");
                 $is_available = ($status === 'available' ? 1 : 0);
-                $stmt->bind_param("ssdiidsiisssddii", $unit_name, $description, $price, $capacity, $is_available, $sqm, $bed_type, $num_beds, $num_bathrooms, $street_address, $unit_number, $city, $latitude, $longitude, $branch_id, $unit_id);
+                $stmt->bind_param("ssdsiidsiisssddii", $unit_name, $description, $price, $pricing_type, $capacity, $is_available, $sqm, $bed_type, $num_beds, $num_bathrooms, $street_address, $unit_number, $city, $latitude, $longitude, $branch_id, $unit_id);
                 
                 if ($stmt->execute()) {
                     // Update geolocation if provided
@@ -418,8 +421,8 @@ $allowed_branch_ids = array_map(function($b){ return (int)$b['branch_id']; }, $b
                         
                         <div class="unit-info">
                             <div class="info-item">
-                                <div class="info-label">Rate per Night</div>
-                                <div class="info-value">₱<?php echo number_format($unit['monthly_rate'] ?? 0); ?></div>
+                                <div class="info-label">Base Rate</div>
+                                <div class="info-value">₱<?php echo number_format($unit['monthly_rate'] ?? 0); ?> / <?php echo ($unit['pricing_type'] ?? 'monthly') === 'monthly' ? 'month' : 'night'; ?></div>
                             </div>
                             <div class="info-item">
                                 <div class="info-label">Capacity</div>
@@ -442,6 +445,9 @@ $allowed_branch_ids = array_map(function($b){ return (int)$b['branch_id']; }, $b
                             <button class="btn btn-secondary btn-sm" onclick="openEditModal(<?php echo $unit['unit_id']; ?>)">
                                 <i class="fas fa-edit"></i> Edit
                             </button>
+                            <a class="btn btn-success btn-sm" href="property_settings.php?unit_id=<?php echo $unit['unit_id']; ?>&tab=pricing">
+                                <i class="fas fa-sliders-h"></i> Pricing
+                            </a>
                             <button class="btn btn-danger btn-sm" onclick="openDeleteConfirm(<?php echo $unit['unit_id']; ?>, '<?php echo htmlspecialchars($unit['unit_name']); ?>')">
                                 <i class="fas fa-trash"></i> Delete
                             </button>
@@ -547,8 +553,15 @@ $allowed_branch_ids = array_map(function($b){ return (int)$b['branch_id']; }, $b
                 
                 <div class="form-row">
                     <div class="form-group">
-                        <label>Rate per Night (₱)</label>
+                        <label>Price Rate (₱)</label>
                         <input type="number" name="price" id="price" placeholder="e.g., 2500" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Pricing Type</label>
+                        <select name="pricing_type" id="pricingType" required>
+                            <option value="daily">Daily / Nightly</option>
+                            <option value="monthly">Monthly</option>
+                        </select>
                     </div>
                     <div class="form-group">
                         <label>Capacity (Guests)</label>
@@ -710,6 +723,7 @@ $allowed_branch_ids = array_map(function($b){ return (int)$b['branch_id']; }, $b
                         document.getElementById('latDisplay').value = unit.latitude || '';
                         document.getElementById('lngDisplay').value = unit.longitude || '';
                         document.getElementById('price').value = unit.monthly_rate || 0;
+                        document.getElementById('pricingType').value = unit.pricing_type || 'monthly';
                         document.getElementById('capacity').value = unit.max_occupancy;
                         document.getElementById('status').value = unit.is_available ? 'available' : 'maintenance';
                         document.getElementById('sqm').value = unit.sqm || '';

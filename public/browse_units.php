@@ -15,6 +15,31 @@ $priceMin = isset($_GET['price_min']) ? (int)$_GET['price_min'] : null;
 $priceMax = isset($_GET['price_max']) ? (int)$_GET['price_max'] : null;
 $propertyType = isset($_GET['property_type']) ? $_GET['property_type'] : null;
 $bedrooms = isset($_GET['bedrooms']) ? (int)$_GET['bedrooms'] : null;
+$checkIn = isset($_GET['check_in']) ? trim((string)$_GET['check_in']) : '';
+$checkOut = isset($_GET['check_out']) ? trim((string)$_GET['check_out']) : '';
+$guests = isset($_GET['guests']) ? (int)$_GET['guests'] : null;
+
+// If search came from homepage without branch selection,
+// auto-select first branch that currently has approved available units.
+if (!$selectedBranch && $checkIn !== '' && $checkOut !== '') {
+    $defaultBranch = get_single_result(
+        "SELECT b.branch_id
+         FROM branches b
+         JOIN units u ON u.branch_id = b.branch_id
+         WHERE b.is_active = 1
+         AND u.is_available = 1
+         AND (u.approval_status = 'approved' OR u.approval_status IS NULL)
+         ORDER BY b.branch_name ASC
+         LIMIT 1"
+    );
+
+    if (!empty($defaultBranch['branch_id'])) {
+        $qs = $_GET;
+        $qs['branch_id'] = (int)$defaultBranch['branch_id'];
+        header('Location: browse_units.php?' . http_build_query($qs));
+        exit;
+    }
+}
 
 $availableUnits = [];
 $branchDetails = null;
@@ -70,7 +95,9 @@ if ($selectedBranch) {
             foreach ($unit_images as $img) {
                 $all_images[] = $img['image_path'];
             }
-            $unitPricePerNight = !empty($u['monthly_rate']) ? round($u['monthly_rate'] / 30) : null;
+            $ptype = $u['pricing_type'] ?? 'monthly';
+            $unitPricePerNight = $ptype === 'daily' ? $u['monthly_rate'] : (!empty($u['monthly_rate']) ? round($u['monthly_rate'] / 30) : null);
+            $unitPricePerMonth = $ptype === 'daily' ? $u['monthly_rate'] * 30 : $u['monthly_rate'];
             
             $unitsForMap[] = [
                 'unit_id' => $u['unit_id'],
@@ -83,6 +110,8 @@ if ($selectedBranch) {
                 'lat' => !empty($u['latitude']) ? $u['latitude'] : ($u['branch_lat'] ?? null),
                 'lng' => !empty($u['longitude']) ? $u['longitude'] : ($u['branch_lng'] ?? null),
                 'price' => $unitPricePerNight,
+                'monthlyPrice' => $unitPricePerMonth,
+                'pricingType' => $ptype,
                 'beds' => $u['num_beds'] ?? 0,
                 'baths' => $u['num_bathrooms'] ?? 0,
                 'sqm' => $u['sqm'] ?? 0,
@@ -354,7 +383,8 @@ if ($selectedBranch) {
                                     [$unit['unit_id']]
                                 );
                                 $image_path = !empty($unit_images) ? $unit_images[0]['image_path'] : null;
-                                $unitPricePerNight = !empty($unit['monthly_rate']) ? round($unit['monthly_rate'] / 30) : null;
+                                $ptype = $unit['pricing_type'] ?? 'monthly';
+                                $unitPricePerNight = $ptype === 'daily' ? $unit['monthly_rate'] : (!empty($unit['monthly_rate']) ? round($unit['monthly_rate'] / 30) : null);
                             ?>
                             <div class="property-card soft-shadow cursor-pointer group transition-all" data-unit-id="<?php echo $unit['unit_id']; ?>" onclick="selectUnit(<?php echo $unit['unit_id']; ?>)">
                                 <!-- Image -->
@@ -579,7 +609,7 @@ if ($selectedBranch) {
             document.getElementById('previewBeds').textContent = unit.beds || '-';
             document.getElementById('previewBaths').textContent = unit.baths || '-';
             document.getElementById('previewPrice').textContent = unit.price ? '₱' + unit.price.toLocaleString() : '-';
-            document.getElementById('previewMonthly').textContent = unit.price ? '₱' + (unit.price * 30).toLocaleString() : '-';
+            document.getElementById('previewMonthly').textContent = unit.monthlyPrice ? '₱' + unit.monthlyPrice.toLocaleString() : '-';
             
             // Show modal with animation
             modal.classList.remove('hidden');

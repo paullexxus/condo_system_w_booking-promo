@@ -1,4 +1,4 @@
-﻿@import url('admin-common.css');
+@import url('admin-common.css');
 @import url('../sidebar-common.css');
 
 /* Dashboard specific customizations go here */
@@ -6,7 +6,7 @@
 
 /* Main Content Styles */
 .content {
-    margin-left: 280px;
+    margin-left: var(--sidebar-width, 280px);
     padding: 30px;
     min-height: 100vh;
     background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
@@ -96,7 +96,7 @@
 .stat-card:nth-child(6)::before { background: linear-gradient(90deg, #1abc9c, #16a085); }
 
 .stat-card:hover {
-    transform: translateY(-10px) scale(1.02);
+    transform: translateY(-5px); /* REMOVED SCALE() */
     box-shadow: 0 15px 40px rgba(0,0,0,0.15);
 }
 
@@ -171,7 +171,7 @@
 }
 
 .breakdown-item:hover {
-    transform: scale(1.08);
+    transform: translateY(-2px); /* REMOVED SCALE() */
     box-shadow: 0 8px 25px rgba(0,0,0,0.15);
 }
 
@@ -339,7 +339,7 @@
     margin: 0 -15px;
     padding: 20px 15px;
     border-radius: 12px;
-    transform: scale(1.02);
+    transform: translateY(-1px); /* REMOVED SCALE() */
 }
 
 .activity-item:last-child {
@@ -474,29 +474,6 @@
 
 /* Mobile Responsive */
 @media (max-width: 1200px) {
-    .sidebar {
-        width: 80px;
-    }
-    
-    .brand span, .sidebar-menu a span {
-        display: none;
-    }
-    
-    .sidebar-menu i {
-        margin-right: 0;
-        width: auto;
-        font-size: 1.3em;
-    }
-    
-    .content {
-        margin-left: 80px;
-        padding: 20px;
-    }
-    
-    .profile-details {
-        display: none;
-    }
-    
     .stats-container {
         grid-template-columns: repeat(2, 1fr);
     }
@@ -863,18 +840,16 @@
     justify-content: center;
     transition: all 0.3s ease;
     opacity: 0;
-    transform: scale(0.8);
 }
 
 .stat-card:hover .stat-action-btn {
     opacity: 1;
-    transform: scale(1);
     background: rgba(52, 152, 219, 1);
 }
 
 .stat-action-btn:hover {
     background: #3498db;
-    transform: scale(1.1);
+    transform: translateY(-2px); /* REMOVED SCALE() */
     box-shadow: 0 4px 12px rgba(52, 152, 219, 0.4);
 }
 

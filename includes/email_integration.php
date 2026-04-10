@@ -129,4 +129,48 @@ function sendAdminBookingNotification($reservation, $admin_email = 'admin@bookit
     return sendEmailViaPhpMail($admin_email, 'Admin', $subject, $message);
 }
 
+// ======================= HOST APPLICATION EMAILS (FORMAL) =======================
+
+function sendHostApplicationReceivedEmail($user_email, $user_name) {
+    $subject = "Application Submitted Successfully - BookIT";
+    $message = "<!DOCTYPE html><html><body style='font-family: Arial, sans-serif; line-height: 1.6; color: #333;'>
+        <h2>Application Submitted Successfully</h2>
+        <p>Dear " . htmlspecialchars($user_name) . ",</p>
+        <p>Thank you for your interest in becoming a Host on BookIT.</p>
+        <p>Your application is currently under review. Please allow 3–5 business days for verification and processing.</p>
+        <p>You will be notified once a decision has been made.</p>
+        <br/>
+        <p><em>Please ensure that all submitted documents are accurate and clearly visible to avoid processing delays.</em></p>
+        <p><br>Sincerely,<br>The BookIT Team</p>
+        </body></html>";
+    return sendEmailViaPhpMail($user_email, $user_name, $subject, $message);
+}
+
+function sendHostApplicationApprovedEmail($user_email, $user_name) {
+    $subject = "Application Approved - Welcome to BookIT";
+    $message = "<!DOCTYPE html><html><body style='font-family: Arial, sans-serif; line-height: 1.6; color: #333;'>
+        <h2>Application Approved</h2>
+        <p>Dear " . htmlspecialchars($user_name) . ",</p>
+        <p>Congratulations! Your application has been approved.</p>
+        <p>You may now proceed to log in, list your property, and start accepting bookings.</p>
+        <p><br>Welcome aboard!<br>The BookIT Team</p>
+        </body></html>";
+    return sendEmailViaPhpMail($user_email, $user_name, $subject, $message);
+}
+
+function sendHostApplicationRejectedEmail($user_email, $user_name, $admin_notes) {
+    $subject = "Application Rejected - BookIT";
+    $reason = htmlspecialchars($admin_notes);
+    $message = "<!DOCTYPE html><html><body style='font-family: Arial, sans-serif; line-height: 1.6; color: #333;'>
+        <h2>Application Rejected</h2>
+        <p>Dear " . htmlspecialchars($user_name) . ",</p>
+        <p>We regret to inform you that your application was not approved.</p>
+        <p><strong>Reason:</strong><br/> " . nl2br($reason) . "</p>
+        <p>You may update your information and resubmit your application for reconsideration via your dashboard.</p>
+        <p><br>Sincerely,<br>The BookIT Team</p>
+        </body></html>";
+    return sendEmailViaPhpMail($user_email, $user_name, $subject, $message);
+}
+
+
 

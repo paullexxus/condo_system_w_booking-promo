@@ -71,7 +71,23 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['reserve_unit'])) {
             if ($unit && $branch) {
             // I-calculate ang unit amount
             $totalDays = calculateDays($checkInDate, $checkOutDate);
-            $unitAmount = $unit['monthly_rate'] * $totalDays;
+            
+            // Unified Pricing Logic: fetch nightly rate from settings
+            $pricing_settings = get_single_result("SELECT base_nightly_rate FROM unit_pricing_settings WHERE unit_id = ?", [$unitId]);
+            if ($pricing_settings && (float)$pricing_settings['base_nightly_rate'] > 0) {
+                $dailyRate = (float)$pricing_settings['base_nightly_rate'];
+            } else {
+                $pricing_type = $unit['pricing_type'] ?? 'monthly';
+                $rate_val = (float)($unit['monthly_rate'] ?? 0);
+                if ($pricing_type === 'daily') {
+                    $dailyRate = $rate_val;
+                } else {
+                    $dailyRate = $rate_val / 30;
+                }
+            }
+            $dailyRate = max(0, $dailyRate);
+            
+            $unitAmount = $dailyRate * $totalDays;
             $securityDeposit = $unit['security_deposit'];
             $cleaningFee = isset($unit['cleaning_fee']) ? (float)$unit['cleaning_fee'] : 0.0;
             $serviceFee = isset($unit['service_fee']) ? (float)$unit['service_fee'] : 0.0;
@@ -95,8 +111,42 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['reserve_unit'])) {
                     }
                 }
             }
-            
             $totalAmount = $unitAmount + $amenityCosts + $cleaningFee + $serviceFee;
+            
+            // Apply Promo Code if provided
+            $promo_code = isset($_POST['promo_code']) ? sanitize_input($_POST['promo_code']) : '';
+            $discountAmount = 0;
+            if (!empty($promo_code)) {
+                $date_today = date('Y-m-d');
+                $promo = get_single_result(
+                    "SELECT * FROM promo_codes WHERE code = ? AND (status = 'active' OR is_active = 1) AND valid_from <= ? AND valid_until >= ?",
+                    [$promo_code, $date_today, $date_today]
+                );
+                
+                if ($promo) {
+                    $valid_promo = true;
+                    // Check ownership validity (global or specific host/branch)
+                    if ($promo['scope'] === 'host' && (int)$promo['host_id'] !== (int)($unit['host_id'] ?? 0)) {
+                        $valid_promo = false;
+                    } elseif ($promo['scope'] === 'branch' && (int)$promo['branch_id'] !== (int)$branchId) {
+                        $valid_promo = false;
+                    }
+                    
+                    if ($valid_promo && $unitAmount >= (float)$promo['min_booking_amount']) {
+                        $value = (float)$promo['discount_value'];
+                        if ($promo['discount_type'] === 'percentage') {
+                            $discountAmount = $unitAmount * ($value / 100.0);
+                            if (!empty($promo['max_discount']) && $promo['max_discount'] > 0) {
+                                $discountAmount = min($discountAmount, (float)$promo['max_discount']);
+                            }
+                        } else {
+                            $discountAmount = $value;
+                        }
+                    }
+                }
+            }
+            
+            $totalAmount = max(0, $totalAmount - $discountAmount);
             
             // Read extra guest info and booking type
             $bookingType = sanitize_input($_POST['booking_type'] ?? 'request');
@@ -434,7 +484,7 @@ $branches = mysqli_query($conn, "SELECT * FROM branches WHERE is_active = 1 ORDE
                                 </h5>
                             </div>
                             <div class="absolute bottom-3 left-3 bg-orange-500 text-white px-3 py-1 rounded-lg font-bold">
-                                ₱<?php echo number_format($unit['monthly_rate'], 0); ?>/month
+                                ₱<?php echo number_format($unit['monthly_rate'], 0); ?>/<?php echo ($unit['pricing_type'] ?? 'monthly') === 'monthly' ? 'month' : 'night'; ?>
                             </div>
                         </div>
                         <div class="p-6 flex-1 flex flex-col">
@@ -474,29 +524,29 @@ $branches = mysqli_query($conn, "SELECT * FROM branches WHERE is_active = 1 ORDE
                                 $amenities = getBranchAmenities($unit['branch_id']);
                                 if ($amenities && !empty($amenities)): 
                                 ?>
-                                    <div class="amenity-selection">
-                                        <label class="form-label fw-bold"><i class="fas fa-swimming-pool"></i> Select Amenities (Optional)</label>
-                                        <div class="amenity-selection">
+                                    <div class="mt-4 mb-4">
+                                        <label class="block text-sm font-bold text-gray-700 mb-2"><i class="fas fa-swimming-pool text-blue-500"></i> Select Amenities (Optional)</label>
+                                        <div class="space-y-2">
                                             <?php foreach ($amenities as $amenity): ?>
-                                                <div class="form-check mb-2">
-                                                    <input class="form-check-input amenity-checkbox" type="checkbox" 
+                                                <label class="flex items-start gap-3 p-3 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors" for="amenity_<?php echo $amenity['amenity_id']; ?>">
+                                                    <input class="mt-1 w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 amenity-checkbox" type="checkbox" 
                                                            name="amenities[]" value="<?php echo $amenity['amenity_id']; ?>" 
                                                            id="amenity_<?php echo $amenity['amenity_id']; ?>"
                                                            data-rate="<?php echo $amenity['hourly_rate']; ?>">
-                                                    <label class="form-check-label" for="amenity_<?php echo $amenity['amenity_id']; ?>">
-                                                        <strong><?php echo $amenity['amenity_name']; ?></strong>
-                                                        <small class="text-muted d-block">
+                                                    <div>
+                                                        <strong class="text-gray-900 block"><?php echo $amenity['amenity_name']; ?></strong>
+                                                        <span class="text-sm text-gray-500">
                                                             ₱<?php echo number_format($amenity['hourly_rate'], 2); ?>/day
-                                                        </small>
-                                                    </label>
-                                                </div>
+                                                        </span>
+                                                    </div>
+                                                </label>
                                             <?php endforeach; ?>
                                         </div>
                                     </div>
                                 <?php endif; ?>
 
                                 <!-- Reservation Form -->
-                                <form method="POST" enctype="multipart/form-data" class="mt-3">
+                                <form method="POST" enctype="multipart/form-data" class="mt-4 space-y-4">
                                     <input type="hidden" name="csrf_token" value="<?php echo generateCSRFToken(); ?>">
                                     <input type="hidden" name="unit_id" value="<?php echo $unit['unit_id']; ?>">
                                     <input type="hidden" name="branch_id" value="<?php echo $unit['branch_id']; ?>">
@@ -504,77 +554,98 @@ $branches = mysqli_query($conn, "SELECT * FROM branches WHERE is_active = 1 ORDE
                                     <input type="hidden" name="check_out_date" value="<?php echo $checkOutDate; ?>">
                                     <input type="hidden" name="booking_type" value="request">
 
-                                    <div class="mb-3">
-                                        <label class="form-label fw-bold">Booking Type</label>
-                                        <select name="booking_type" class="form-select">
-                                            <option value="request" <?php echo empty($unit['instant_booking']) ? 'selected' : ''; ?>>Request to Book (Host approval required)</option>
-                                            <option value="instant" <?php echo !empty($unit['instant_booking']) ? 'selected' : ''; ?>>Instant Booking (Pay now and confirm immediately)</option>
+                                    <div>
+                                        <label class="block text-sm font-bold text-gray-700 mb-1">Booking Type</label>
+                                        <select name="booking_type" class="w-full px-4 py-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-400 outline-none bg-white">
+                                            <option value="request" <?php echo empty($unit['instant_booking']) ? 'selected' : ''; ?>>Request to Book (Host approval)</option>
+                                            <option value="instant" <?php echo !empty($unit['instant_booking']) ? 'selected' : ''; ?>>Instant Booking (Pay & confirm immediately)</option>
                                         </select>
                                     </div>
 
-                                    <div class="mb-3">
-                                        <label class="form-label fw-bold">Full Name</label>
-                                        <input type="text" name="guest_fullname" class="form-control" value="<?php echo htmlspecialchars($_SESSION['fullname'] ?? ''); ?>" required>
+                                    <div>
+                                        <label class="block text-sm font-bold text-gray-700 mb-1">Full Name</label>
+                                        <input type="text" name="guest_fullname" class="w-full px-4 py-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-400 outline-none" value="<?php echo htmlspecialchars($_SESSION['fullname'] ?? ''); ?>" required>
                                     </div>
 
-                                    <div class="mb-3">
-                                        <label class="form-label fw-bold">Phone Number</label>
-                                        <input type="text" name="guest_phone" class="form-control" value="<?php echo htmlspecialchars($_SESSION['phone'] ?? ''); ?>" required>
+                                    <div>
+                                        <label class="block text-sm font-bold text-gray-700 mb-1">Phone Number</label>
+                                        <input type="text" name="guest_phone" class="w-full px-4 py-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-400 outline-none" value="<?php echo htmlspecialchars($_SESSION['phone'] ?? ''); ?>" required>
                                     </div>
 
-                                    <div class="mb-3">
-                                        <label class="form-label fw-bold">Government ID (optional)</label>
-                                        <input type="file" name="government_id" accept="image/*,.pdf" class="form-control">
-                                        <small class="text-muted">Allowed: jpg, png, pdf. Max 5MB.</small>
+                                    <div>
+                                        <label class="block text-sm font-bold text-gray-700 mb-1">Government ID <span class="text-gray-400 font-normal">(Optional)</span></label>
+                                        <input type="file" name="government_id" accept="image/*,.pdf" class="w-full px-4 py-2 rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-400 outline-none file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+                                        <p class="mt-1 text-xs text-gray-500">Allowed: jpg, png, pdf. Max 5MB.</p>
                                     </div>
 
-                                    <div class="mb-3">
-                                        <label class="form-label fw-bold">Purpose of Stay</label>
-                                        <input type="text" name="purpose_of_stay" class="form-control">
+                                    <div>
+                                        <label class="block text-sm font-bold text-gray-700 mb-1">Purpose of Stay</label>
+                                        <input type="text" name="purpose_of_stay" class="w-full px-4 py-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-400 outline-none" placeholder="e.g. Vacation, Business">
                                     </div>
                                     
-                                    <div class="mb-3">
-                                        <label class="form-label fw-bold">Special Requests</label>
-                                        <textarea class="form-control" name="special_requests" rows="2" 
-                                                  placeholder="Any special requirements or requests..."></textarea>
+                                    <div>
+                                        <label class="block text-sm font-bold text-gray-700 mb-1">Special Requests</label>
+                                        <textarea class="w-full px-4 py-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-400 outline-none resize-none" name="special_requests" rows="2" 
+                                                  placeholder="Any special requirements..."></textarea>
                                     </div>
                                     
-                                    <div class="pricing-breakdown">
-                                        <h6 class="fw-bold">Pricing Breakdown</h6>
-                                        <div class="unit-cost mb-2">
+                                    <div class="bg-gray-50 border border-gray-200 rounded-xl p-5 mt-6">
+                                        <h6 class="font-bold text-gray-900 mb-3 border-b border-gray-200 pb-2">Pricing Breakdown</h6>
+                                        <div class="flex justify-between items-center text-sm text-gray-600 mb-2">
                                             <span>Unit (<?php echo calculateDays($checkInDate, $checkOutDate); ?> days):</span>
-                                            <span class="float-end fw-bold">₱<?php echo number_format($unit['monthly_rate'] * calculateDays($checkInDate, $checkOutDate), 2); ?></span>
+                                            <span class="font-bold text-gray-900">
+                                            <?php 
+                                            $ps = get_single_result("SELECT base_nightly_rate FROM unit_pricing_settings WHERE unit_id = ?", [$unit['unit_id']]);
+                                            if ($ps && (float)$ps['base_nightly_rate'] > 0) {
+                                                $drate = (float)$ps['base_nightly_rate'];
+                                            } else {
+                                                $ptype = $unit['pricing_type'] ?? 'monthly';
+                                                $drate = $ptype === 'daily' ? (float)($unit['monthly_rate']??0) : (float)($unit['monthly_rate']??0) / 30;
+                                            }
+                                            $drate = max(0, $drate);
+                                            echo '₱' . number_format($drate * calculateDays($checkInDate, $checkOutDate), 2);
+                                            ?>
+                                            </span>
                                         </div>
-                                        <div class="amenity-cost mb-2" style="display: none;">
+                                        <div class="amenity-cost flex justify-between items-center text-sm text-gray-600 mb-2" style="display: none;">
                                             <span>Amenities:</span>
-                                            <span class="float-end fw-bold" id="amenity-total-<?php echo $unit['unit_id']; ?>">₱0.00</span>
+                                            <span class="font-bold text-gray-900" id="amenity-total-<?php echo $unit['unit_id']; ?>">₱0.00</span>
                                         </div>
-                                        <div class="security-deposit mb-2">
+                                        <div class="flex justify-between items-center text-sm text-gray-600 mb-2">
                                             <span>Security Deposit:</span>
-                                            <span class="float-end">₱<?php echo number_format($unit['security_deposit'], 2); ?></span>
+                                            <span class="text-gray-900">₱<?php echo number_format($unit['security_deposit'], 2); ?></span>
                                         </div>
                                         <?php if (!empty($unit['cleaning_fee'])): ?>
-                                        <div class="cleaning-fee mb-2">
+                                        <div class="flex justify-between items-center text-sm text-gray-600 mb-2">
                                             <span>Cleaning Fee:</span>
-                                            <span class="float-end">₱<?php echo number_format($unit['cleaning_fee'], 2); ?></span>
+                                            <span class="text-gray-900">₱<?php echo number_format($unit['cleaning_fee'], 2); ?></span>
                                         </div>
                                         <?php endif; ?>
                                         <?php if (!empty($unit['service_fee'])): ?>
-                                        <div class="service-fee mb-2">
+                                        <div class="flex justify-between items-center text-sm text-gray-600 mb-2">
                                             <span>Service Fee:</span>
-                                            <span class="float-end">₱<?php echo number_format($unit['service_fee'], 2); ?></span>
+                                            <span class="text-gray-900">₱<?php echo number_format($unit['service_fee'], 2); ?></span>
                                         </div>
                                         <?php endif; ?>
-                                        <hr>
-                                        <div class="total-cost">
-                                            <span class="fw-bold">Total Amount:</span>
-                                            <span class="float-end h5 text-success fw-bold" id="total-cost-<?php echo $unit['unit_id']; ?>">
-                                                ₱<?php echo number_format((($unit['monthly_rate'] * calculateDays($checkInDate, $checkOutDate)) + $unit['security_deposit'] + ($unit['cleaning_fee'] ?? 0) + ($unit['service_fee'] ?? 0)), 2); ?>
+                                        <div class="border-t border-gray-200 mt-3 pt-3 flex justify-between items-center">
+                                            <span class="font-bold text-gray-900 text-lg">Total Amount:</span>
+                                            <span class="text-xl font-bold text-green-600" id="total-cost-<?php echo $unit['unit_id']; ?>">
+                                                ₱<?php 
+                                                $ps = get_single_result("SELECT base_nightly_rate FROM unit_pricing_settings WHERE unit_id = ?", [$unit['unit_id']]);
+                                                if ($ps && (float)$ps['base_nightly_rate'] > 0) {
+                                                    $drate = (float)$ps['base_nightly_rate'];
+                                                } else {
+                                                    $ptype = $unit['pricing_type'] ?? 'monthly';
+                                                    $drate = $ptype === 'daily' ? (float)($unit['monthly_rate']??0) : (float)($unit['monthly_rate']??0) / 30;
+                                                }
+                                                $drate = max(0, $drate);
+                                                echo number_format((($drate * calculateDays($checkInDate, $checkOutDate)) + $unit['security_deposit'] + ($unit['cleaning_fee'] ?? 0) + ($unit['service_fee'] ?? 0)), 2); 
+                                                ?>
                                             </span>
                                         </div>
                                     </div>
                                     
-                                    <button type="submit" name="reserve_unit" class="btn btn-luxury w-100 mt-3">
+                                    <button type="submit" name="reserve_unit" class="btn-modern btn-luxury-primary w-full mt-6 justify-center text-lg">
                                         <i class="fas fa-calendar-plus"></i> Reserve This Unit
                                     </button>
                                 </form>
@@ -584,133 +655,7 @@ $branches = mysqli_query($conn, "SELECT * FROM branches WHERE is_active = 1 ORDE
                 <?php endforeach; ?>
             </div>
             
-            <!-- Unit Overview Modals -->
-            <?php foreach ($availableUnits as $unit): 
-                // Get unit images for modal
-                $unit_images = get_multiple_results("SELECT image_path FROM unit_images WHERE unit_id = ? ORDER BY created_at DESC", [$unit['unit_id']]);
-                $main_image = !empty($unit_images) ? $unit_images[0]['image_path'] : 'https://via.placeholder.com/600x300/667eea/ffffff?text=Unit+' . urlencode($unit['unit_number']);
 
-                // Get unit reviews (approved)
-                $reviews = get_multiple_results(
-                    "SELECT r.*, u.full_name FROM reviews r JOIN users u ON r.user_id = u.user_id WHERE r.unit_id = ? AND r.is_approved = 1 ORDER BY r.created_at DESC LIMIT 5",
-                    [$unit['unit_id']]
-                );
-
-                // Get unit amenities for display
-                $unitAmenities = getBranchAmenities($unit['branch_id']);
-            ?>
-                <!-- Unit Modal -->
-                <div class="modal fade" id="unitModal<?php echo $unit['unit_id']; ?>" tabindex="-1" aria-labelledby="unitModalLabel<?php echo $unit['unit_id']; ?>" aria-hidden="true">
-                    <div class="modal-dialog modal-lg">
-                        <div class="modal-content">
-                            <div class="modal-header">
-                                <h5 class="modal-title" id="unitModalLabel<?php echo $unit['unit_id']; ?>">
-                                    <i class="fas fa-home"></i> 
-                                    <?php echo !empty($unit['unit_name']) ? htmlspecialchars($unit['unit_name']) : 'Unit ' . htmlspecialchars($unit['unit_number']); ?>
-                                    <?php if (!empty($unit['unit_type'])) echo ' - ' . htmlspecialchars($unit['unit_type']); ?>
-                                </h5>
-                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                            </div>
-                            <div class="modal-body">
-                                <!-- Unit Images -->
-                                <div class="row mb-4">
-                                    <div class="col-12">
-                                        <div class="unit-gallery">
-                                            <div class="main-image text-center mb-3">
-                                                <img src="<?php echo htmlspecialchars($main_image); ?>" class="img-fluid rounded" alt="Unit <?php echo $unit['unit_number']; ?>">
-                                            </div>
-                                            <div class="image-thumbnails mt-2 text-center">
-                                                <?php if (!empty($unit_images)): ?>
-                                                    <?php foreach ($unit_images as $img): ?>
-                                                        <img src="<?php echo htmlspecialchars($img['image_path']); ?>" class="img-thumbnail me-2" style="width: 100px; height: 60px; object-fit:cover;">
-                                                    <?php endforeach; ?>
-                                                <?php else: ?>
-                                                    <img src="https://via.placeholder.com/100x60/764ba2/ffffff?text=View" class="img-thumbnail me-2" style="width: 100px; height: 60px;">
-                                                <?php endif; ?>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                
-                                <!-- Unit Details -->
-                                <div class="row">
-                                    <div class="col-md-6">
-                                        <h6><i class="fas fa-info-circle"></i> Unit Details</h6>
-                                        <ul class="list-unstyled">
-                                            <li><strong>Type:</strong> <?php echo $unit['unit_type']; ?></li>
-                                            <li><strong>Floor:</strong> <?php echo $unit['floor_number']; ?></li>
-                                            <li><strong>Max Occupancy:</strong> <?php echo $unit['max_occupancy']; ?> persons</li>
-                                            <li><strong>Floor Area:</strong> <?php echo $unit['sqm'] ?? 'N/A'; ?> sqm</li>
-                                            <li><strong>Monthly Rate:</strong> ₱<?php echo number_format($unit['monthly_rate'], 2); ?></li>
-                                            <li><strong>Security Deposit:</strong> ₱<?php echo number_format($unit['security_deposit'], 2); ?></li>
-                                        </ul>
-                                        
-                                        <?php if ($unit['description']): ?>
-                                            <h6><i class="fas fa-align-left"></i> Description</h6>
-                                            <p class="text-muted"><?php echo $unit['description']; ?></p>
-                                        <?php endif; ?>
-                                    </div>
-                                    
-                                    <div class="col-md-6">
-                                        <h6><i class="fas fa-swimming-pool"></i> Available Amenities</h6>
-                                        <?php if ($unitAmenities && !empty($unitAmenities)): ?>
-                                            <ul class="list-unstyled">
-                                                <?php foreach ($unitAmenities as $amenity): ?>
-                                                    <li class="mb-2">
-                                                        <i class="fas fa-check text-success"></i> 
-                                                        <strong><?php echo $amenity['amenity_name']; ?></strong>
-                                                        <small class="text-muted d-block">₱<?php echo number_format($amenity['hourly_rate'], 2); ?>/day</small>
-                                                    </li>
-                                                <?php endforeach; ?>
-                                            </ul>
-                                        <?php else: ?>
-                                            <p class="text-muted">No amenities available for this unit.</p>
-                                        <?php endif; ?>
-                                    </div>
-                                </div>
-                                
-                                <!-- Reviews Section -->
-                                <div class="mt-4">
-                                    <h6><i class="fas fa-star"></i> Reviews & Ratings</h6>
-                                    <?php if (!empty($reviews) && count($reviews) > 0): ?>
-                                        <div class="reviews-section">
-                                            <?php foreach ($reviews as $review): ?>
-                                                <div class="review-item border-bottom pb-3 mb-3">
-                                                    <div class="d-flex justify-content-between align-items-start">
-                                                        <div>
-                                                            <strong><?php echo esc($review['full_name']); ?></strong>
-                                                            <div class="rating">
-                                                                <?php for ($i = 1; $i <= 5; $i++): ?>
-                                                                    <i class="fas fa-star <?php echo $i <= (int)$review['rating'] ? 'text-warning' : 'text-muted'; ?>"></i>
-                                                                <?php endfor; ?>
-                                                            </div>
-                                                        </div>
-                                                        <small class="text-muted"><?php echo formatDate($review['created_at']); ?></small>
-                                                    </div>
-                                                    <?php if (!empty($review['comment'])): ?>
-                                                        <p class="mt-2 mb-0"><?php echo esc($review['comment']); ?></p>
-                                                    <?php endif; ?>
-                                                </div>
-                                            <?php endforeach; ?>
-                                        </div>
-                                    <?php else: ?>
-                                        <div class="text-center py-4">
-                                            <i class="fas fa-comment-slash fa-2x text-muted mb-2"></i>
-                                            <p class="text-muted">No reviews yet. Be the first to review this unit!</p>
-                                        </div>
-                                    <?php endif; ?>
-                                </div>
-                            </div>
-                            <div class="modal-footer">
-                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                                <button type="button" class="btn btn-luxury" data-bs-dismiss="modal">
-                                    <i class="fas fa-calendar-plus"></i> Book This Unit
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            <?php endforeach; ?>
             
         <?php elseif ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['search_units'])): ?>
             <div class="text-center py-5">

@@ -41,6 +41,9 @@ $notifications = get_multiple_results("
     ORDER BY created_at DESC
     LIMIT 50
 ");
+if (!is_array($notifications)) {
+    $notifications = [];
+}
 
 // Get notification counts
 $unread_count = $conn->query(
@@ -74,12 +77,22 @@ $page_title = 'Notifications';
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?php echo $page_title; ?> | BookIT Host</title>
-    <link rel="stylesheet" href="../assets/css/sidebar.css?v=<?php echo time(); ?>">
     <link rel="stylesheet" href="../assets/css/sidebar-common.css?v=<?php echo time(); ?>">
     <link rel="stylesheet" href="../assets/css/admin/admin-common.css?v=<?php echo time(); ?>">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        .content { padding: 30px; }
+        .main-container {
+            min-height: 100vh;
+        }
+
+        .content {
+            margin-left: var(--sidebar-width, 230px);
+            width: calc(100% - var(--sidebar-width, 230px));
+            max-width: 100%;
+            min-height: 100vh;
+            padding: 30px;
+            box-sizing: border-box;
+        }
         .page-header {
             margin-bottom: 30px;
             padding-bottom: 20px;
@@ -124,7 +137,8 @@ $page_title = 'Notifications';
         }
         
         .notifications-container {
-            max-width: 800px;
+            width: 100%;
+            max-width: 100%;
         }
         
         .notification-section {
@@ -152,6 +166,7 @@ $page_title = 'Notifications';
             display: flex;
             justify-content: space-between;
             align-items: flex-start;
+            gap: 12px;
         }
         
         .notification-item.unread {
@@ -212,6 +227,10 @@ $page_title = 'Notifications';
             padding: 4px 8px;
             transition: color 0.3s;
         }
+
+        .notification-actions form {
+            margin: 0;
+        }
         
         .notification-actions button:hover {
             color: #2c3e50;
@@ -219,17 +238,48 @@ $page_title = 'Notifications';
         
         .empty-state {
             text-align: center;
-            padding: 40px;
+            padding: 48px 20px;
             color: #999;
             background: white;
             border-radius: 8px;
             border: 1px dashed #ddd;
+            min-height: 260px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
         }
         
         .empty-state i {
             font-size: 48px;
             margin-bottom: 15px;
             opacity: 0.5;
+        }
+        
+        @media (max-width: 1200px) {
+            .content {
+                margin-left: 0;
+                width: 100%;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .content {
+                padding: 16px;
+            }
+            .page-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 12px;
+            }
+            .notification-item {
+                flex-direction: column;
+            }
+            .notification-actions {
+                margin-left: 0;
+                width: 100%;
+                justify-content: flex-end;
+            }
         }
         
         .icon-booking { color: #3498db; }
@@ -260,7 +310,8 @@ $page_title = 'Notifications';
                 <?php if (empty($notifications)): ?>
                     <div class="empty-state">
                         <i class="fas fa-inbox"></i>
-                        <p>No notifications yet</p>
+                        <p class="mb-1"><strong>No notifications yet</strong></p>
+                        <small>New booking, payment, and system updates will appear here.</small>
                     </div>
                 <?php else: ?>
                     <!-- Booking Notifications -->
