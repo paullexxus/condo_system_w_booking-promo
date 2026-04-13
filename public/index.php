@@ -11,9 +11,9 @@ $featuredBranches = mysqli_query($conn, "
     SELECT b.*, 
            COUNT(DISTINCT u.unit_id) as unit_count, 
            COUNT(DISTINCT r.reservation_id) as booking_count,
-           MIN(IF(u.pricing_type = 'daily', u.monthly_rate, u.monthly_rate / 30)) as min_price,
-           MAX(IF(u.pricing_type = 'daily', u.monthly_rate, u.monthly_rate / 30)) as max_price,
-           AVG(IF(u.pricing_type = 'daily', u.monthly_rate, u.monthly_rate / 30)) as avg_price
+           MIN(IF(u.pricing_type IN ('daily', 'nightly'), u.price_per_night, u.price_per_month / 30)) as min_price,
+           MAX(IF(u.pricing_type IN ('daily', 'nightly'), u.price_per_night, u.price_per_month / 30)) as max_price,
+           AVG(IF(u.pricing_type IN ('daily', 'nightly'), u.price_per_night, u.price_per_month / 30)) as avg_price
     FROM branches b 
     LEFT JOIN units u ON b.branch_id = u.branch_id AND u.is_available = 1 AND (u.approval_status = 'approved' OR u.approval_status IS NULL)
     LEFT JOIN reservations r ON b.branch_id = r.branch_id AND r.status = 'confirmed'
@@ -537,6 +537,9 @@ $hostEngagementRate = ($totalHosts['total'] > 0 && $totalUnits['total'] > 0) ? r
                                 </a>
                                 <a href="../renter/my_bookings.php" class="block px-4 py-2 text-gray-700 hover:bg-gray-50 smooth-transition">
                                     <i class="fas fa-calendar-check mr-2 text-orange-500"></i> My Bookings
+                                </a>
+                                <a href="../renter/messages.php" class="block px-4 py-2 text-gray-700 hover:bg-gray-50 smooth-transition">
+                                    <i class="fas fa-envelope mr-2 text-blue-500"></i> Messages
                                 </a>
                                 <a href="../renter/profile.php" class="block px-4 py-2 text-gray-700 hover:bg-gray-50 smooth-transition">
                                     <i class="fas fa-cog mr-2 text-gray-500"></i> Settings

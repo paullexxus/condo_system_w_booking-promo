@@ -23,25 +23,25 @@ if (isset($_GET['type']) && isset($_GET['id'])) {
     } else {
         if ($type == 'reservation') {
             $bookingDetails = get_single_result(
-                "SELECT r.*, u.unit_number, u.unit_type, u.monthly_rate, u.security_deposit, 
+                "SELECT r.*, u.unit_number, u.unit_type, u.price_per_night, u.price_per_month, u.pricing_type, u.security_deposit, 
                         b.branch_name, b.address, b.city
                 FROM reservations r 
                 JOIN units u ON r.unit_id = u.unit_id 
                 JOIN branches b ON r.branch_id = b.branch_id 
-                WHERE r.reservation_id = ? AND r.user_id = ? AND r.status IN ('pending', 'approved')",
+                WHERE r.reservation_id = ? AND r.user_id = ? AND r.status IN ('approved', 'confirmed')",
                 [$id, $_SESSION['user_id']]
             );
             
             if (!$bookingDetails) {
-                $error = "Reservation not found or already paid.";
-            } elseif ($bookingDetails['status'] != 'approved') {
-                $error = "Your booking is still awaiting host approval. Payment will be available after approval.";
+                $error = "Reservation not found or not available for payment.";
+            } elseif (!in_array(strtolower((string)($bookingDetails['payment_status'] ?? '')), ['pending', 'partial', 'not_paid'], true)) {
+                $error = "This reservation is already paid or does not require payment here.";
             }
         } elseif ($type == 'amenity') {
             $bookingDetails = get_single_result(
-                "SELECT ab.*, a.amenity_name, a.description, a.hourly_rate, b.branch_name 
+                "SELECT ab.*, a.name AS amenity_name, '' AS description, 0 AS hourly_rate, b.branch_name 
                 FROM amenity_bookings ab 
-                JOIN amenities a ON ab.amenity_id = a.amenity_id 
+                JOIN amenities a ON ab.amenity_id = a.id 
                 JOIN branches b ON ab.branch_id = b.branch_id 
                 WHERE ab.booking_id = ? AND ab.user_id = ? AND ab.status = 'pending'",
                 [$id, $_SESSION['user_id']]
@@ -55,21 +55,26 @@ if (isset($_GET['type']) && isset($_GET['id'])) {
 } else if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['reservation_id'])) {
     // Handle POST from my_bookings.php
     $reservationId = (int)$_POST['reservation_id'];
+    $type = 'reservation';
+    $id = $reservationId;
     
     $bookingDetails = get_single_result(
-        "SELECT r.*, u.unit_number, u.unit_type, u.monthly_rate, u.security_deposit, 
+        "SELECT r.*, u.unit_number, u.unit_type, u.price_per_night, u.price_per_month, u.pricing_type, u.security_deposit, 
                 b.branch_name, b.address, b.city
         FROM reservations r 
         JOIN units u ON r.unit_id = u.unit_id 
         JOIN branches b ON r.branch_id = b.branch_id 
-        WHERE r.reservation_id = ? AND r.user_id = ?",
+        WHERE r.reservation_id = ? AND r.user_id = ?
+          AND r.status IN ('approved','confirmed')",
         [$reservationId, $_SESSION['user_id']]
     );
     
     if (!$bookingDetails) {
         $error = "Reservation not found.";
-    } elseif ($bookingDetails['status'] != 'approved') {
+    } elseif (!in_array($bookingDetails['status'], ['approved', 'confirmed'], true)) {
         $error = "Your booking is still awaiting host approval. Payment will be available after approval.";
+    } elseif (!in_array(strtolower((string)($bookingDetails['payment_status'] ?? '')), ['pending', 'partial', 'not_paid'], true)) {
+        $error = "This reservation is already paid or does not require payment here.";
     }
 } else {
     $error = "No booking specified.";

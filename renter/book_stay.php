@@ -116,9 +116,8 @@ if ($blackout) {
 }
 
 // Pricing
-$pricing = get_single_result("SELECT base_nightly_rate FROM unit_pricing_settings WHERE unit_id = ?", [$unit_id]);
-$base_rate = $pricing && (float) $pricing['base_nightly_rate'] > 0 ? (float) $pricing['base_nightly_rate'] : (float) (($unit['monthly_rate'] ?? 0) / 30);
-$base_rate = max(0, $base_rate);
+$base_rate = (($unit['pricing_type'] ?? 'nightly') === 'monthly') ? (($unit['price_per_month'] ?? 0) / 30) : ($unit['price_per_night'] ?? 0);
+$base_rate = max(0, (float) $base_rate);
 
 $rules = get_multiple_results(
     "SELECT rule_type, adjustment_type, adjustment_value, start_date, end_date

@@ -38,7 +38,7 @@ if (empty($hostName)) {
 $images = get_multiple_results("SELECT image_path FROM unit_images WHERE unit_id = ? ORDER BY created_at DESC", [$unitId]);
 $main_image = !empty($images) ? $images[0]['image_path'] : 'https://via.placeholder.com/900x600?text=Unit+' . urlencode($unit['unit_number']);
 
-$amenities = getBranchAmenities($unit['branch_id']);
+$amenities = getUnitAmenities($unitId);
 
 $reviews = get_multiple_results("SELECT r.*, u.full_name FROM reviews r JOIN users u ON r.user_id = u.user_id WHERE r.unit_id = ? AND r.is_approved = 1 ORDER BY r.created_at DESC", [$unitId]);
 
@@ -46,10 +46,11 @@ $unit_addons = get_multiple_results("SELECT * FROM unit_addons WHERE unit_id = ?
 $blackouts = get_multiple_results("SELECT start_date, end_date, reason FROM unit_blackouts WHERE unit_id = ? ORDER BY start_date ASC", [$unitId]);
 $pricing_rules = get_multiple_results("SELECT rule_type, adjustment_type, adjustment_value, start_date, end_date FROM unit_pricing_rules WHERE unit_id = ? AND is_active = 1", [$unitId]);
 
-if (($unit['pricing_type'] ?? 'monthly') === 'daily') {
-    $nightly = (float) ($unit['monthly_rate'] ?? 0);
+$pricing_type = $unit['pricing_type'] ?? 'nightly';
+if ($pricing_type === 'nightly' || $pricing_type === 'daily') {
+    $nightly = (float) ($unit['price_per_night'] ?? 0);
 } else {
-    $nightly = isset($unit['monthly_rate']) ? round($unit['monthly_rate'] / 30, 2) : 0;
+    $nightly = isset($unit['price_per_month']) ? round($unit['price_per_month'] / 30, 2) : 0;
 }
 $cleaningFee = isset($unit['cleaning_fee']) ? (float) $unit['cleaning_fee'] : 0.0;
 $serviceFee = isset($unit['service_fee']) ? (float) $unit['service_fee'] : 0.0;
@@ -290,13 +291,18 @@ $serviceFee = isset($unit['service_fee']) ? (float) $unit['service_fee'] : 0.0;
                             <div class="flex justify-between items-start mb-2">
                                 <div>
                                     <h3 class="text-3xl font-bold text-gray-900">
-                                        ₱<?php echo number_format($nightly, 2); ?></h3>
-                                    <p class="text-gray-600">per night</p>
+                                        ₱<?php echo in_array($pricing_type, ['nightly', 'daily']) ? number_format((float) ($unit['price_per_night'] ?? 0), 2) : number_format((float) ($unit['price_per_month'] ?? 0), 2); ?></h3>
+                                    <p class="text-gray-600">per <?php echo in_array($pricing_type, ['nightly', 'daily']) ? 'night' : 'month'; ?></p>
                                 </div>
-                                <span
-                                    class="inline-block px-3 py-1 bg-blue-100 text-blue-700 text-sm font-semibold rounded-lg">
-                                    <?php echo htmlspecialchars($unit['max_occupancy'] ?? '1'); ?> guests
-                                </span>
+                                <div class="flex flex-col gap-2 items-end">
+                                    <span
+                                        class="inline-block px-3 py-1 bg-blue-100 text-blue-700 text-sm font-semibold rounded-lg text-center">
+                                        <?php echo htmlspecialchars($unit['max_occupancy'] ?? '1'); ?> guests
+                                    </span>
+                                    <span class="inline-block px-3 py-1 <?php echo in_array($pricing_type, ['nightly', 'daily']) ? 'bg-orange-100 text-orange-700' : 'bg-indigo-100 text-indigo-700'; ?> text-sm font-semibold rounded-lg text-center">
+                                        <?php echo in_array($pricing_type, ['nightly', 'daily']) ? 'Nightly Stay' : 'Monthly Rental'; ?>
+                                    </span>
+                                </div>
                             </div>
                         </div>
 

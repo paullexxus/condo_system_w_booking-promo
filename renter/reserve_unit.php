@@ -72,18 +72,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['reserve_unit'])) {
             // I-calculate ang unit amount
             $totalDays = calculateDays($checkInDate, $checkOutDate);
             
-            // Unified Pricing Logic: fetch nightly rate from settings
-            $pricing_settings = get_single_result("SELECT base_nightly_rate FROM unit_pricing_settings WHERE unit_id = ?", [$unitId]);
-            if ($pricing_settings && (float)$pricing_settings['base_nightly_rate'] > 0) {
-                $dailyRate = (float)$pricing_settings['base_nightly_rate'];
+            // Unified Pricing Logic: fetch rate directly from units table
+            $pricing_type = $unit['pricing_type'] ?? 'nightly';
+            if ($pricing_type === 'nightly' || $pricing_type === 'daily') {
+                $dailyRate = (float)($unit['price_per_night'] ?? 0);
             } else {
-                $pricing_type = $unit['pricing_type'] ?? 'monthly';
-                $rate_val = (float)($unit['monthly_rate'] ?? 0);
-                if ($pricing_type === 'daily') {
-                    $dailyRate = $rate_val;
-                } else {
-                    $dailyRate = $rate_val / 30;
-                }
+                $dailyRate = (float)($unit['price_per_month'] ?? 0) / 30;
             }
             $dailyRate = max(0, $dailyRate);
             
@@ -117,28 +111,33 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['reserve_unit'])) {
             $promo_code = isset($_POST['promo_code']) ? sanitize_input($_POST['promo_code']) : '';
             $discountAmount = 0;
             if (!empty($promo_code)) {
-                $date_today = date('Y-m-d');
-                $promo = get_single_result(
-                    "SELECT * FROM promo_codes WHERE code = ? AND (status = 'active' OR is_active = 1) AND valid_from <= ? AND valid_until >= ?",
-                    [$promo_code, $date_today, $date_today]
-                );
+                $promo = get_single_result("
+                    SELECT p.*, u.role as creator_role 
+                    FROM promos p 
+                    LEFT JOIN users u ON p.created_by = u.user_id 
+                    WHERE p.code = ? AND p.is_active = 1 LIMIT 1
+                ", [$promo_code]);
                 
                 if ($promo) {
                     $valid_promo = true;
-                    // Check ownership validity (global or specific host/branch)
-                    if ($promo['scope'] === 'host' && (int)$promo['host_id'] !== (int)($unit['host_id'] ?? 0)) {
+                    
+                    if (!empty($promo['expires_at']) && strtotime($promo['expires_at']) < time()) {
                         $valid_promo = false;
-                    } elseif ($promo['scope'] === 'branch' && (int)$promo['branch_id'] !== (int)$branchId) {
+                    }
+                    if (!empty($promo['usage_limit']) && (int) $promo['used_count'] >= (int) $promo['usage_limit']) {
                         $valid_promo = false;
                     }
                     
-                    if ($valid_promo && $unitAmount >= (float)$promo['min_booking_amount']) {
-                        $value = (float)$promo['discount_value'];
-                        if ($promo['discount_type'] === 'percentage') {
+                    if (isset($promo['creator_role']) && in_array($promo['creator_role'], ['host', 'manager'])) {
+                        if (!isset($unit['host_id']) || (int) $promo['created_by'] !== (int) $unit['host_id']) {
+                            $valid_promo = false;
+                        }
+                    }
+                    
+                    if ($valid_promo) {
+                        $value = (float)$promo['value'];
+                        if ($promo['type'] === 'percentage') {
                             $discountAmount = $unitAmount * ($value / 100.0);
-                            if (!empty($promo['max_discount']) && $promo['max_discount'] > 0) {
-                                $discountAmount = min($discountAmount, (float)$promo['max_discount']);
-                            }
                         } else {
                             $discountAmount = $value;
                         }
@@ -153,9 +152,15 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['reserve_unit'])) {
             $guestFullname = sanitize_input($_POST['guest_fullname'] ?? ($_SESSION['fullname'] ?? ''));
             $guestPhone = sanitize_input($_POST['guest_phone'] ?? ($_SESSION['phone'] ?? ''));
             $purposeOfStay = sanitize_input($_POST['purpose_of_stay'] ?? '');
+            $numAdults = max(1, (int)($_POST['num_adults'] ?? 1));
+            $numChildren = max(0, (int)($_POST['num_children'] ?? 0));
+            $maxOcc = max(1, (int)($unit['max_occupancy'] ?? 10));
+            if ($numAdults + $numChildren > $maxOcc) {
+                $error = 'Guest count exceeds this unit\'s maximum occupancy (' . $maxOcc . ').';
+            }
 
             // I-create ang reservation
-            $reservationId = createReservation(
+            $reservationId = empty($error) ? createReservation(
                 $_SESSION['user_id'], 
                 $unitId, 
                 $branchId, 
@@ -163,8 +168,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['reserve_unit'])) {
                 $checkOutDate, 
                 $totalAmount, 
                 $securityDeposit, 
-                $specialRequests
-            );
+                $specialRequests,
+                $numAdults,
+                $numChildren
+            ) : false;
             
             if ($reservationId) {
                 // Mark submission time IMMEDIATELY to prevent race conditions
@@ -483,8 +490,12 @@ $branches = mysqli_query($conn, "SELECT * FROM branches WHERE is_active = 1 ORDE
                                     <?php echo !empty($unit['unit_name']) ? htmlspecialchars($unit['unit_name']) : 'Unit ' . htmlspecialchars($unit['unit_number']); ?>
                                 </h5>
                             </div>
-                            <div class="absolute bottom-3 left-3 bg-orange-500 text-white px-3 py-1 rounded-lg font-bold">
-                                ₱<?php echo number_format($unit['monthly_rate'], 0); ?>/<?php echo ($unit['pricing_type'] ?? 'monthly') === 'monthly' ? 'month' : 'night'; ?>
+                            <?php $ptype = $unit['pricing_type'] ?? 'nightly'; ?>
+                            <div class="absolute bottom-3 left-3 bg-orange-500 text-white px-3 py-1 rounded-lg font-bold shadow-sm">
+                                ₱<?php echo in_array($ptype, ['nightly', 'daily']) ? number_format((float)($unit['price_per_night'] ?? 0)) . '/night' : number_format((float)($unit['price_per_month'] ?? 0)) . '/month'; ?>
+                            </div>
+                            <div class="absolute bottom-3 right-3 bg-white/90 text-gray-800 px-2 py-1 rounded-lg font-bold text-xs shadow-sm uppercase tracking-wide">
+                                <?php echo in_array($ptype, ['nightly', 'daily']) ? 'Nightly Stay' : 'Monthly Rental'; ?>
                             </div>
                         </div>
                         <div class="p-6 flex-1 flex flex-col">
@@ -546,7 +557,7 @@ $branches = mysqli_query($conn, "SELECT * FROM branches WHERE is_active = 1 ORDE
                                 <?php endif; ?>
 
                                 <!-- Reservation Form -->
-                                <form method="POST" enctype="multipart/form-data" class="mt-4 space-y-4">
+                                <form method="POST" enctype="multipart/form-data" class="mt-4 space-y-4" data-max-occ="<?php echo (int)($unit['max_occupancy'] ?? 20); ?>">
                                     <input type="hidden" name="csrf_token" value="<?php echo generateCSRFToken(); ?>">
                                     <input type="hidden" name="unit_id" value="<?php echo $unit['unit_id']; ?>">
                                     <input type="hidden" name="branch_id" value="<?php echo $unit['branch_id']; ?>">
@@ -572,6 +583,18 @@ $branches = mysqli_query($conn, "SELECT * FROM branches WHERE is_active = 1 ORDE
                                         <input type="text" name="guest_phone" class="w-full px-4 py-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-400 outline-none" value="<?php echo htmlspecialchars($_SESSION['phone'] ?? ''); ?>" required>
                                     </div>
 
+                                    <div class="grid grid-cols-2 gap-3">
+                                        <div>
+                                            <label class="block text-sm font-bold text-gray-700 mb-1">Adults</label>
+                                            <input type="number" name="num_adults" min="1" max="<?php echo (int)($unit['max_occupancy'] ?? 20); ?>" value="1" required class="w-full px-4 py-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-400 outline-none">
+                                        </div>
+                                        <div>
+                                            <label class="block text-sm font-bold text-gray-700 mb-1">Children</label>
+                                            <input type="number" name="num_children" min="0" max="<?php echo (int)($unit['max_occupancy'] ?? 20); ?>" value="0" class="w-full px-4 py-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-400 outline-none">
+                                        </div>
+                                    </div>
+                                    <p class="text-xs text-gray-500 -mt-2">Total guests cannot exceed this unit's max occupancy (<?php echo (int)($unit['max_occupancy'] ?? 0); ?>).</p>
+
                                     <div>
                                         <label class="block text-sm font-bold text-gray-700 mb-1">Government ID <span class="text-gray-400 font-normal">(Optional)</span></label>
                                         <input type="file" name="government_id" accept="image/*,.pdf" class="w-full px-4 py-2 rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-400 outline-none file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
@@ -595,13 +618,8 @@ $branches = mysqli_query($conn, "SELECT * FROM branches WHERE is_active = 1 ORDE
                                             <span>Unit (<?php echo calculateDays($checkInDate, $checkOutDate); ?> days):</span>
                                             <span class="font-bold text-gray-900">
                                             <?php 
-                                            $ps = get_single_result("SELECT base_nightly_rate FROM unit_pricing_settings WHERE unit_id = ?", [$unit['unit_id']]);
-                                            if ($ps && (float)$ps['base_nightly_rate'] > 0) {
-                                                $drate = (float)$ps['base_nightly_rate'];
-                                            } else {
-                                                $ptype = $unit['pricing_type'] ?? 'monthly';
-                                                $drate = $ptype === 'daily' ? (float)($unit['monthly_rate']??0) : (float)($unit['monthly_rate']??0) / 30;
-                                            }
+                                            $ptype = $unit['pricing_type'] ?? 'nightly';
+                                            $drate = in_array($ptype, ['nightly', 'daily']) ? (float)($unit['price_per_night'] ?? 0) : (float)($unit['price_per_month'] ?? 0) / 30;
                                             $drate = max(0, $drate);
                                             echo '₱' . number_format($drate * calculateDays($checkInDate, $checkOutDate), 2);
                                             ?>
@@ -631,13 +649,8 @@ $branches = mysqli_query($conn, "SELECT * FROM branches WHERE is_active = 1 ORDE
                                             <span class="font-bold text-gray-900 text-lg">Total Amount:</span>
                                             <span class="text-xl font-bold text-green-600" id="total-cost-<?php echo $unit['unit_id']; ?>">
                                                 ₱<?php 
-                                                $ps = get_single_result("SELECT base_nightly_rate FROM unit_pricing_settings WHERE unit_id = ?", [$unit['unit_id']]);
-                                                if ($ps && (float)$ps['base_nightly_rate'] > 0) {
-                                                    $drate = (float)$ps['base_nightly_rate'];
-                                                } else {
-                                                    $ptype = $unit['pricing_type'] ?? 'monthly';
-                                                    $drate = $ptype === 'daily' ? (float)($unit['monthly_rate']??0) : (float)($unit['monthly_rate']??0) / 30;
-                                                }
+                                                $ptype = $unit['pricing_type'] ?? 'nightly';
+                                                $drate = in_array($ptype, ['nightly', 'daily']) ? (float)($unit['price_per_night'] ?? 0) : (float)($unit['price_per_month'] ?? 0) / 30;
                                                 $drate = max(0, $drate);
                                                 echo number_format((($drate * calculateDays($checkInDate, $checkOutDate)) + $unit['security_deposit'] + ($unit['cleaning_fee'] ?? 0) + ($unit['service_fee'] ?? 0)), 2); 
                                                 ?>
@@ -699,5 +712,30 @@ $branches = mysqli_query($conn, "SELECT * FROM branches WHERE is_active = 1 ORDE
 
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script src="../assets/js/renter/ui.js"></script>
+    <script>
+    (function () {
+        document.addEventListener('input', function (e) {
+            if (!e.target.matches('input[name="num_adults"], input[name="num_children"]')) return;
+            var form = e.target.closest('form[data-max-occ]');
+            if (!form) return;
+            var maxO = parseInt(form.getAttribute('data-max-occ'), 10);
+            if (!maxO || maxO < 1) maxO = 99;
+            var aEl = form.querySelector('input[name="num_adults"]');
+            var cEl = form.querySelector('input[name="num_children"]');
+            if (!aEl || !cEl) return;
+            var a = parseInt(aEl.value, 10) || 1;
+            var c = parseInt(cEl.value, 10) || 0;
+            if (a < 1) { a = 1; aEl.value = 1; }
+            if (c < 0) { c = 0; cEl.value = 0; }
+            if (a + c > maxO) {
+                if (e.target.name === 'num_children') {
+                    cEl.value = String(Math.max(0, maxO - a));
+                } else {
+                    aEl.value = String(Math.max(1, maxO - c));
+                }
+            }
+        });
+    })();
+    </script>
 </body>
 </html>

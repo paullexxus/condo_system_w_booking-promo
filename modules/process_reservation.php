@@ -4,18 +4,18 @@ include_once dirname(__FILE__) . '/../includes/session.php';
 include_once dirname(__FILE__) . '/../includes/functions.php';
 include_once dirname(__FILE__) . '/../config/db.php';
 
-// Only hosts/managers/admins or the reservation owner (for certain actions) can perform actions
-checkRole(['host','manager','admin','renter']);
+checkRole(['host', 'manager', 'admin', 'renter']);
+
+$redirectAfter = ($_SESSION['role'] ?? '') === 'renter' ? '../renter/my_bookings.php' : 'reservations.php';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    header('Location: reservations.php');
+    header('Location: ' . $redirectAfter);
     exit;
 }
 
-// CSRF check
 if (!isset($_POST['csrf_token']) || !verifyCSRFToken($_POST['csrf_token'])) {
     $_SESSION['flash_error'] = 'Security validation failed.';
-    header('Location: reservations.php');
+    header('Location: ' . $redirectAfter);
     exit;
 }
 
@@ -24,78 +24,111 @@ $reservationId = isset($_POST['reservation_id']) ? (int)$_POST['reservation_id']
 
 if ($reservationId <= 0) {
     $_SESSION['flash_error'] = 'Invalid reservation ID.';
-    header('Location: reservations.php');
+    header('Location: ' . $redirectAfter);
     exit;
+}
+
+/** Normalize UI hyphenated statuses to DB underscores */
+function normalize_reservation_status($raw) {
+    $s = strtolower(str_replace('-', '_', trim((string)$raw)));
+    $allowed = ['pending', 'approved', 'confirmed', 'checked_in', 'checked_out', 'completed', 'cancelled'];
+    return in_array($s, $allowed, true) ? $s : '';
 }
 
 try {
     if ($action === 'approve') {
-        // Only host/manager/admin can approve
-        if (!in_array($_SESSION['role'], ['host','manager','admin'])) {
+        if (!in_array($_SESSION['role'], ['host', 'manager', 'admin'], true)) {
             throw new Exception('Unauthorized');
         }
 
-        execute_query("UPDATE reservations SET reservation_status = 'approved', approved_by = ?, approved_at = NOW() WHERE reservation_id = ?", [$_SESSION['user_id'], $reservationId]);
+        execute_query(
+            "UPDATE reservations SET status = 'confirmed', approved_by = ?, approved_at = NOW() WHERE reservation_id = ?",
+            [$_SESSION['user_id'], $reservationId]
+        );
 
-        // Notify renter
         $res = get_single_result("SELECT user_id FROM reservations WHERE reservation_id = ?", [$reservationId]);
         if ($res && $res['user_id']) {
-            sendNotification($res['user_id'], 'Booking Approved', 'Your booking has been approved by the host. Please complete payment to confirm your reservation.', 'booking', 'system');
+            sendNotification(
+                (int)$res['user_id'],
+                'Booking Approved',
+                'Your booking has been approved by the host. Please complete payment to confirm your reservation.',
+                'booking',
+                'system'
+            );
         }
 
         $_SESSION['flash_success'] = 'Reservation approved.';
     } elseif ($action === 'reject') {
-        if (!in_array($_SESSION['role'], ['host','manager','admin'])) {
+        if (!in_array($_SESSION['role'], ['host', 'manager', 'admin'], true)) {
             throw new Exception('Unauthorized');
         }
 
         $reason = sanitize_input($_POST['reason'] ?? '');
-        execute_query("UPDATE reservations SET reservation_status = 'rejected', admin_notes = ? WHERE reservation_id = ?", [$reason, $reservationId]);
+        execute_query(
+            "UPDATE reservations SET status = 'cancelled', cancellation_reason = ? WHERE reservation_id = ?",
+            [$reason, $reservationId]
+        );
 
         $res = get_single_result("SELECT user_id FROM reservations WHERE reservation_id = ?", [$reservationId]);
         if ($res && $res['user_id']) {
-            sendNotification($res['user_id'], 'Booking Rejected', 'Your booking request was rejected by the host.' . ($reason ? ' Reason: ' . $reason : ''), 'booking', 'system');
+            sendNotification(
+                (int)$res['user_id'],
+                'Booking Rejected',
+                'Your booking request was rejected by the host.' . ($reason ? ' Reason: ' . $reason : ''),
+                'booking',
+                'system'
+            );
         }
 
         $_SESSION['flash_success'] = 'Reservation rejected.';
     } elseif ($action === 'update_status') {
-        $newStatus = sanitize_input($_POST['new_status'] ?? '');
+        $newStatus = normalize_reservation_status($_POST['new_status'] ?? '');
+        if ($newStatus === '') {
+            throw new Exception('Invalid status.');
+        }
 
-        // Hosts/admins can update many statuses; renters can only mark checked-in/checked-out for their own bookings
         $allowedByRole = false;
-        if (in_array($_SESSION['role'], ['host','manager','admin'])) {
+        if (in_array($_SESSION['role'], ['host', 'manager', 'admin'], true)) {
             $allowedByRole = true;
         } elseif ($_SESSION['role'] === 'renter') {
-            // Only allow renter to set checked-out or checked-in on their own reservation
-            $allowedByRole = in_array($newStatus, ['checked-in','checked-out']);
+            $allowedByRole = in_array($newStatus, ['checked_in', 'checked_out'], true);
         }
 
-        if (!$allowedByRole) throw new Exception('Unauthorized status change');
+        if (!$allowedByRole) {
+            throw new Exception('Unauthorized status change');
+        }
 
-        // Verify renter owns the reservation if role is renter
         if ($_SESSION['role'] === 'renter') {
-            $own = get_single_result("SELECT reservation_id FROM reservations WHERE reservation_id = ? AND user_id = ?", [$reservationId, $_SESSION['user_id']]);
-            if (!$own) throw new Exception('Reservation not found or unauthorized');
+            $own = get_single_result(
+                "SELECT reservation_id FROM reservations WHERE reservation_id = ? AND user_id = ?",
+                [$reservationId, $_SESSION['user_id']]
+            );
+            if (!$own) {
+                throw new Exception('Reservation not found or unauthorized');
+            }
         }
 
-        // Update status and optional timestamp
-        $timestampColumn = '';
-        if ($newStatus === 'checked-in') $timestampColumn = ', checked_in_at = NOW()';
-        if ($newStatus === 'checked-out') $timestampColumn = ', checked_out_at = NOW()';
+        execute_query("UPDATE reservations SET status = ? WHERE reservation_id = ?", [$newStatus, $reservationId]);
 
-        execute_query("UPDATE reservations SET reservation_status = ? $timestampColumn WHERE reservation_id = ?", [$newStatus, $reservationId]);
-
-        // Notify appropriate parties
-        $r = get_single_result("SELECT user_id, branch_id FROM reservations WHERE reservation_id = ?", [$reservationId]);
+        $r = get_single_result("SELECT user_id, branch_id, unit_id FROM reservations WHERE reservation_id = ?", [$reservationId]);
         if ($r) {
-            if ($newStatus === 'checked-in') {
-                // Notify host that guest checked in
-                $branch = get_single_result("SELECT host_id FROM branches WHERE branch_id = ?", [$r['branch_id']]);
-                if ($branch && $branch['host_id']) sendNotification($branch['host_id'], 'Guest Checked-In', 'Guest has checked in for reservation #' . $reservationId, 'booking', 'system');
+            $notifyIds = [];
+            $br = get_single_result("SELECT host_id FROM branches WHERE branch_id = ?", [$r['branch_id']]);
+            if ($br && !empty($br['host_id'])) {
+                $notifyIds[] = (int)$br['host_id'];
             }
-            if ($newStatus === 'checked-out') {
-                $branch = get_single_result("SELECT host_id FROM branches WHERE branch_id = ?", [$r['branch_id']]);
-                if ($branch && $branch['host_id']) sendNotification($branch['host_id'], 'Guest Checked-Out', 'Guest has checked out for reservation #' . $reservationId, 'booking', 'system');
+            $uh = get_single_result("SELECT host_id FROM units WHERE unit_id = ?", [$r['unit_id']]);
+            if ($uh && !empty($uh['host_id'])) {
+                $notifyIds[] = (int)$uh['host_id'];
+            }
+            $notifyIds = array_values(array_unique(array_filter($notifyIds)));
+            foreach ($notifyIds as $hid) {
+                if ($newStatus === 'checked_in') {
+                    sendNotification($hid, 'Guest Checked-In', 'Guest has checked in for reservation #' . $reservationId, 'booking', 'system');
+                }
+                if ($newStatus === 'checked_out') {
+                    sendNotification($hid, 'Guest Checked-Out', 'Guest has checked out for reservation #' . $reservationId, 'booking', 'system');
+                }
             }
         }
 
@@ -107,7 +140,5 @@ try {
     $_SESSION['flash_error'] = $e->getMessage();
 }
 
-header('Location: reservations.php');
+header('Location: ' . $redirectAfter);
 exit;
-
-?>

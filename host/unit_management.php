@@ -25,13 +25,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         
         // Add New Unit
         if ($action === 'add_unit') {
+            $posted_amenity_ids = [];
+            if (!empty($_POST['amenities']) && is_array($_POST['amenities'])) {
+                foreach ($_POST['amenities'] as $v) {
+                    $posted_amenity_ids[] = (int) $v;
+                }
+            }
+
             $unit_name = sanitize_input($_POST['unit_name']);
             $branch_id = sanitize_input($_POST['branch_id']);
             $description = sanitize_input($_POST['description'] ?? '');
-            $price = sanitize_input($_POST['price']);
+            $price_input = sanitize_input($_POST['price']);
             $capacity = sanitize_input($_POST['capacity']);
             $status = sanitize_input($_POST['status'] ?? 'available');
-            $pricing_type = sanitize_input($_POST['pricing_type'] ?? 'monthly');
+            
+            $pricing_type = sanitize_input($_POST['pricing_type'] ?? 'nightly');
+            if ($pricing_type === 'daily') $pricing_type = 'nightly';
+            $price_per_night = ($pricing_type === 'nightly') ? (float)$price_input : 0.00;
+            $price_per_month = ($pricing_type === 'monthly') ? (float)$price_input : 0.00;
             
             // New unit details
             $sqm = isset($_POST['sqm']) && $_POST['sqm'] !== '' ? (float)$_POST['sqm'] : null;
@@ -84,12 +95,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $action_success = false;
                 } else {
                     // Insert unit with prepared statement (auto-approved so it's instantly visible to customers)
-                    $stmt = $conn->prepare("INSERT INTO units (unit_name, host_id, branch_id, description, monthly_rate, pricing_type, max_occupancy, is_available, approval_status, created_at, sqm, bed_type, num_beds, num_bathrooms, street_address, unit_number, city, latitude, longitude) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'approved', NOW(), ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+                    $stmt = $conn->prepare("INSERT INTO units (unit_name, host_id, branch_id, description, price_per_night, price_per_month, pricing_type, max_occupancy, is_available, approval_status, created_at, sqm, bed_type, num_beds, num_bathrooms, street_address, unit_number, city, latitude, longitude) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'approved', NOW(), ?, ?, ?, ?, ?, ?, ?, ?, ?)");
                     $is_available = ($status === 'available' ? 1 : 0);
-                    $stmt->bind_param("siisdsiidsiisssdd", $unit_name, $host_id, $branch_id, $description, $price, $pricing_type, $capacity, $is_available, $sqm, $bed_type, $num_beds, $num_bathrooms, $street_address, $unit_number, $city, $latitude, $longitude);
+                    $stmt->bind_param("siisddsiidsiisssdd", $unit_name, $host_id, $branch_id, $description, $price_per_night, $price_per_month, $pricing_type, $capacity, $is_available, $sqm, $bed_type, $num_beds, $num_bathrooms, $street_address, $unit_number, $city, $latitude, $longitude);
 
                     if ($stmt->execute()) {
                         $unit_id = $stmt->insert_id;
+
+                        syncUnitAmenities($unit_id, $posted_amenity_ids);
 
                         // Handle photo uploads
                         if (isset($_FILES['photos']) && !empty($_FILES['photos']['name'][0])) {
@@ -129,11 +142,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         
         // Edit Unit
         else if ($action === 'edit_unit') {
+            $posted_amenity_ids = [];
+            if (!empty($_POST['amenities']) && is_array($_POST['amenities'])) {
+                foreach ($_POST['amenities'] as $v) {
+                    $posted_amenity_ids[] = (int) $v;
+                }
+            }
+
             $unit_id = sanitize_input($_POST['unit_id']);
             $unit_name = sanitize_input($_POST['unit_name']);
             $description = sanitize_input($_POST['description'] ?? '');
-            $price = sanitize_input($_POST['price']);
-            $pricing_type = sanitize_input($_POST['pricing_type'] ?? 'monthly');
+            $price_input = sanitize_input($_POST['price']);
+            $pricing_type = sanitize_input($_POST['pricing_type'] ?? 'nightly');
+            if ($pricing_type === 'daily') $pricing_type = 'nightly';
+            $price_per_night = ($pricing_type === 'nightly') ? (float)$price_input : 0.00;
+            $price_per_month = ($pricing_type === 'monthly') ? (float)$price_input : 0.00;
+            
             $capacity = sanitize_input($_POST['capacity']);
             $status = sanitize_input($_POST['status']);
             
@@ -157,7 +181,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     UPDATE units 
                     SET unit_name = ?, 
                         description = ?, 
-                        monthly_rate = ?, 
+                        price_per_night = ?, 
+                        price_per_month = ?,
                         pricing_type = ?,
                         max_occupancy = ?,
                         is_available = ?,
@@ -174,9 +199,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     WHERE unit_id = ?
                 ");
                 $is_available = ($status === 'available' ? 1 : 0);
-                $stmt->bind_param("ssdsiidsiisssddii", $unit_name, $description, $price, $pricing_type, $capacity, $is_available, $sqm, $bed_type, $num_beds, $num_bathrooms, $street_address, $unit_number, $city, $latitude, $longitude, $branch_id, $unit_id);
+                $stmt->bind_param("ssddsiidsiisssddii", $unit_name, $description, $price_per_night, $price_per_month, $pricing_type, $capacity, $is_available, $sqm, $bed_type, $num_beds, $num_bathrooms, $street_address, $unit_number, $city, $latitude, $longitude, $branch_id, $unit_id);
                 
                 if ($stmt->execute()) {
+                    syncUnitAmenities((int) $unit_id, $posted_amenity_ids);
+
                     // Update geolocation if provided
                     if ($latitude && $longitude) {
                         include_once '../includes/GeolocationValidation.php';
@@ -239,6 +266,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $unit = get_single_result("SELECT * FROM units WHERE unit_id = ? AND host_id = ?", [$unit_id, $host_id]);
             
             if ($unit) {
+                execute_query("DELETE FROM unit_amenities WHERE unit_id = ?", [$unit_id]);
                 $conn->query("DELETE FROM units WHERE unit_id = $unit_id");
                 
                 $action_message = "Unit deleted successfully!";
@@ -295,6 +323,8 @@ if ($assignedBranch) {
 
 // Build allowed branch IDs for quick validation when saving units
 $allowed_branch_ids = array_map(function($b){ return (int)$b['branch_id']; }, $branches);
+
+$unit_amenities_catalog = get_multiple_results("SELECT id, name FROM amenities ORDER BY name ASC");
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -420,9 +450,20 @@ $allowed_branch_ids = array_map(function($b){ return (int)$b['branch_id']; }, $b
                         <?php endif; ?>
                         
                         <div class="unit-info">
+                            <?php 
+                                $is_monthly = ($unit['pricing_type'] ?? 'nightly') === 'monthly';
+                                $display_price = $is_monthly ? $unit['price_per_month'] : $unit['price_per_night'];
+                            ?>
+                            <div style="margin-bottom: 8px;">
+                                <?php if ($is_monthly): ?>
+                                    <span class="badge bg-primary" style="font-size: 0.7rem; padding: 4px 8px;">Monthly Rental</span>
+                                <?php else: ?>
+                                    <span class="badge bg-info text-dark" style="font-size: 0.7rem; padding: 4px 8px;">Nightly Stay</span>
+                                <?php endif; ?>
+                            </div>
                             <div class="info-item">
                                 <div class="info-label">Base Rate</div>
-                                <div class="info-value">₱<?php echo number_format($unit['monthly_rate'] ?? 0); ?> / <?php echo ($unit['pricing_type'] ?? 'monthly') === 'monthly' ? 'month' : 'night'; ?></div>
+                                <div class="info-value">₱<?php echo number_format($display_price ?? 0); ?> / <?php echo $is_monthly ? 'month' : 'night'; ?></div>
                             </div>
                             <div class="info-item">
                                 <div class="info-label">Capacity</div>
@@ -439,16 +480,16 @@ $allowed_branch_ids = array_map(function($b){ return (int)$b['branch_id']; }, $b
                         </div>
                         
                         <div class="unit-actions">
-                            <button class="btn btn-info btn-sm" onclick="openViewModal(<?php echo $unit['unit_id']; ?>)">
+                            <button type="button" class="btn btn-info btn-sm" onclick="openViewModal(<?php echo (int) $unit['unit_id']; ?>)">
                                 <i class="fas fa-eye"></i> View
                             </button>
-                            <button class="btn btn-secondary btn-sm" onclick="openEditModal(<?php echo $unit['unit_id']; ?>)">
+                            <button type="button" class="btn btn-secondary btn-sm" onclick="openEditModal(<?php echo (int) $unit['unit_id']; ?>)">
                                 <i class="fas fa-edit"></i> Edit
                             </button>
-                            <a class="btn btn-success btn-sm" href="property_settings.php?unit_id=<?php echo $unit['unit_id']; ?>&tab=pricing">
+                            <a class="btn btn-success btn-sm" href="property_settings.php?unit_id=<?php echo (int) $unit['unit_id']; ?>&tab=pricing">
                                 <i class="fas fa-sliders-h"></i> Pricing
                             </a>
-                            <button class="btn btn-danger btn-sm" onclick="openDeleteConfirm(<?php echo $unit['unit_id']; ?>, '<?php echo htmlspecialchars($unit['unit_name']); ?>')">
+                            <button type="button" class="btn btn-danger btn-sm" onclick="openDeleteConfirm(<?php echo (int) $unit['unit_id']; ?>, <?php echo json_encode($unit['unit_name'] ?? '', JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP); ?>)">
                                 <i class="fas fa-trash"></i> Delete
                             </button>
                         </div>
@@ -608,38 +649,17 @@ $allowed_branch_ids = array_map(function($b){ return (int)$b['branch_id']; }, $b
                 <div class="form-group">
                     <label>Amenities</label>
                     <div class="amenities-list">
-                        <div class="amenity-checkbox">
-                            <input type="checkbox" name="amenities" value="WiFi" id="amenity-wifi">
-                            <label for="amenity-wifi">WiFi</label>
-                        </div>
-                        <div class="amenity-checkbox">
-                            <input type="checkbox" name="amenities" value="Air Conditioning" id="amenity-ac">
-                            <label for="amenity-ac">Air Conditioning</label>
-                        </div>
-                        <div class="amenity-checkbox">
-                            <input type="checkbox" name="amenities" value="Kitchen" id="amenity-kitchen">
-                            <label for="amenity-kitchen">Kitchen</label>
-                        </div>
-                        <div class="amenity-checkbox">
-                            <input type="checkbox" name="amenities" value="TV" id="amenity-tv">
-                            <label for="amenity-tv">TV</label>
-                        </div>
-                        <div class="amenity-checkbox">
-                            <input type="checkbox" name="amenities" value="Washing Machine" id="amenity-washer">
-                            <label for="amenity-washer">Washing Machine</label>
-                        </div>
-                        <div class="amenity-checkbox">
-                            <input type="checkbox" name="amenities" value="Pool" id="amenity-pool">
-                            <label for="amenity-pool">Pool</label>
-                        </div>
-                        <div class="amenity-checkbox">
-                            <input type="checkbox" name="amenities" value="Gym" id="amenity-gym">
-                            <label for="amenity-gym">Gym</label>
-                        </div>
-                        <div class="amenity-checkbox">
-                            <input type="checkbox" name="amenities" value="Parking" id="amenity-parking">
-                            <label for="amenity-parking">Parking</label>
-                        </div>
+                        <?php if (!empty($unit_amenities_catalog)): ?>
+                            <?php foreach ($unit_amenities_catalog as $am): ?>
+                                <?php $aid = (int) $am['id']; ?>
+                                <div class="amenity-checkbox">
+                                    <input type="checkbox" name="amenities[]" value="<?php echo $aid; ?>" id="amenity-<?php echo $aid; ?>">
+                                    <label for="amenity-<?php echo $aid; ?>"><?php echo htmlspecialchars($am['name']); ?></label>
+                                </div>
+                            <?php endforeach; ?>
+                        <?php else: ?>
+                            <p class="text-muted small mb-0">No amenities in the catalog. Add rows to the <code>amenities</code> table (id, name).</p>
+                        <?php endif; ?>
                     </div>
                 </div>
                     </form>
@@ -656,33 +676,40 @@ $allowed_branch_ids = array_map(function($b){ return (int)$b['branch_id']; }, $b
     
     <!-- View Unit Modal -->
     <div id="viewModal" class="modal fade" tabindex="-1">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Unit Details</h5>
-                    <button type="button" class="btn-close" onclick="closeViewModal()"></button>
+        <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content border-0 shadow-lg" style="border-radius: 16px; overflow: hidden;">
+                <div class="modal-header border-0 py-3 px-4 align-items-center" style="background: #f8fafc;">
+                    <span class="small text-uppercase fw-bold text-muted mb-0" style="letter-spacing: 0.08em;">Listing preview</span>
+                    <button type="button" class="btn-close" onclick="closeViewModal()" aria-label="Close"></button>
                 </div>
-                <div class="modal-body" id="viewContent"></div>
+                <div class="modal-body pt-3 px-4 pb-4" id="viewContent" style="background: #f1f5f9;"></div>
             </div>
         </div>
     </div>
     
-    <!-- Delete Confirmation Modal -->
-    <div id="deleteModal" class="modal">
-        <div class="modal-content confirmation-modal">
-            <div class="modal-header" style="justify-content: center; margin-bottom: 30px;">
-                <span><i class="fas fa-exclamation-triangle" style="color: #e74c3c; margin-right: 10px;"></i> Confirm Delete</span>
-            </div>
-            <p>Are you sure you want to delete <strong id="deleteUnitName"></strong>?</p>
-            <p style="color: #999; font-size: 13px;">This action cannot be undone.</p>
-            <form method="POST" id="deleteForm">
-                <input type="hidden" name="action" value="delete_unit">
-                <input type="hidden" name="unit_id" id="deleteUnitId">
-                <div class="form-buttons">
-                    <button type="button" class="btn btn-secondary" onclick="closeDeleteConfirm()" style="min-width: 120px;">Cancel</button>
-                    <button type="submit" class="btn btn-danger" style="min-width: 120px;">Delete Unit</button>
+    <!-- Delete Confirmation Modal (Bootstrap 5: needs .modal-dialog for centering, width, and click-through fix) -->
+    <div id="deleteModal" class="modal fade" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered delete-confirm-dialog">
+            <div class="modal-content confirmation-modal shadow border-0">
+                <div class="modal-header border-0 pb-0 pt-3 px-3 flex-column align-items-center position-relative">
+                    <h5 class="modal-title text-center fw-bold mb-0" id="deleteModalLabel" style="font-size: 1.1rem; color: #2c3e50;">
+                        <i class="fas fa-exclamation-triangle text-danger me-2"></i>Confirm Delete
+                    </h5>
+                    <button type="button" class="btn-close position-absolute top-0 end-0 m-2" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-            </form>
+                <div class="modal-body text-center px-4 py-3">
+                    <p class="mb-2" style="font-size: 15px; color: #2c3e50;">Are you sure you want to delete <strong id="deleteUnitName"></strong>?</p>
+                    <p class="text-muted small mb-0">This action cannot be undone.</p>
+                    <form method="POST" id="deleteForm" class="mt-4">
+                        <input type="hidden" name="action" value="delete_unit">
+                        <input type="hidden" name="unit_id" id="deleteUnitId">
+                        <div class="d-flex gap-2 justify-content-center flex-wrap delete-confirm-actions">
+                            <button type="button" class="btn btn-secondary px-4" data-bs-dismiss="modal">Cancel</button>
+                            <button type="submit" class="btn btn-danger px-4">Delete Unit</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
         </div>
     </div>
     
@@ -722,7 +749,7 @@ $allowed_branch_ids = array_map(function($b){ return (int)$b['branch_id']; }, $b
                         document.getElementById('longitude').value = unit.longitude || '';
                         document.getElementById('latDisplay').value = unit.latitude || '';
                         document.getElementById('lngDisplay').value = unit.longitude || '';
-                        document.getElementById('price').value = unit.monthly_rate || 0;
+                        document.getElementById('price').value = (unit.pricing_type === 'monthly' ? unit.price_per_month : unit.price_per_night) || 0;
                         document.getElementById('pricingType').value = unit.pricing_type || 'monthly';
                         document.getElementById('capacity').value = unit.max_occupancy;
                         document.getElementById('status').value = unit.is_available ? 'available' : 'maintenance';
@@ -730,6 +757,14 @@ $allowed_branch_ids = array_map(function($b){ return (int)$b['branch_id']; }, $b
                         document.getElementById('bedType').value = unit.bed_type || '';
                         document.getElementById('numBeds').value = unit.num_beds || 1;
                         document.getElementById('numBathrooms').value = unit.num_bathrooms || 1;
+
+                        document.querySelectorAll('#unitForm input[name="amenities[]"]').forEach(cb => { cb.checked = false; });
+                        if (unit.amenity_ids && unit.amenity_ids.length) {
+                            unit.amenity_ids.forEach(function (id) {
+                                const cb = document.getElementById('amenity-' + id);
+                                if (cb) cb.checked = true;
+                            });
+                        }
                         
                         mapInitialized = false;
                         const unitModal = new bootstrap.Modal(document.getElementById('unitModal'));
@@ -743,12 +778,33 @@ $allowed_branch_ids = array_map(function($b){ return (int)$b['branch_id']; }, $b
             if (unitModal) unitModal.hide();
         }
 
+        function initUnitViewLeaflet(unitId) {
+            const el = document.getElementById('uvm-leaflet-' + unitId);
+            if (!el || typeof L === 'undefined') return;
+            const lat = parseFloat(el.dataset.lat);
+            const lng = parseFloat(el.dataset.lng);
+            if (Number.isNaN(lat) || Number.isNaN(lng)) return;
+            const map = L.map(el, { scrollWheelZoom: false }).setView([lat, lng], 15);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 19,
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+            }).addTo(map);
+            L.marker([lat, lng]).addTo(map);
+            setTimeout(function () { map.invalidateSize(); }, 200);
+        }
+
         function openViewModal(unitId) {
             fetch(`../ajax/get_unit_view.php?unit_id=${unitId}`)
                 .then(r => r.text())
                 .then(html => {
                     document.getElementById('viewContent').innerHTML = html;
-                    const viewModal = new bootstrap.Modal(document.getElementById('viewModal'));
+                    const viewModalEl = document.getElementById('viewModal');
+                    const onShown = function () {
+                        initUnitViewLeaflet(unitId);
+                        viewModalEl.removeEventListener('shown.bs.modal', onShown);
+                    };
+                    viewModalEl.addEventListener('shown.bs.modal', onShown);
+                    const viewModal = bootstrap.Modal.getOrCreateInstance(viewModalEl);
                     viewModal.show();
                 });
         }
@@ -758,10 +814,29 @@ $allowed_branch_ids = array_map(function($b){ return (int)$b['branch_id']; }, $b
             if (viewModal) viewModal.hide();
         }
 
+        function fromUnitViewOpenEdit(unitId) {
+            const vm = bootstrap.Modal.getInstance(document.getElementById('viewModal'));
+            if (vm) vm.hide();
+            setTimeout(function () { openEditModal(unitId); }, 400);
+        }
+
+        function fromUnitViewOpenDelete(unitId, unitName) {
+            const vm = bootstrap.Modal.getInstance(document.getElementById('viewModal'));
+            if (vm) vm.hide();
+            setTimeout(function () { openDeleteConfirm(unitId, unitName); }, 400);
+        }
+
+        function closeDeleteConfirm() {
+            const el = document.getElementById('deleteModal');
+            const dm = bootstrap.Modal.getInstance(el);
+            if (dm) dm.hide();
+        }
+
         function openDeleteConfirm(unitId, unitName) {
             document.getElementById('deleteUnitName').textContent = unitName;
             document.getElementById('deleteUnitId').value = unitId;
-            const deleteModal = new bootstrap.Modal(document.getElementById('deleteModal'));
+            const el = document.getElementById('deleteModal');
+            const deleteModal = bootstrap.Modal.getOrCreateInstance(el);
             deleteModal.show();
         }
     </script>

@@ -482,6 +482,12 @@ $page_title = 'Notifications';
                             <div class="notification-content">
                                 <div class="notification-title"><?php echo htmlspecialchars($notif['title']); ?></div>
                                 <div class="notification-message"><?php echo htmlspecialchars($notif['message']); ?></div>
+                                <?php if (!empty($notif['admin_message'])): ?>
+                                <div style="margin-top: 10px; background: #f9f9f9; padding: 10px; border-left: 3px solid <?php echo (isset($notif['status']) && $notif['status'] == 'approved') ? '#2ecc71' : '#e74c3c'; ?>;">
+                                    <strong style="font-size: 13px; color: #555;">Admin Note:</strong><br>
+                                    <span style="font-size: 13px; color: #666; font-style: italic;">"<?php echo htmlspecialchars($notif['admin_message']); ?>"</span>
+                                </div>
+                                <?php endif; ?>
                                 <div class="notification-time">
                                     <i class="fas fa-clock"></i>
                                     <?php 

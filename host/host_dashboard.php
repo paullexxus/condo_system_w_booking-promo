@@ -324,8 +324,13 @@ $recent_bookings = get_multiple_results("
                         <p class="unit-number">Unit #<?php echo htmlspecialchars($unit['unit_number']); ?></p>
                         <p class="unit-type"><?php echo htmlspecialchars($unit['unit_type']); ?></p>
                         <div class="unit-rate">
-                            <strong>₱<?php echo number_format($unit['monthly_rate'] ?? 0, 0); ?></strong>
-                            <span class="text-muted">/night</span>
+                            <?php if (($unit['pricing_type'] ?? 'nightly') === 'monthly'): ?>
+                                <strong>₱<?php echo number_format($unit['price_per_month'] ?? 0, 0); ?></strong>
+                                <span class="text-muted">/mo</span>
+                            <?php else: ?>
+                                <strong>₱<?php echo number_format($unit['price_per_night'] ?? 0, 0); ?></strong>
+                                <span class="text-muted">/night</span>
+                            <?php endif; ?>
                         </div>
                     </div>
                     <div class="unit-actions">

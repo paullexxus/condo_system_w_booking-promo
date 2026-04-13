@@ -25,7 +25,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['remove_booking'])) {
             [$reservationId, $_SESSION['user_id']]
         );
         
-        if ($reservation && $reservation['status'] == 'awaiting_approval') {
+        if ($reservation && in_array($reservation['status'], ['awaiting_approval', 'pending'], true)) {
             // I-delete ang reservation completely
             $sql = "DELETE FROM reservations WHERE reservation_id = ?";
             if (execute_query($sql, [$reservationId])) {
@@ -57,7 +57,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['cancel_booking'])) {
             $today = new DateTime();
             $hoursUntilCheckIn = $today->diff($checkInDate)->h + ($today->diff($checkInDate)->days * 24);
             
-            if ($hoursUntilCheckIn >= 24 && $reservation['status'] == 'confirmed') {
+            if ($hoursUntilCheckIn >= 24 && in_array($reservation['status'], ['confirmed', 'approved'], true)) {
                 // I-cancel ang reservation
                 $sql = "UPDATE reservations SET status = 'cancelled' WHERE reservation_id = ?";
                 if (execute_query($sql, [$reservationId])) {
@@ -95,16 +95,19 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['cancel_booking'])) {
     }
 }
 
-// Kumuha ng user reservations - FIXED: Use prepared statements
+// Kumuha ng user reservations - LEFT JOIN so rows still show if unit/branch metadata is missing
 $reservations = get_multiple_results(
-    "SELECT r.*, u.unit_number, u.unit_name, u.unit_type, b.branch_name, b.address 
+    "SELECT r.*, u.unit_number, u.unit_type, b.branch_name, b.address
     FROM reservations r 
-    JOIN units u ON r.unit_id = u.unit_id 
-    JOIN branches b ON r.branch_id = b.branch_id 
+    LEFT JOIN units u ON r.unit_id = u.unit_id 
+    LEFT JOIN branches b ON r.branch_id = b.branch_id 
     WHERE r.user_id = ? 
     ORDER BY r.created_at DESC",
     [$_SESSION['user_id']]
 );
+if (!is_array($reservations)) {
+    $reservations = [];
+}
 ?>
 
 <!DOCTYPE html>
@@ -293,7 +296,7 @@ $reservations = get_multiple_results(
                                     </h6>
                                     <span class="status-badge status-<?php echo $booking['status']; ?>">
                                         <?php 
-                                            if ($booking['status'] == 'awaiting_approval') {
+                                            if (in_array($booking['status'], ['awaiting_approval', 'pending'], true)) {
                                                 echo '<i class="fas fa-clock me-1"></i>Pending Approval';
                                             } elseif ($booking['status'] == 'approved') {
                                                 echo '<i class="fas fa-check me-1"></i>Approved';
@@ -325,7 +328,7 @@ $reservations = get_multiple_results(
                                     <?php endif; ?>
                                     
                                     <!-- Approval Status Alert -->
-                                    <?php if ($booking['status'] == 'awaiting_approval'): ?>
+                                    <?php if (in_array($booking['status'], ['awaiting_approval', 'pending'], true)): ?>
                                         <div class="alert alert-warning alert-sm" style="padding: 10px; margin-bottom: 15px;">
                                             <i class="fas fa-info-circle me-1"></i>
                                             <small>Your booking is awaiting approval from the branch host. You'll be notified once they review it.</small>
@@ -373,7 +376,7 @@ $reservations = get_multiple_results(
                                                 $nowDT = new DateTime();
                                                 $diff = $nowDT->diff($co);
                                                 if ($co <= $nowDT && $diff->days <= 14) {
-                                                    $existingReview = get_single_result("SELECT review_id FROM reviews WHERE reservation_id = ? AND user_id = ?", [$booking['reservation_id'], $_SESSION['user_id']]);
+                                                    $existingReview = get_single_result("SELECT review_id FROM reviews WHERE unit_id = ? AND user_id = ? ORDER BY created_at DESC LIMIT 1", [$booking['unit_id'], $_SESSION['user_id']]);
                                                     if (!$existingReview) $canReview = true;
                                                 }
                                             } catch (Exception $e) {}
@@ -382,14 +385,14 @@ $reservations = get_multiple_results(
                                                     <i class="fas fa-star"></i> Leave Review
                                                 </button>
                                             <?php endif; ?>
-                                        <?php elseif ($booking['status'] == 'approved'): ?>
+                                        <?php elseif (in_array($booking['status'], ['approved', 'confirmed'], true) && !in_array(strtolower((string)($booking['payment_status'] ?? '')), ['paid'], true)): ?>
                                             <form action="checkout.php" method="POST" style="display: inline;">
                                                 <input type="hidden" name="reservation_id" value="<?php echo $booking['reservation_id']; ?>">
                                                 <button type="submit" class="btn btn-sm btn-success">
                                                     <i class="fas fa-credit-card"></i> Pay Now
                                                 </button>
                                             </form>
-                                        <?php elseif ($booking['status'] == 'awaiting_approval'): ?>
+                                        <?php elseif (in_array($booking['status'], ['awaiting_approval', 'pending'], true)): ?>
                                             <button class="btn btn-sm btn-outline-danger" 
                                                     onclick="confirmRemove(<?php echo $booking['reservation_id']; ?>)">
                                                 <i class="fas fa-trash"></i> Remove

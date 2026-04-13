@@ -261,6 +261,21 @@ function createGmailUrl($subject, $message, $recipient = '') {
                                 <?php echo htmlspecialchars($notification['message']); ?>
                             </p>
                             
+                            <?php if (!empty($notification['admin_message'])): ?>
+                            <div class="bg-gray-50 border-l-4 <?php echo (isset($notification['status']) && $notification['status'] == 'approved') ? 'border-green-500' : 'border-red-500'; ?> p-4 rounded-r-lg mb-4">
+                                <h5 class="text-sm font-bold text-gray-700 mb-1">Admin Note:</h5>
+                                <p class="text-gray-600 italic text-sm">"<?php echo htmlspecialchars($notification['admin_message']); ?>"</p>
+                            </div>
+                            <?php endif; ?>
+                            
+                            <?php if (isset($notification['status']) && $notification['status'] == 'rejected'): ?>
+                            <div class="mb-4">
+                                <a href="../renter/my_application.php" class="inline-flex items-center gap-2 bg-orange-100 text-orange-700 font-bold py-2.5 px-5 rounded-xl hover:bg-orange-200 transition-colors shadow-sm text-sm">
+                                    <i class="fas fa-edit"></i> Edit & Resubmit
+                                </a>
+                            </div>
+                            <?php endif; ?>
+                            
                             <div class="flex items-center justify-between">
                                 <div class="flex items-center gap-4">
                                     <?php if (!$notification['is_read']): ?>
@@ -307,7 +322,7 @@ function createGmailUrl($subject, $message, $recipient = '') {
                 
                 <h3 class="text-2xl md:text-3xl font-bold text-gray-900 mb-4">No notifications yet</h3>
                 <p class="text-gray-500 max-w-sm mb-10 text-lg leading-relaxed">
-                    You’ll see updates here when you start making reservations and bookings.
+                    Your application updates will appear here once reviewed by the admin.
                 </p>
                 
                 <?php if ($_SESSION['role'] == 'renter'): ?>

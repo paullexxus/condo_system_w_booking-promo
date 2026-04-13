@@ -2490,3 +2490,349 @@ Stack trace:
 [10-Apr-2026 11:01:35 Asia/Manila] Exception in execute_query: Unknown column 'sent_via' in 'field list'
 [10-Apr-2026 11:01:39 Asia/Manila] PHPMailer: Email sent to: tonystark@gmail.com
 [10-Apr-2026 11:03:47 Asia/Manila] PHPMailer: Email sent to: tonystark@gmail.com
+[12-Apr-2026 00:00:15 Asia/Manila] Exception in execute_query: Unknown column 'sent_via' in 'field list'
+[12-Apr-2026 00:00:20 Asia/Manila] PHPMailer: Email sent to: founnder@gmail.com
+[12-Apr-2026 00:01:13 Asia/Manila] PHP Fatal error:  Uncaught mysqli_sql_exception: Duplicate column name 'admin_message' in C:\wamp64\www\BookIT\admin\host_verifications.php:39
+Stack trace:
+#0 C:\wamp64\www\BookIT\admin\host_verifications.php(39): mysqli_query(Object(mysqli), 'ALTER TABLE `no...')
+#1 {main}
+  thrown in C:\wamp64\www\BookIT\admin\host_verifications.php on line 39
+[12-Apr-2026 00:03:15 Asia/Manila] PHPMailer: Email sent to: founnder@gmail.com
+[12-Apr-2026 00:04:06 Asia/Manila] PHP Warning:  include_once(../config/db.php): Failed to open stream: No such file or directory in C:\wamp64\www\BookIT\includes\functions.php on line 5
+[12-Apr-2026 00:04:06 Asia/Manila] PHP Stack trace:
+[12-Apr-2026 00:04:06 Asia/Manila] PHP   1. {main}() C:\wamp64\www\BookIT\includes\api\get_user_details.php:0
+[12-Apr-2026 00:04:06 Asia/Manila] PHP   2. include_once() C:\wamp64\www\BookIT\includes\api\get_user_details.php:7
+[12-Apr-2026 00:04:06 Asia/Manila] PHP Warning:  include_once(): Failed opening '../config/db.php' for inclusion (include_path='.;C:\php\pear') in C:\wamp64\www\BookIT\includes\functions.php on line 5
+[12-Apr-2026 00:04:06 Asia/Manila] PHP Stack trace:
+[12-Apr-2026 00:04:06 Asia/Manila] PHP   1. {main}() C:\wamp64\www\BookIT\includes\api\get_user_details.php:0
+[12-Apr-2026 00:04:06 Asia/Manila] PHP   2. include_once() C:\wamp64\www\BookIT\includes\api\get_user_details.php:7
+[12-Apr-2026 00:04:28 Asia/Manila] WARNING: Using test PayMongo keys. Set PAYMONGO_* in .env for proper configuration.
+[12-Apr-2026 01:04:23 Asia/Manila] PHP Fatal error:  Uncaught mysqli_sql_exception: You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near 'IF NOT EXISTS price_per_night DECIMAL(10,2) NOT NULL DEFAULT 0.00 AFTER descript' at line 1 in C:\wamp64\www\BookIT\scratch\schema_migration.php:24
+Stack trace:
+#0 C:\wamp64\www\BookIT\scratch\schema_migration.php(24): mysqli->query('ALTER TABLE uni...')
+#1 {main}
+  thrown in C:\wamp64\www\BookIT\scratch\schema_migration.php on line 24
+[12-Apr-2026 01:04:23 Asia/Manila] PHP Fatal error:  Uncaught mysqli_sql_exception: You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near 'IF NOT EXISTS price_per_night DECIMAL(10,2) NOT NULL DEFAULT 0.00 AFTER descript' at line 1 in C:\wamp64\www\BookIT\scratch\schema_migration.php:24
+Stack trace:
+#0 C:\wamp64\www\BookIT\scratch\schema_migration.php(24): mysqli->query('ALTER TABLE uni...')
+#1 {main}
+  thrown in C:\wamp64\www\BookIT\scratch\schema_migration.php on line 24
+[12-Apr-2026 01:05:16 Asia/Manila] PHP Fatal error:  Uncaught Error: Class "mysqli" not found in C:\wamp64\www\BookIT\config\db.php:8
+Stack trace:
+#0 C:\wamp64\www\BookIT\scratch\schema_migration.php(2): require_once()
+#1 {main}
+  thrown in C:\wamp64\www\BookIT\config\db.php on line 8
+[12-Apr-2026 01:05:41 Asia/Manila] PHP Fatal error:  Uncaught mysqli_sql_exception: You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near 'IF NOT EXISTS price_per_night DECIMAL(10,2) NOT NULL DEFAULT 0.00 AFTER descript' at line 1 in C:\wamp64\www\BookIT\scratch\schema_migration.php:16
+Stack trace:
+#0 C:\wamp64\www\BookIT\scratch\schema_migration.php(16): mysqli->query('ALTER TABLE uni...')
+#1 {main}
+  thrown in C:\wamp64\www\BookIT\scratch\schema_migration.php on line 16
+[12-Apr-2026 10:12:01 Asia/Manila] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown column 'branch_id' in 'where clause' in C:\wamp64\www\BookIT\config\db.php:85
+Stack trace:
+#0 C:\wamp64\www\BookIT\config\db.php(85): mysqli->prepare('SELECT * FROM a...')
+#1 C:\wamp64\www\BookIT\includes\functions.php(510): get_multiple_results('SELECT * FROM a...', Array)
+#2 C:\wamp64\www\BookIT\public\browse_units.php(52): getBranchAmenities(6)
+#3 {main}
+  thrown in C:\wamp64\www\BookIT\config\db.php on line 85
+[12-Apr-2026 18:33:13 Asia/Manila] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown column 'amenity_name' in 'field list' in C:\wamp64\www\BookIT\config\db.php:85
+Stack trace:
+#0 C:\wamp64\www\BookIT\config\db.php(85): mysqli->prepare('SELECT DISTINCT...')
+#1 C:\wamp64\www\BookIT\admin\settings.php(167): get_multiple_results('SELECT DISTINCT...')
+#2 {main}
+  thrown in C:\wamp64\www\BookIT\config\db.php on line 85
+[12-Apr-2026 18:34:44 Asia/Manila] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown column 'amenity_name' in 'field list' in C:\wamp64\www\BookIT\config\db.php:85
+Stack trace:
+#0 C:\wamp64\www\BookIT\config\db.php(85): mysqli->prepare('SELECT DISTINCT...')
+#1 C:\wamp64\www\BookIT\admin\settings.php(167): get_multiple_results('SELECT DISTINCT...')
+#2 {main}
+  thrown in C:\wamp64\www\BookIT\config\db.php on line 85
+[12-Apr-2026 18:45:00 Asia/Manila] PHP Warning:  include_once(../config/db.php): Failed to open stream: No such file or directory in C:\wamp64\www\BookIT\includes\functions.php on line 5
+[12-Apr-2026 18:45:00 Asia/Manila] PHP Stack trace:
+[12-Apr-2026 18:45:00 Asia/Manila] PHP   1. {main}() C:\wamp64\www\BookIT\includes\api\get_user_details.php:0
+[12-Apr-2026 18:45:00 Asia/Manila] PHP   2. include_once() C:\wamp64\www\BookIT\includes\api\get_user_details.php:7
+[12-Apr-2026 18:45:00 Asia/Manila] PHP Warning:  include_once(): Failed opening '../config/db.php' for inclusion (include_path='.;C:\php\pear') in C:\wamp64\www\BookIT\includes\functions.php on line 5
+[12-Apr-2026 18:45:00 Asia/Manila] PHP Stack trace:
+[12-Apr-2026 18:45:00 Asia/Manila] PHP   1. {main}() C:\wamp64\www\BookIT\includes\api\get_user_details.php:0
+[12-Apr-2026 18:45:00 Asia/Manila] PHP   2. include_once() C:\wamp64\www\BookIT\includes\api\get_user_details.php:7
+[12-Apr-2026 18:45:18 Asia/Manila] PHP Warning:  include_once(../config/db.php): Failed to open stream: No such file or directory in C:\wamp64\www\BookIT\includes\functions.php on line 5
+[12-Apr-2026 18:45:18 Asia/Manila] PHP Stack trace:
+[12-Apr-2026 18:45:18 Asia/Manila] PHP   1. {main}() C:\wamp64\www\BookIT\includes\api\get_user_details.php:0
+[12-Apr-2026 18:45:18 Asia/Manila] PHP   2. include_once() C:\wamp64\www\BookIT\includes\api\get_user_details.php:7
+[12-Apr-2026 18:45:18 Asia/Manila] PHP Warning:  include_once(): Failed opening '../config/db.php' for inclusion (include_path='.;C:\php\pear') in C:\wamp64\www\BookIT\includes\functions.php on line 5
+[12-Apr-2026 18:45:18 Asia/Manila] PHP Stack trace:
+[12-Apr-2026 18:45:18 Asia/Manila] PHP   1. {main}() C:\wamp64\www\BookIT\includes\api\get_user_details.php:0
+[12-Apr-2026 18:45:18 Asia/Manila] PHP   2. include_once() C:\wamp64\www\BookIT\includes\api\get_user_details.php:7
+[12-Apr-2026 18:45:30 Asia/Manila] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown column 'a.branch_id' in 'on clause' in C:\wamp64\www\BookIT\modules\amenities.php:25
+Stack trace:
+#0 C:\wamp64\www\BookIT\modules\amenities.php(25): mysqli->prepare('SELECT a.*, b.b...')
+#1 {main}
+  thrown in C:\wamp64\www\BookIT\modules\amenities.php on line 25
+[12-Apr-2026 18:47:06 Asia/Manila] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown column 'a.amenity_name' in 'field list' in C:\wamp64\www\BookIT\config\db.php:85
+Stack trace:
+#0 C:\wamp64\www\BookIT\config\db.php(85): mysqli->prepare('\r\n    SELECT \r\n...')
+#1 C:\wamp64\www\BookIT\host\amenities.php(50): get_multiple_results('\r\n    SELECT \r\n...')
+#2 {main}
+  thrown in C:\wamp64\www\BookIT\config\db.php on line 85
+[12-Apr-2026 18:47:09 Asia/Manila] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown column 'a.amenity_name' in 'field list' in C:\wamp64\www\BookIT\config\db.php:85
+Stack trace:
+#0 C:\wamp64\www\BookIT\config\db.php(85): mysqli->prepare('\r\n    SELECT \r\n...')
+#1 C:\wamp64\www\BookIT\host\amenities.php(50): get_multiple_results('\r\n    SELECT \r\n...')
+#2 {main}
+  thrown in C:\wamp64\www\BookIT\config\db.php on line 85
+[12-Apr-2026 19:15:04 Asia/Manila] WARNING: Using test PayMongo keys. Set PAYMONGO_* in .env for proper configuration.
+[12-Apr-2026 19:16:22 Asia/Manila] WARNING: Using test PayMongo keys. Set PAYMONGO_* in .env for proper configuration.
+[12-Apr-2026 21:24:33 Asia/Manila] WARNING: Using test PayMongo keys. Set PAYMONGO_* in .env for proper configuration.
+[12-Apr-2026 22:32:24 Asia/Manila] PHP Fatal error:  Uncaught Error: Call to undefined function isLoggedIn() in C:\wamp64\www\BookIT\ajax\messages_api.php:9
+Stack trace:
+#0 {main}
+  thrown in C:\wamp64\www\BookIT\ajax\messages_api.php on line 9
+[12-Apr-2026 22:32:29 Asia/Manila] PHP Fatal error:  Uncaught Error: Call to undefined function isLoggedIn() in C:\wamp64\www\BookIT\ajax\messages_api.php:9
+Stack trace:
+#0 {main}
+  thrown in C:\wamp64\www\BookIT\ajax\messages_api.php on line 9
+[12-Apr-2026 22:32:35 Asia/Manila] PHP Fatal error:  Uncaught Error: Call to undefined function isLoggedIn() in C:\wamp64\www\BookIT\ajax\messages_api.php:9
+Stack trace:
+#0 {main}
+  thrown in C:\wamp64\www\BookIT\ajax\messages_api.php on line 9
+[12-Apr-2026 22:32:40 Asia/Manila] PHP Fatal error:  Uncaught Error: Call to undefined function isLoggedIn() in C:\wamp64\www\BookIT\ajax\messages_api.php:9
+Stack trace:
+#0 {main}
+  thrown in C:\wamp64\www\BookIT\ajax\messages_api.php on line 9
+[12-Apr-2026 22:32:47 Asia/Manila] PHP Fatal error:  Uncaught Error: Call to undefined function isLoggedIn() in C:\wamp64\www\BookIT\ajax\messages_api.php:9
+Stack trace:
+#0 {main}
+  thrown in C:\wamp64\www\BookIT\ajax\messages_api.php on line 9
+[12-Apr-2026 22:32:50 Asia/Manila] PHP Fatal error:  Uncaught Error: Call to undefined function isLoggedIn() in C:\wamp64\www\BookIT\ajax\messages_api.php:9
+Stack trace:
+#0 {main}
+  thrown in C:\wamp64\www\BookIT\ajax\messages_api.php on line 9
+[12-Apr-2026 22:32:54 Asia/Manila] PHP Fatal error:  Uncaught Error: Call to undefined function isLoggedIn() in C:\wamp64\www\BookIT\ajax\messages_api.php:9
+Stack trace:
+#0 {main}
+  thrown in C:\wamp64\www\BookIT\ajax\messages_api.php on line 9
+[12-Apr-2026 22:33:00 Asia/Manila] PHP Fatal error:  Uncaught Error: Call to undefined function isLoggedIn() in C:\wamp64\www\BookIT\ajax\messages_api.php:9
+Stack trace:
+#0 {main}
+  thrown in C:\wamp64\www\BookIT\ajax\messages_api.php on line 9
+[12-Apr-2026 22:33:04 Asia/Manila] PHP Fatal error:  Uncaught Error: Call to undefined function isLoggedIn() in C:\wamp64\www\BookIT\ajax\messages_api.php:9
+Stack trace:
+#0 {main}
+  thrown in C:\wamp64\www\BookIT\ajax\messages_api.php on line 9
+[12-Apr-2026 22:33:09 Asia/Manila] PHP Fatal error:  Uncaught Error: Call to undefined function isLoggedIn() in C:\wamp64\www\BookIT\ajax\messages_api.php:9
+Stack trace:
+#0 {main}
+  thrown in C:\wamp64\www\BookIT\ajax\messages_api.php on line 9
+[12-Apr-2026 22:33:15 Asia/Manila] PHP Fatal error:  Uncaught Error: Call to undefined function isLoggedIn() in C:\wamp64\www\BookIT\ajax\messages_api.php:9
+Stack trace:
+#0 {main}
+  thrown in C:\wamp64\www\BookIT\ajax\messages_api.php on line 9
+[12-Apr-2026 22:33:19 Asia/Manila] PHP Fatal error:  Uncaught Error: Call to undefined function isLoggedIn() in C:\wamp64\www\BookIT\ajax\messages_api.php:9
+Stack trace:
+#0 {main}
+  thrown in C:\wamp64\www\BookIT\ajax\messages_api.php on line 9
+[12-Apr-2026 22:33:24 Asia/Manila] PHP Fatal error:  Uncaught Error: Call to undefined function isLoggedIn() in C:\wamp64\www\BookIT\ajax\messages_api.php:9
+Stack trace:
+#0 {main}
+  thrown in C:\wamp64\www\BookIT\ajax\messages_api.php on line 9
+[12-Apr-2026 22:33:31 Asia/Manila] PHP Fatal error:  Uncaught Error: Call to undefined function isLoggedIn() in C:\wamp64\www\BookIT\ajax\messages_api.php:9
+Stack trace:
+#0 {main}
+  thrown in C:\wamp64\www\BookIT\ajax\messages_api.php on line 9
+[12-Apr-2026 22:33:42 Asia/Manila] PHP Fatal error:  Uncaught Error: Call to undefined function isLoggedIn() in C:\wamp64\www\BookIT\ajax\messages_api.php:9
+Stack trace:
+#0 {main}
+  thrown in C:\wamp64\www\BookIT\ajax\messages_api.php on line 9
+[12-Apr-2026 22:33:44 Asia/Manila] PHP Fatal error:  Uncaught Error: Call to undefined function isLoggedIn() in C:\wamp64\www\BookIT\ajax\messages_api.php:9
+Stack trace:
+#0 {main}
+  thrown in C:\wamp64\www\BookIT\ajax\messages_api.php on line 9
+[12-Apr-2026 22:33:49 Asia/Manila] PHP Fatal error:  Uncaught Error: Call to undefined function isLoggedIn() in C:\wamp64\www\BookIT\ajax\messages_api.php:9
+Stack trace:
+#0 {main}
+  thrown in C:\wamp64\www\BookIT\ajax\messages_api.php on line 9
+[12-Apr-2026 22:33:56 Asia/Manila] PHP Fatal error:  Uncaught Error: Call to undefined function isLoggedIn() in C:\wamp64\www\BookIT\ajax\messages_api.php:9
+Stack trace:
+#0 {main}
+  thrown in C:\wamp64\www\BookIT\ajax\messages_api.php on line 9
+[12-Apr-2026 22:34:02 Asia/Manila] PHP Fatal error:  Uncaught Error: Call to undefined function isLoggedIn() in C:\wamp64\www\BookIT\ajax\messages_api.php:9
+Stack trace:
+#0 {main}
+  thrown in C:\wamp64\www\BookIT\ajax\messages_api.php on line 9
+[12-Apr-2026 22:34:04 Asia/Manila] PHP Fatal error:  Uncaught Error: Call to undefined function isLoggedIn() in C:\wamp64\www\BookIT\renter\messages.php:8
+Stack trace:
+#0 {main}
+  thrown in C:\wamp64\www\BookIT\renter\messages.php on line 8
+[12-Apr-2026 22:34:04 Asia/Manila] PHP Fatal error:  Uncaught Error: Call to undefined function isLoggedIn() in C:\wamp64\www\BookIT\ajax\messages_api.php:9
+Stack trace:
+#0 {main}
+  thrown in C:\wamp64\www\BookIT\ajax\messages_api.php on line 9
+[12-Apr-2026 22:34:09 Asia/Manila] PHP Fatal error:  Uncaught Error: Call to undefined function isLoggedIn() in C:\wamp64\www\BookIT\ajax\messages_api.php:9
+Stack trace:
+#0 {main}
+  thrown in C:\wamp64\www\BookIT\ajax\messages_api.php on line 9
+[12-Apr-2026 22:34:15 Asia/Manila] PHP Fatal error:  Uncaught Error: Call to undefined function isLoggedIn() in C:\wamp64\www\BookIT\ajax\messages_api.php:9
+Stack trace:
+#0 {main}
+  thrown in C:\wamp64\www\BookIT\ajax\messages_api.php on line 9
+[12-Apr-2026 22:34:19 Asia/Manila] PHP Fatal error:  Uncaught Error: Call to undefined function isLoggedIn() in C:\wamp64\www\BookIT\ajax\messages_api.php:9
+Stack trace:
+#0 {main}
+  thrown in C:\wamp64\www\BookIT\ajax\messages_api.php on line 9
+[12-Apr-2026 22:34:26 Asia/Manila] PHP Fatal error:  Uncaught Error: Call to undefined function isLoggedIn() in C:\wamp64\www\BookIT\ajax\messages_api.php:9
+Stack trace:
+#0 {main}
+  thrown in C:\wamp64\www\BookIT\ajax\messages_api.php on line 9
+[12-Apr-2026 22:34:29 Asia/Manila] PHP Fatal error:  Uncaught Error: Call to undefined function isLoggedIn() in C:\wamp64\www\BookIT\ajax\messages_api.php:9
+Stack trace:
+#0 {main}
+  thrown in C:\wamp64\www\BookIT\ajax\messages_api.php on line 9
+[12-Apr-2026 22:34:34 Asia/Manila] PHP Fatal error:  Uncaught Error: Call to undefined function isLoggedIn() in C:\wamp64\www\BookIT\ajax\messages_api.php:9
+Stack trace:
+#0 {main}
+  thrown in C:\wamp64\www\BookIT\ajax\messages_api.php on line 9
+[12-Apr-2026 22:34:41 Asia/Manila] PHP Fatal error:  Uncaught Error: Call to undefined function isLoggedIn() in C:\wamp64\www\BookIT\ajax\messages_api.php:9
+Stack trace:
+#0 {main}
+  thrown in C:\wamp64\www\BookIT\ajax\messages_api.php on line 9
+[12-Apr-2026 22:34:44 Asia/Manila] PHP Fatal error:  Uncaught Error: Call to undefined function isLoggedIn() in C:\wamp64\www\BookIT\ajax\messages_api.php:9
+Stack trace:
+#0 {main}
+  thrown in C:\wamp64\www\BookIT\ajax\messages_api.php on line 9
+[12-Apr-2026 22:34:49 Asia/Manila] PHP Fatal error:  Uncaught Error: Call to undefined function isLoggedIn() in C:\wamp64\www\BookIT\ajax\messages_api.php:9
+Stack trace:
+#0 {main}
+  thrown in C:\wamp64\www\BookIT\ajax\messages_api.php on line 9
+[12-Apr-2026 22:34:55 Asia/Manila] PHP Fatal error:  Uncaught Error: Call to undefined function isLoggedIn() in C:\wamp64\www\BookIT\ajax\messages_api.php:9
+Stack trace:
+#0 {main}
+  thrown in C:\wamp64\www\BookIT\ajax\messages_api.php on line 9
+[12-Apr-2026 22:34:59 Asia/Manila] PHP Fatal error:  Uncaught Error: Call to undefined function isLoggedIn() in C:\wamp64\www\BookIT\ajax\messages_api.php:9
+Stack trace:
+#0 {main}
+  thrown in C:\wamp64\www\BookIT\ajax\messages_api.php on line 9
+[12-Apr-2026 22:35:05 Asia/Manila] PHP Fatal error:  Uncaught Error: Call to undefined function isLoggedIn() in C:\wamp64\www\BookIT\ajax\messages_api.php:9
+Stack trace:
+#0 {main}
+  thrown in C:\wamp64\www\BookIT\ajax\messages_api.php on line 9
+[12-Apr-2026 22:35:11 Asia/Manila] PHP Fatal error:  Uncaught Error: Call to undefined function isLoggedIn() in C:\wamp64\www\BookIT\ajax\messages_api.php:9
+Stack trace:
+#0 {main}
+  thrown in C:\wamp64\www\BookIT\ajax\messages_api.php on line 9
+[12-Apr-2026 22:35:14 Asia/Manila] PHP Fatal error:  Uncaught Error: Call to undefined function isLoggedIn() in C:\wamp64\www\BookIT\ajax\messages_api.php:9
+Stack trace:
+#0 {main}
+  thrown in C:\wamp64\www\BookIT\ajax\messages_api.php on line 9
+[12-Apr-2026 22:35:19 Asia/Manila] PHP Fatal error:  Uncaught Error: Call to undefined function isLoggedIn() in C:\wamp64\www\BookIT\ajax\messages_api.php:9
+Stack trace:
+#0 {main}
+  thrown in C:\wamp64\www\BookIT\ajax\messages_api.php on line 9
+[12-Apr-2026 22:35:25 Asia/Manila] PHP Fatal error:  Uncaught Error: Call to undefined function isLoggedIn() in C:\wamp64\www\BookIT\ajax\messages_api.php:9
+Stack trace:
+#0 {main}
+  thrown in C:\wamp64\www\BookIT\ajax\messages_api.php on line 9
+[12-Apr-2026 22:35:33 Asia/Manila] PHP Fatal error:  Uncaught Error: Call to undefined function isLoggedIn() in C:\wamp64\www\BookIT\ajax\messages_api.php:9
+Stack trace:
+#0 {main}
+  thrown in C:\wamp64\www\BookIT\ajax\messages_api.php on line 9
+[12-Apr-2026 22:35:34 Asia/Manila] PHP Fatal error:  Uncaught Error: Call to undefined function isLoggedIn() in C:\wamp64\www\BookIT\ajax\messages_api.php:9
+Stack trace:
+#0 {main}
+  thrown in C:\wamp64\www\BookIT\ajax\messages_api.php on line 9
+[12-Apr-2026 22:36:14 Asia/Manila] PHP Warning:  include(../includes/header.php): Failed to open stream: No such file or directory in C:\wamp64\www\BookIT\renter\messages.php on line 59
+[12-Apr-2026 22:36:14 Asia/Manila] PHP Stack trace:
+[12-Apr-2026 22:36:14 Asia/Manila] PHP   1. {main}() C:\wamp64\www\BookIT\renter\messages.php:0
+[12-Apr-2026 22:36:14 Asia/Manila] PHP Warning:  include(): Failed opening '../includes/header.php' for inclusion (include_path='.;C:\php\pear') in C:\wamp64\www\BookIT\renter\messages.php on line 59
+[12-Apr-2026 22:36:14 Asia/Manila] PHP Stack trace:
+[12-Apr-2026 22:36:14 Asia/Manila] PHP   1. {main}() C:\wamp64\www\BookIT\renter\messages.php:0
+[12-Apr-2026 22:37:47 Asia/Manila] PHP Warning:  include(../includes/header.php): Failed to open stream: No such file or directory in C:\wamp64\www\BookIT\renter\messages.php on line 59
+[12-Apr-2026 22:37:47 Asia/Manila] PHP Stack trace:
+[12-Apr-2026 22:37:47 Asia/Manila] PHP   1. {main}() C:\wamp64\www\BookIT\renter\messages.php:0
+[12-Apr-2026 22:37:47 Asia/Manila] PHP Warning:  include(): Failed opening '../includes/header.php' for inclusion (include_path='.;C:\php\pear') in C:\wamp64\www\BookIT\renter\messages.php on line 59
+[12-Apr-2026 22:37:47 Asia/Manila] PHP Stack trace:
+[12-Apr-2026 22:37:47 Asia/Manila] PHP   1. {main}() C:\wamp64\www\BookIT\renter\messages.php:0
+[12-Apr-2026 22:37:48 Asia/Manila] PHP Warning:  include(../includes/header.php): Failed to open stream: No such file or directory in C:\wamp64\www\BookIT\renter\messages.php on line 59
+[12-Apr-2026 22:37:48 Asia/Manila] PHP Stack trace:
+[12-Apr-2026 22:37:48 Asia/Manila] PHP   1. {main}() C:\wamp64\www\BookIT\renter\messages.php:0
+[12-Apr-2026 22:37:48 Asia/Manila] PHP Warning:  include(): Failed opening '../includes/header.php' for inclusion (include_path='.;C:\php\pear') in C:\wamp64\www\BookIT\renter\messages.php on line 59
+[12-Apr-2026 22:37:48 Asia/Manila] PHP Stack trace:
+[12-Apr-2026 22:37:48 Asia/Manila] PHP   1. {main}() C:\wamp64\www\BookIT\renter\messages.php:0
+[12-Apr-2026 22:54:24 Asia/Manila] WARNING: Using test PayMongo keys. Set PAYMONGO_* in .env for proper configuration.
+[12-Apr-2026 22:54:29 Asia/Manila] WARNING: Using test PayMongo keys. Set PAYMONGO_* in .env for proper configuration.
+[12-Apr-2026 23:16:36 Asia/Manila] WARNING: Using test PayMongo keys. Set PAYMONGO_* in .env for proper configuration.
+[12-Apr-2026 23:17:59 Asia/Manila] WARNING: Using test PayMongo keys. Set PAYMONGO_* in .env for proper configuration.
+[12-Apr-2026 23:18:05 Asia/Manila] Exception in execute_query: Unknown column 'sent_via' in 'field list'
+[12-Apr-2026 23:18:11 Asia/Manila] Exception in execute_query: Unknown column 'checked_in_by' in 'field list'
+[12-Apr-2026 23:18:11 Asia/Manila] Exception in execute_query: Unknown column 'sent_via' in 'field list'
+[12-Apr-2026 23:18:14 Asia/Manila] Exception in execute_query: Unknown column 'checked_in_by' in 'field list'
+[12-Apr-2026 23:18:14 Asia/Manila] Exception in execute_query: Unknown column 'sent_via' in 'field list'
+[12-Apr-2026 23:25:52 Asia/Manila] WARNING: Using test PayMongo keys. Set PAYMONGO_* in .env for proper configuration.
+[12-Apr-2026 23:26:30 Asia/Manila] WARNING: Using test PayMongo keys. Set PAYMONGO_* in .env for proper configuration.
+[12-Apr-2026 23:27:18 Asia/Manila] WARNING: Using test PayMongo keys. Set PAYMONGO_* in .env for proper configuration.
+[13-Apr-2026 00:11:00 Asia/Manila] PHP Fatal error:  Uncaught mysqli_sql_exception: No connection could be made because the target machine actively refused it in C:\wamp64\www\BookIT\config\db.php:8
+Stack trace:
+#0 C:\wamp64\www\BookIT\config\db.php(8): mysqli->__construct('localhost', 'root', Object(SensitiveParameterValue), 'condo_rental_re...')
+#1 C:\wamp64\www\BookIT\includes\functions.php(5): include_once('C:\\wamp64\\www\\B...')
+#2 C:\wamp64\www\BookIT\host\messages.php(4): include('C:\\wamp64\\www\\B...')
+#3 {main}
+  thrown in C:\wamp64\www\BookIT\config\db.php on line 8
+[13-Apr-2026 00:12:15 Asia/Manila] PHP Warning:  include_once(../config/db.php): Failed to open stream: No such file or directory in C:\wamp64\www\BookIT\includes\functions.php on line 5
+[13-Apr-2026 00:12:15 Asia/Manila] PHP Stack trace:
+[13-Apr-2026 00:12:15 Asia/Manila] PHP   1. {main}() C:\wamp64\www\BookIT\includes\api\get_user_details.php:0
+[13-Apr-2026 00:12:15 Asia/Manila] PHP   2. include_once() C:\wamp64\www\BookIT\includes\api\get_user_details.php:7
+[13-Apr-2026 00:12:15 Asia/Manila] PHP Warning:  include_once(): Failed opening '../config/db.php' for inclusion (include_path='.;C:\php\pear') in C:\wamp64\www\BookIT\includes\functions.php on line 5
+[13-Apr-2026 00:12:15 Asia/Manila] PHP Stack trace:
+[13-Apr-2026 00:12:15 Asia/Manila] PHP   1. {main}() C:\wamp64\www\BookIT\includes\api\get_user_details.php:0
+[13-Apr-2026 00:12:15 Asia/Manila] PHP   2. include_once() C:\wamp64\www\BookIT\includes\api\get_user_details.php:7
+[13-Apr-2026 00:20:05 Asia/Manila] WARNING: Using test PayMongo keys. Set PAYMONGO_* in .env for proper configuration.
+[13-Apr-2026 00:32:33 Asia/Manila] Exception in execute_query: Unknown column 'updated_at' in 'field list'
+[13-Apr-2026 00:32:47 Asia/Manila] Exception in execute_query: Unknown column 'updated_at' in 'field list'
+[13-Apr-2026 00:34:21 Asia/Manila] PHP Fatal error:  Uncaught Error: Class "mysqli" not found in C:\wamp64\www\BookIT\config\db.php:8
+Stack trace:
+#0 C:\wamp64\www\BookIT\scratch\get_schema.php(2): require_once()
+#1 {main}
+  thrown in C:\wamp64\www\BookIT\config\db.php on line 8
+[13-Apr-2026 02:54:08 Asia/Manila] PHP Fatal error:  Uncaught Error: Class "mysqli" not found in C:\wamp64\www\BookIT\scratch\check_schema.php:3
+Stack trace:
+#0 {main}
+  thrown in C:\wamp64\www\BookIT\scratch\check_schema.php on line 3
+[13-Apr-2026 03:01:13 Asia/Manila] PHP Fatal error:  Uncaught Error: Class "mysqli" not found in C:\wamp64\www\BookIT\config\db.php:8
+Stack trace:
+#0 C:\wamp64\www\BookIT\scratch\migrate_units_tracking.php(2): include_once()
+#1 {main}
+  thrown in C:\wamp64\www\BookIT\config\db.php on line 8
+[13-Apr-2026 03:05:20 Asia/Manila] Exception in execute_query: Unknown column 'sent_via' in 'field list'
+[13-Apr-2026 09:46:52 Asia/Manila] WARNING: Using test PayMongo keys. Set PAYMONGO_* in .env for proper configuration.
+[13-Apr-2026 09:47:03 Asia/Manila] WARNING: Using test PayMongo keys. Set PAYMONGO_* in .env for proper configuration.
+[13-Apr-2026 13:07:03 Asia/Manila] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown column 'status' in 'where clause' in C:\wamp64\www\BookIT\config\db.php:25
+Stack trace:
+#0 C:\wamp64\www\BookIT\config\db.php(25): mysqli->prepare('SELECT * FROM p...')
+#1 C:\wamp64\www\BookIT\renter\reserve_unit.php(115): get_single_result('SELECT * FROM p...', Array)
+#2 {main}
+  thrown in C:\wamp64\www\BookIT\config\db.php on line 25
+[13-Apr-2026 13:09:59 Asia/Manila] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown column 'status' in 'where clause' in C:\wamp64\www\BookIT\config\db.php:25
+Stack trace:
+#0 C:\wamp64\www\BookIT\config\db.php(25): mysqli->prepare('SELECT * FROM p...')
+#1 C:\wamp64\www\BookIT\renter\reserve_unit.php(115): get_single_result('SELECT * FROM p...', Array)
+#2 {main}
+  thrown in C:\wamp64\www\BookIT\config\db.php on line 25
+[13-Apr-2026 13:10:41 Asia/Manila] PHP Fatal error:  Uncaught Error: Class "mysqli" not found in C:\wamp64\www\BookIT\config\db.php:8
+Stack trace:
+#0 C:\wamp64\www\BookIT\scratch_db.php(2): require()
+#1 {main}
+  thrown in C:\wamp64\www\BookIT\config\db.php on line 8
+[13-Apr-2026 13:11:24 Asia/Manila] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown column 'status' in 'where clause' in C:\wamp64\www\BookIT\config\db.php:25
+Stack trace:
+#0 C:\wamp64\www\BookIT\config\db.php(25): mysqli->prepare('SELECT * FROM p...')
+#1 C:\wamp64\www\BookIT\renter\reserve_unit.php(115): get_single_result('SELECT * FROM p...', Array)
+#2 {main}
+  thrown in C:\wamp64\www\BookIT\config\db.php on line 25
+[13-Apr-2026 13:11:27 Asia/Manila] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown column 'status' in 'where clause' in C:\wamp64\www\BookIT\config\db.php:25
+Stack trace:
+#0 C:\wamp64\www\BookIT\config\db.php(25): mysqli->prepare('SELECT * FROM p...')
+#1 C:\wamp64\www\BookIT\renter\reserve_unit.php(115): get_single_result('SELECT * FROM p...', Array)
+#2 {main}
+  thrown in C:\wamp64\www\BookIT\config\db.php on line 25
+[13-Apr-2026 14:09:39 Asia/Manila] PHPMailer: Email sent to: cabajar@gmail.com
+[13-Apr-2026 14:12:28 Asia/Manila] PHPMailer: Email sent to: cabajar@gmail.com
+[13-Apr-2026 14:12:32 Asia/Manila] PHPMailer: Email sent to: cabajar@gmail.com
+[13-Apr-2026 14:21:43 Asia/Manila] PHPMailer: Email sent to: cabajar@gmail.com

@@ -270,7 +270,7 @@
     function checkUnitAvailability($unit_id, $check_in, $check_out) {
         $sql = "SELECT COUNT(*) as count FROM reservations 
                 WHERE unit_id = ? 
-                AND status IN ('confirmed', 'checked_in')
+                AND status IN ('pending', 'approved', 'confirmed', 'checked_in')
                 AND (
                     (check_in_date <= ? AND check_out_date > ?) OR
                     (check_in_date < ? AND check_out_date >= ?) OR
@@ -295,7 +295,7 @@
      * @param string $special_requests - special requests
      * @return int|false - reservation ID kung successful, false kung failed
      */
-    function createReservation($user_id, $unit_id, $branch_id, $check_in_date, $check_out_date, $total_amount, $security_deposit = 0, $special_requests = '') {
+    function createReservation($user_id, $unit_id, $branch_id, $check_in_date, $check_out_date, $total_amount, $security_deposit = 0, $special_requests = '', $num_adults = 1, $num_children = 0) {
         global $conn;
         
         // Sanitize inputs
@@ -307,6 +307,8 @@
         $total_amount = (float)$total_amount;
         $security_deposit = (float)$security_deposit;
         $special_requests = sanitize_input($special_requests);
+        $num_adults = max(1, (int)$num_adults);
+        $num_children = max(0, (int)$num_children);
         
         // I-check muna kung available pa ang unit
         if (!checkUnitAvailability($unit_id, $check_in_date, $check_out_date)) {
@@ -320,7 +322,7 @@
             // LAYER 1: Check for overlapping reservations for this unit (by ANY user)
             $overlap_sql = "SELECT reservation_id FROM reservations 
                             WHERE unit_id = ?
-                            AND status IN ('awaiting_approval', 'confirmed', 'checked_in') 
+                            AND status IN ('pending', 'awaiting_approval', 'approved', 'confirmed', 'checked_in') 
                             AND (
                                 (check_in_date < ? AND check_out_date > ?) OR
                                 (check_in_date <= ? AND check_out_date > ?) OR
@@ -340,7 +342,7 @@
             $existing_sql = "SELECT reservation_id FROM reservations 
                             WHERE user_id = ? 
                             AND unit_id = ?
-                            AND status IN ('awaiting_approval', 'confirmed', 'checked_in') 
+                            AND status IN ('pending', 'awaiting_approval', 'approved', 'confirmed', 'checked_in') 
                             AND (
                                 (check_in_date <= ? AND check_out_date > ?) OR
                                 (check_in_date < ? AND check_out_date >= ?) OR
@@ -357,10 +359,22 @@
             }
             
             // LAYER 3: Insert reservation within transaction
-            $sql = "INSERT INTO reservations (user_id, unit_id, branch_id, check_in_date, check_out_date, total_amount, security_deposit, special_requests, status, payment_status, created_at) 
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'awaiting_approval', 'not_paid', NOW())";
+            $hasGuestCols = false;
+            if ($chk = @$conn->query("SHOW COLUMNS FROM reservations LIKE 'num_adults'")) {
+                $hasGuestCols = $chk->num_rows > 0;
+                $chk->free();
+            }
+            if ($hasGuestCols) {
+                $sql = "INSERT INTO reservations (user_id, unit_id, branch_id, check_in_date, check_out_date, total_amount, security_deposit, special_requests, num_adults, num_children, status, payment_status, created_at) 
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', 'pending', NOW())";
+                $insertOk = execute_query($sql, [$user_id, $unit_id, $branch_id, $check_in_date, $check_out_date, $total_amount, $security_deposit, $special_requests, $num_adults, $num_children]);
+            } else {
+                $sql = "INSERT INTO reservations (user_id, unit_id, branch_id, check_in_date, check_out_date, total_amount, security_deposit, special_requests, status, payment_status, created_at) 
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pending', 'pending', NOW())";
+                $insertOk = execute_query($sql, [$user_id, $unit_id, $branch_id, $check_in_date, $check_out_date, $total_amount, $security_deposit, $special_requests]);
+            }
             
-            if (execute_query($sql, [$user_id, $unit_id, $branch_id, $check_in_date, $check_out_date, $total_amount, $security_deposit, $special_requests])) {
+            if ($insertOk) {
                 $reservation_id = $conn->insert_id;
                 
                 // Commit transaction
@@ -369,15 +383,26 @@
                 // Get branch host assigned to this branch
                 $branch = get_single_result("SELECT host_id FROM branches WHERE branch_id = ?", [$branch_id]);
                 
-                if ($branch && $branch['host_id']) {
-                    // Send notification to host for approval
-                    sendNotification(
-                        $branch['host_id'],
-                        'New Booking Request - Awaiting Approval',
-                        'New reservation #' . $reservation_id . ' needs your approval. Please review in your dashboard.',
-                        'booking',
-                        'system'
-                    );
+                // Notify every host that should see this booking (branch manager + unit owner)
+                $hostIds = [];
+                if (!empty($branch['host_id'])) {
+                    $hostIds[] = (int)$branch['host_id'];
+                }
+                $unitHost = get_single_result("SELECT host_id FROM units WHERE unit_id = ?", [$unit_id]);
+                if ($unitHost && !empty($unitHost['host_id'])) {
+                    $hostIds[] = (int)$unitHost['host_id'];
+                }
+                $hostIds = array_values(array_unique(array_filter($hostIds)));
+                foreach ($hostIds as $hid) {
+                    if ($hid > 0 && $hid !== (int)$user_id) {
+                        sendNotification(
+                            $hid,
+                            'New Booking Request - Awaiting Approval',
+                            'New reservation #' . $reservation_id . ' needs your approval. Please review in your dashboard.',
+                            'booking',
+                            'system'
+                        );
+                    }
                 }
                 
                 // Send notification to renter that booking was submitted
@@ -422,8 +447,8 @@
             return false;
         }
         
-        // Update reservation status to 'approved'
-        $sql = "UPDATE reservations SET status = 'approved', approved_at = NOW(), approved_by = ? WHERE reservation_id = ?";
+        // Update reservation status to 'confirmed' (host dashboard + renter checkout expect this)
+        $sql = "UPDATE reservations SET status = 'confirmed', approved_at = NOW(), approved_by = ? WHERE reservation_id = ?";
         
         if (execute_query($sql, [$host_id, $reservation_id])) {
             // Send notification to renter
@@ -501,13 +526,79 @@
     // ==================== AMENITY MANAGEMENT FUNCTIONS ====================
 
     /**
-     * Kumuha ng amenities sa specific branch
-     * @param int $branch_id - branch ID
-     * @return array - amenities
+     * Amenities associated with any approved/visible unit in a branch (catalog + unit_amenities).
+     * Returns amenity_id, amenity_name; hourly_rate is 0 for compatibility with legacy bookable-amenity UI.
+     *
+     * @param int $branch_id
+     * @return array
      */
     function getBranchAmenities($branch_id) {
-        $sql = "SELECT * FROM amenities WHERE branch_id = ? AND is_available = 1 ORDER BY amenity_name";
+        $branch_id = (int) $branch_id;
+        if ($branch_id <= 0) {
+            return [];
+        }
+        $sql = "SELECT DISTINCT a.id AS amenity_id, a.name AS amenity_name, 0 AS hourly_rate
+                FROM amenities a
+                INNER JOIN unit_amenities ua ON ua.amenity_id = a.id
+                INNER JOIN units u ON u.unit_id = ua.unit_id
+                WHERE u.branch_id = ?
+                  AND u.is_available = 1
+                  AND (u.approval_status = 'approved' OR u.approval_status IS NULL)
+                ORDER BY a.name";
         return get_multiple_results($sql, [$branch_id]);
+    }
+
+    /**
+     * Listing amenities for a unit (global amenities catalog + unit_amenities junction).
+     * Returns rows with amenity_id and amenity_name for template compatibility.
+     *
+     * @param int $unit_id
+     * @return array
+     */
+    function getUnitAmenities($unit_id) {
+        $unit_id = (int) $unit_id;
+        if ($unit_id <= 0) {
+            return [];
+        }
+        $sql = "SELECT a.id AS amenity_id, a.name AS amenity_name
+                FROM unit_amenities ua
+                INNER JOIN amenities a ON a.id = ua.amenity_id
+                WHERE ua.unit_id = ?
+                ORDER BY a.name";
+        return get_multiple_results($sql, [$unit_id]);
+    }
+
+    /**
+     * Replace all unit_amenities rows for a unit (only IDs that exist in amenities are kept).
+     *
+     * @param int $unit_id
+     * @param array $amenity_ids
+     * @return bool
+     */
+    function syncUnitAmenities($unit_id, array $amenity_ids) {
+        $unit_id = (int) $unit_id;
+        if ($unit_id <= 0) {
+            return false;
+        }
+        if (!execute_query("DELETE FROM unit_amenities WHERE unit_id = ?", [$unit_id])) {
+            return false;
+        }
+        $ids = array_unique(array_filter(array_map('intval', $amenity_ids)));
+        if (empty($ids)) {
+            return true;
+        }
+        $placeholders = implode(',', array_fill(0, count($ids), '?'));
+        $valid = get_multiple_results(
+            "SELECT id FROM amenities WHERE id IN ($placeholders)",
+            array_values($ids)
+        );
+        foreach ($valid as $row) {
+            execute_query(
+                "INSERT INTO unit_amenities (unit_id, amenity_id) VALUES (?, ?)",
+                [$unit_id, (int) $row['id']]
+            );
+        }
+        return true;
     }
 
     /**
@@ -631,12 +722,17 @@
      * @param string $title - notification title
      * @param string $message - notification message
      * @param string $type - notification type
-     * @param string $sent_via - sent via (email, sms, system)
+     * @param string $sent_via Legacy 5th arg (ignored); kept for backward compatibility with old call sites.
+     * @param string|null $admin_message Optional detail shown as "Admin note" in UI (notifications.admin_message).
      * @return bool - true kung successful, false kung failed
      */
-    function sendNotification($user_id, $title, $message, $type = 'system', $sent_via = 'system') {
-        $sql = "INSERT INTO notifications (user_id, title, message, type, sent_via) VALUES (?, ?, ?, ?, ?)";
-        return execute_query($sql, [$user_id, $title, $message, $type, $sent_via]);
+    function sendNotification($user_id, $title, $message, $type = 'system', $sent_via = 'system', $admin_message = null) {
+        $allowed = ['booking', 'payment', 'reminder', 'system'];
+        if (!in_array($type, $allowed, true)) {
+            $type = 'system';
+        }
+        $sql = "INSERT INTO notifications (user_id, title, message, admin_message, status, type) VALUES (?, ?, ?, ?, 'info', ?)";
+        return execute_query($sql, [(int) $user_id, $title, $message, $admin_message, $type]);
     }
 
     /**

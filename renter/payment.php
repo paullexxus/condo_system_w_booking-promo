@@ -33,9 +33,9 @@ if (isset($_GET['type']) && isset($_GET['id'])) {
             );
         } elseif ($type == 'amenity') {
             $amenityBooking = get_single_result(
-                "SELECT ab.*, a.amenity_name, a.description, b.branch_name 
+                "SELECT ab.*, a.name AS amenity_name, '' AS description, b.branch_name 
                 FROM amenity_bookings ab 
-                JOIN amenities a ON ab.amenity_id = a.amenity_id 
+                JOIN amenities a ON ab.amenity_id = a.id 
                 JOIN branches b ON ab.branch_id = b.branch_id 
                 WHERE ab.booking_id = ? AND ab.user_id = ?",
                 [$id, $_SESSION['user_id']]

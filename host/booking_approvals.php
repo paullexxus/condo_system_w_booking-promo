@@ -111,7 +111,7 @@ if (!$hostBranch) {
     
     // Get pending bookings for this branch
     $pendingBookings = get_multiple_results(
-        "SELECT r.*, u.unit_number, u.unit_type, u.monthly_rate, 
+        "SELECT r.*, u.unit_number, u.unit_type, u.price_per_night, u.price_per_month, u.pricing_type, 
                 renter.full_name as renter_name, renter.email as renter_email, renter.phone as renter_phone
          FROM reservations r 
          JOIN units u ON r.unit_id = u.unit_id 
@@ -128,7 +128,7 @@ if (!$hostBranch) {
          FROM reservations r 
          JOIN units u ON r.unit_id = u.unit_id 
          JOIN users renter ON r.user_id = renter.user_id 
-         WHERE r.branch_id = ? AND r.status = 'approved'
+         WHERE r.branch_id = ? AND r.status IN ('approved','confirmed')
          ORDER BY r.approved_at DESC",
         [$hostBranch['branch_id']]
     );

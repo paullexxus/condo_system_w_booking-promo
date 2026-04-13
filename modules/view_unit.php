@@ -213,8 +213,12 @@ $avg_booking_value = $metrics['total_bookings'] > 0 ?
                                         <td><?= $unit['max_occupancy'] ?> persons</td>
                                     </tr>
                                     <tr>
-                                        <td><strong>Price per Night:</strong></td>
-                                        <td class="text-success fw-bold">₱<?= number_format(($unit['monthly_rate'] ?? 0) / 30, 2) ?></td>
+                                        <td><strong>Pricing Model:</strong></td>
+                                        <td><?= ucfirst($unit['pricing_type'] ?? 'nightly') ?></td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Price:</strong></td>
+                                        <td class="text-success fw-bold">₱<?= number_format(($unit['pricing_type'] ?? 'nightly') === 'monthly' ? ($unit['price_per_month'] ?? 0) : ($unit['price_per_night'] ?? 0), 2) ?></td>
                                     </tr>
                                     <tr>
                                         <td><strong>Security Deposit:</strong></td>

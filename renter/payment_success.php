@@ -72,7 +72,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['transaction_ref'])) {
                 execute_query("UPDATE amenity_bookings SET status = 'confirmed', payment_status = 'paid' WHERE booking_id = ?", [$bookingId]);
                 
                 // Get amenity details for confirmation
-                $booking = get_single_result("SELECT ab.*, a.amenity_name, b.host_id FROM amenity_bookings ab JOIN amenities a ON ab.amenity_id = a.amenity_id JOIN branches b ON ab.branch_id = b.branch_id WHERE ab.booking_id = ?", [$bookingId]);
+                $booking = get_single_result("SELECT ab.*, a.name AS amenity_name, b.host_id FROM amenity_bookings ab JOIN amenities a ON ab.amenity_id = a.id JOIN branches b ON ab.branch_id = b.branch_id WHERE ab.booking_id = ?", [$bookingId]);
                 
                 // Send confirmation email to renter
                 sendNotification(

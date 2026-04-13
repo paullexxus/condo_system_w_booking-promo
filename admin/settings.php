@@ -163,8 +163,10 @@ $admins = get_multiple_results("SELECT user_id, full_name, email, is_active FROM
 // Get all branches
 $all_branches = get_multiple_results("SELECT branch_id, branch_name, host_id, (SELECT COUNT(*) FROM units WHERE branch_id = branches.branch_id) as unit_count FROM branches WHERE is_active = 1 ORDER BY branch_name");
 
-// Get all amenities for default list
-$all_amenities = get_multiple_results("SELECT DISTINCT amenity_name, description, hourly_rate FROM amenities ORDER BY amenity_name");
+// Catalog amenities (global id + name; unit-level pricing is on units / legacy flows)
+$all_amenities = get_multiple_results(
+    "SELECT id AS amenity_id, name AS amenity_name, '' AS description, 0 AS hourly_rate FROM amenities ORDER BY name"
+);
 ?>
 
 <!DOCTYPE html>
@@ -929,7 +931,7 @@ $all_amenities = get_multiple_results("SELECT DISTINCT amenity_name, description
                                         <?php echo htmlspecialchars($amenity['amenity_name']); ?>
                                     </label>
                                 </div>
-                                <input type="number" class="amenity-price" placeholder="Price" value="<?php echo $amenity['hourly_rate'] ?? 0; ?>" step="0.01">
+                                <input type="number" class="amenity-price" placeholder="N/A" value="0" step="0.01" disabled title="Catalog amenities have no hourly rate in the current schema">
                             </div>
                             <?php 
                                 endforeach;

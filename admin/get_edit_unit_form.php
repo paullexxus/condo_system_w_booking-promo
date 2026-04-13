@@ -57,7 +57,15 @@ $branches = get_multiple_results("SELECT branch_id, branch_name FROM branches WH
     </div>
 
     <div class="row">
-        <div class="col-md-6">
+        <div class="col-md-4">
+            <div class="mb-3">
+                <label class="form-label">Unit Name / Title</label>
+                <input type="text" class="form-control" name="unit_name" 
+                       value="<?= htmlspecialchars($unit['unit_name'] ?? '') ?>" 
+                       placeholder="e.g., Unit 101 or Penthouse">
+            </div>
+        </div>
+        <div class="col-md-4">
             <div class="mb-3">
                 <label class="form-label">Unit Number *</label>
                 <input type="text" class="form-control" name="unit_number" 
@@ -66,7 +74,7 @@ $branches = get_multiple_results("SELECT branch_id, branch_name FROM branches WH
                 <div class="form-text">Unique identifier for the unit</div>
             </div>
         </div>
-        <div class="col-md-6">
+        <div class="col-md-4">
             <div class="mb-3">
                 <label class="form-label">Unit Type *</label>
                 <select class="form-select" name="unit_type" required>
@@ -98,13 +106,41 @@ $branches = get_multiple_results("SELECT branch_id, branch_name FROM branches WH
             </div>
         </div>
         <div class="col-md-6">
-            <div class="mb-3">
-                <label class="form-label">Price per Night (₱) *</label>
-                <input type="number" class="form-control" name="price" 
-                       step="0.01" min="0" 
-                       value="<?= number_format($unit['monthly_rate'] ?? 0, 2, '.', '') ?>" 
-                       required>
+            <div class="mb-3 border p-3 rounded">
+                <label class="form-label fw-bold"><i class="fas fa-tag"></i> Pricing Model</label>
+                <div class="d-flex gap-3 mb-2">
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="pricing_type" id="edit_pricing_nightly" value="nightly" <?= ($unit['pricing_type'] ?? 'nightly') == 'nightly' ? 'checked' : '' ?>>
+                        <label class="form-check-label" for="edit_pricing_nightly">Nightly</label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="pricing_type" id="edit_pricing_monthly" value="monthly" <?= ($unit['pricing_type'] ?? '') == 'monthly' ? 'checked' : '' ?>>
+                        <label class="form-check-label" for="edit_pricing_monthly">Monthly</label>
+                    </div>
+                </div>
+                <div id="edit_nightly_input" class="<?= ($unit['pricing_type'] ?? 'nightly') == 'nightly' ? '' : 'd-none' ?>">
+                    <label class="form-label">Price per Night (₱) *</label>
+                    <input type="number" class="form-control" name="price_per_night" step="0.01" min="0" value="<?= number_format($unit['price_per_night'] ?? 0, 2, '.', '') ?>">
+                </div>
+                <div id="edit_monthly_input" class="<?= ($unit['pricing_type'] ?? '') == 'monthly' ? '' : 'd-none' ?>">
+                    <label class="form-label">Price per Month (₱) *</label>
+                    <input type="number" class="form-control" name="price_per_month" step="0.01" min="0" value="<?= number_format($unit['price_per_month'] ?? 0, 2, '.', '') ?>">
+                </div>
             </div>
+            
+            <script>
+            document.querySelectorAll('#editUnitForm input[name="pricing_type"]').forEach(e => {
+                e.addEventListener('change', function() {
+                    if(this.value === 'nightly') {
+                        document.getElementById('edit_nightly_input').classList.remove('d-none');
+                        document.getElementById('edit_monthly_input').classList.add('d-none');
+                    } else {
+                        document.getElementById('edit_nightly_input').classList.add('d-none');
+                        document.getElementById('edit_monthly_input').classList.remove('d-none');
+                    }
+                });
+            });
+            </script>
         </div>
     </div>
     
@@ -208,12 +244,18 @@ $branches = get_multiple_results("SELECT branch_id, branch_name FROM branches WH
         </div>
     </div>
 
+    <div class="mb-3 mt-3">
+        <label class="form-label fw-semibold"><i class="fas fa-comment-dots me-1 text-warning"></i> Message to host <span class="text-muted fw-normal">(optional)</span></label>
+        <textarea class="form-control" name="host_message" rows="3" maxlength="2000" placeholder="Explain what you changed (shown in the host’s Notifications as an admin note)."></textarea>
+        <div class="form-text">The host still owns this listing; they will see your edits on Unit Management and browse pages.</div>
+    </div>
+
     <!-- Action Buttons -->
-    <div class="modal-footer mt-4">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+    <div class="d-flex justify-content-end gap-2 mt-4 pt-3 border-top">
+        <button type="button" class="btn btn-secondary px-4 py-2" data-bs-dismiss="modal">
             <i class="fas fa-times me-2"></i>Cancel
         </button>
-        <button type="submit" name="update_unit" class="btn btn-warning">
+        <button type="button" id="submitUpdateBtn" class="btn btn-warning px-4 py-2">
             <i class="fas fa-save me-2"></i>Update Unit
         </button>
     </div>
@@ -223,8 +265,8 @@ $branches = get_multiple_results("SELECT branch_id, branch_name FROM branches WH
 // Client-side validation functions
 function validateUnitNumber(unitNumber) {
     if (!unitNumber || unitNumber.trim() === '') return false;
-    // Must start with a letter, followed by alphanumeric characters (like A101, w202).
-    return /^[a-zA-Z][a-zA-Z0-9\-\s]*$/.test(unitNumber.trim());
+    // Must start with an alphanumeric character, followed by alphanumeric, hyphens, or spaces.
+    return /^[a-zA-Z0-9][a-zA-Z0-9\-\s]*$/.test(unitNumber.trim());
 }
 
 function validatePrice(price) {
@@ -233,34 +275,66 @@ function validatePrice(price) {
 
 // Form validation and submission
 // Form validation and submission
+// Form validation and submission
 $(document).ready(function() {
-    $('#editUnitForm').on('submit', function(e) {
+    $('#submitUpdateBtn').on('click', function(e) {
         e.preventDefault();
         
-        // Client-side validation
-        let hasErrors = false;
-        const unitNumber = $('input[name="unit_number"]').val();
-        const price = $('input[name="price"]').val();
-        
-        if (!validateUnitNumber(unitNumber)) {
-            $('input[name="unit_number"]').addClass('is-invalid');
-            $('input[name="unit_number"]').next('.invalid-feedback').remove();
-            $('input[name="unit_number"]').after('<div class="invalid-feedback">Invalid unit number format (e.g., A101, w202)</div>');
-            hasErrors = true;
-        }
-        
-        if (!validatePrice(price)) {
-            $('input[name="price"]').addClass('is-invalid');
-            $('input[name="price"]').next('.invalid-feedback').remove();
-            $('input[name="price"]').after('<div class="invalid-feedback">Price must be a valid number (0 or greater)</div>');
-            hasErrors = true;
-        }
-        
-        if (hasErrors) {
+        const formEl = $('#editUnitForm')[0];
+        if (!formEl.checkValidity()) {
+            formEl.reportValidity();
             return;
         }
         
-        const formData = $(this).serialize();
+        // Client-side validation
+        let hasErrors = false;
+        const unitNumber = $('#editUnitForm input[name="unit_number"]').val();
+        const pricingType = $('#editUnitForm input[name="pricing_type"]:checked').val();
+        let priceField;
+        
+        if (pricingType === 'nightly') {
+            priceField = $('#editUnitForm input[name="price_per_night"]');
+        } else {
+            priceField = $('#editUnitForm input[name="price_per_month"]');
+        }
+        
+        const price = priceField.val();
+        
+        if (!validateUnitNumber(unitNumber)) {
+            $('#editUnitForm input[name="unit_number"]').addClass('is-invalid');
+            $('#editUnitForm input[name="unit_number"]').next('.invalid-feedback').remove();
+            $('#editUnitForm input[name="unit_number"]').after('<div class="invalid-feedback">Invalid unit number format (e.g., A101, 301, w202)</div>');
+            hasErrors = true;
+        } else {
+            $('#editUnitForm input[name="unit_number"]').removeClass('is-invalid');
+            $('#editUnitForm input[name="unit_number"]').next('.invalid-feedback').remove();
+        }
+        
+        if (!validatePrice(price)) {
+            priceField.addClass('is-invalid');
+            priceField.next('.invalid-feedback').remove();
+            priceField.after('<div class="invalid-feedback">Price must be a valid number (0 or greater)</div>');
+            hasErrors = true;
+        } else {
+            priceField.removeClass('is-invalid');
+            priceField.next('.invalid-feedback').remove();
+        }
+        
+        if (hasErrors) {
+            // Scroll to the first invalid field and show an alert
+            const firstInvalid = $('.is-invalid').first();
+            if (firstInvalid.length) {
+                firstInvalid[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+            
+            // Add a global alert at the top of the modal if not present
+            if ($('#editUnitModalBody .alert-danger').length === 0) {
+                $('#editUnitForm').prepend('<div class="alert alert-danger mb-3"><i class="fas fa-exclamation-triangle me-2"></i>Please correct the input errors highlighted below before updating.</div>');
+            }
+            return;
+        }
+        
+        const formData = $('#editUnitForm').serialize() + '&update_unit=1';
         
         // Show loading state
         $('#editUnitModalBody').html(`
@@ -328,7 +402,7 @@ $(document).ready(function() {
         });
     });
 
-    $('input[name="max_occupancy"]').on('input', function() {
+    $('#editUnitForm input[name="max_occupancy"]').on('input', function() {
         if (this.value && parseInt(this.value) <= 0) {
             $(this).addClass('is-invalid');
         } else {
