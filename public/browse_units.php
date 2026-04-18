@@ -53,7 +53,7 @@ if ($selectedBranch) {
     $amenityNames = array_map(function($a) { return $a['amenity_name']; }, $branchAmenities);
     
     // Build dynamic SQL with filters
-    $sql = "SELECT u.*, b.branch_name, b.address as branch_address, b.city as branch_city, b.latitude as branch_lat, b.longitude as branch_lng
+    $sql = "SELECT u.*, b.branch_name, b.address as branch_address, b.city as branch_city, b.latitude as branch_lat, b.longitude as branch_lng, b.host_id as branch_host_id
             FROM units u 
             JOIN branches b ON u.branch_id = b.branch_id 
             WHERE u.branch_id = ? AND u.is_available = 1
@@ -78,6 +78,10 @@ if ($selectedBranch) {
         $params[] = $bedrooms;
         $params[] = $bedrooms;
     }
+    if ($guests > 1) {
+        $sql .= " AND u.max_occupancy >= ?";
+        $params[] = $guests;
+    }
     
     $sql .= " ORDER BY IF(u.pricing_type IN ('nightly', 'daily'), u.price_per_night * 30, u.price_per_month) ASC";
     $availableUnits = get_multiple_results($sql, $params);
@@ -101,6 +105,7 @@ if ($selectedBranch) {
             
             $unitsForMap[] = [
                 'unit_id' => $u['unit_id'],
+                'host_id' => !empty($u['host_id']) ? $u['host_id'] : $u['branch_host_id'],
                 'title' => (!empty($u['unit_name']) ? $u['unit_name'] : ($u['unit_number'] ?? 'Unit ' . $u['unit_id'])),
                 'type' => (!empty($u['unit_name']) ? $u['unit_name'] : ($u['unit_type'] ?? 'Unit')),
                 'address' => !empty($u['street_address']) ? $u['street_address'] : ($u['branch_address'] ?? ''),
@@ -321,19 +326,31 @@ if ($selectedBranch) {
                 <form method="GET" id="filterForm" class="flex flex-wrap gap-4 items-center">
                     <input type="hidden" name="branch_id" value="<?php echo $selectedBranch; ?>">
                     
-                    <!-- Price Range -->
-                    <div class="flex items-center gap-2">
-                        <label class="text-sm font-semibold text-gray-700">Price (Monthly):</label>
-                        <input type="number" name="price_min" class="w-24 px-3 py-2 border border-gray-300 rounded-lg text-sm" placeholder="Min" value="<?php echo $priceMin ?? ''; ?>">
-                        <span class="text-gray-500">-</span>
-                        <input type="number" name="price_max" class="w-24 px-3 py-2 border border-gray-300 rounded-lg text-sm" placeholder="Max" value="<?php echo $priceMax ?? ''; ?>">
+                    <!-- Price Slider -->
+                    <div class="flex flex-col gap-1 w-48">
+                        <label class="text-sm font-semibold text-gray-700 flex justify-between">
+                            <span>Max Price (Monthly)</span>
+                            <span id="priceDisplay" class="text-orange-500 font-bold">₱<?php echo number_format($priceMax ?: 100000); ?></span>
+                        </label>
+                        <input type="range" name="price_max" id="priceRange" min="5000" max="250000" step="5000" 
+                               value="<?php echo $priceMax ?: 100000; ?>" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-orange-500" oninput="document.getElementById('priceDisplay').innerText = '₱' + parseInt(this.value).toLocaleString()">
+                    </div>
+
+                    <!-- Capacity (Guests) -->
+                    <div class="flex flex-col gap-1 w-48">
+                        <label class="text-sm font-semibold text-gray-700 flex justify-between">
+                            <span>Capacity (Guests)</span>
+                            <span id="guestDisplay" class="text-orange-500 font-bold"><?php echo ($guests && $guests > 1) ? $guests . '+' : 'Any'; ?></span>
+                        </label>
+                        <input type="range" name="guests" id="guestRange" min="1" max="15" step="1" 
+                               value="<?php echo $guests ?: 1; ?>" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-orange-500" oninput="document.getElementById('guestDisplay').innerText = this.value == 1 ? 'Any' : this.value + '+'">
                     </div>
 
                     <!-- Property Type -->
                     <div class="flex items-center gap-2">
                         <label class="text-sm font-semibold text-gray-700">Type:</label>
                         <select name="property_type" class="px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none focus:ring-2 focus:ring-orange-500">
-                            <option value="">All Types</option>
+                            <option value="">All</option>
                             <option value="Studio" <?php echo ($propertyType == 'Studio') ? 'selected' : ''; ?>>Studio</option>
                             <option value="1 Bedroom" <?php echo ($propertyType == '1 Bedroom') ? 'selected' : ''; ?>>1 Bedroom</option>
                             <option value="2 Bedroom" <?php echo ($propertyType == '2 Bedroom') ? 'selected' : ''; ?>>2 Bedroom</option>
@@ -343,7 +360,7 @@ if ($selectedBranch) {
 
                     <!-- Bedrooms -->
                     <div class="flex items-center gap-2">
-                        <label class="text-sm font-semibold text-gray-700">Bedrooms:</label>
+                        <label class="text-sm font-semibold text-gray-700">Beds:</label>
                         <select name="bedrooms" class="px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none focus:ring-2 focus:ring-orange-500">
                             <option value="">Any</option>
                             <option value="1" <?php echo ($bedrooms == 1) ? 'selected' : ''; ?>>1+</option>
@@ -506,6 +523,10 @@ if ($selectedBranch) {
                                 </div>
                             </div>
 
+                            <button onclick="contactHost()" class="w-full py-3 bg-white text-orange-500 border-2 border-orange-500 font-bold rounded-xl hover:bg-orange-50 transition-all duration-300 flex items-center justify-center gap-2 mb-3">
+                                <i class="fas fa-comment text-lg"></i> 
+                                <span>Contact Host</span>
+                            </button>
                             <button onclick="bookUnit()" class="w-full py-4 bg-gradient-to-r from-orange-500 to-red-500 text-white font-bold rounded-xl hover:shadow-lg hover:from-orange-600 hover:to-red-600 transition-all duration-300 flex items-center justify-center gap-2 transform hover:-translate-y-0.5">
                                 <i class="fas fa-calendar-check text-lg"></i> 
                                 <span>Proceed to Booking</span>
@@ -649,6 +670,23 @@ if ($selectedBranch) {
                 return;
             }
             window.location.href = '../renter/unit_detail.php?unit_id=' + selectedUnitData.unit_id + '&branch_id=<?php echo $selectedBranch ?? ''; ?>';
+        }
+
+        function contactHost() {
+            if (!selectedUnitData) return;
+            if (!<?php echo isLoggedIn() ? 'true' : 'false'; ?>) {
+                window.location.href = 'login.php?redirect=' + encodeURIComponent(window.location.href);
+                return;
+            }
+            if ('<?php echo $_SESSION['role'] ?? ''; ?>' !== 'renter') {
+                alert('Only renter accounts can message hosts.');
+                return;
+            }
+            if (!selectedUnitData.host_id) {
+                alert('Host information not available for this unit.');
+                return;
+            }
+            window.location.href = '../renter/messages.php?host_id=' + selectedUnitData.host_id;
         }
 
     </script>

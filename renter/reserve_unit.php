@@ -33,245 +33,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['search_units'])) {
     }
 }
 
-// Handle unit reservation with amenities
-if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['reserve_unit'])) {
-    // FIXED: Validate CSRF token first
-    if (!isset($_POST['csrf_token']) || !verifyCSRFToken($_POST['csrf_token'])) {
-        $error = "Security validation failed. Please try again.";
-    }
-    // ENHANCED: Check for duplicate submission (nonce protection) - 3 second window
-    else if (isset($_SESSION['last_booking_submission'])) {
-        $time_diff = time() - $_SESSION['last_booking_submission'];
-        if ($time_diff < 3) {
-            // Prevent duplicate submissions within 3 seconds
-            $error = "Please wait a moment before submitting another booking.";
-        } else {
-            unset($_SESSION['last_booking_submission']);
-        }
-    }
-    
-    if (empty($error)) {
-        // FIXED: Input validation for CRITICAL #8
-        $unitId = (int)$_POST['unit_id'];
-        $branchId = (int)$_POST['branch_id'];
-        $checkInDate = sanitize_input($_POST['check_in_date']);
-        $checkOutDate = sanitize_input($_POST['check_out_date']);
-        $specialRequests = sanitize_input($_POST['special_requests'] ?? '');
-        
-        // Validate inputs before database queries
-        if ($unitId <= 0 || $branchId <= 0) {
-            $error = "Invalid unit or branch selected.";
-        } else if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $checkInDate) || !preg_match('/^\d{4}-\d{2}-\d{2}$/', $checkOutDate)) {
-            $error = "Invalid date format.";
-        } else {
-            // Kumuha ng unit details para sa pricing - FIXED: CRITICAL #2 SQL Injection
-            $unit = get_single_result("SELECT * FROM units WHERE unit_id = ? AND branch_id = ? AND (approval_status = 'approved' OR approval_status IS NULL)", [$unitId, $branchId]);
-            $branch = get_single_result("SELECT * FROM branches WHERE branch_id = ?", [$branchId]);
-            
-            if ($unit && $branch) {
-            // I-calculate ang unit amount
-            $totalDays = calculateDays($checkInDate, $checkOutDate);
-            
-            // Unified Pricing Logic: fetch rate directly from units table
-            $pricing_type = $unit['pricing_type'] ?? 'nightly';
-            if ($pricing_type === 'nightly' || $pricing_type === 'daily') {
-                $dailyRate = (float)($unit['price_per_night'] ?? 0);
-            } else {
-                $dailyRate = (float)($unit['price_per_month'] ?? 0) / 30;
-            }
-            $dailyRate = max(0, $dailyRate);
-            
-            $unitAmount = $dailyRate * $totalDays;
-            $securityDeposit = $unit['security_deposit'];
-            $cleaningFee = isset($unit['cleaning_fee']) ? (float)$unit['cleaning_fee'] : 0.0;
-            $serviceFee = isset($unit['service_fee']) ? (float)$unit['service_fee'] : 0.0;
-            
-            // I-calculate ang amenity costs - FIXED: CRITICAL #3 SQL Injection
-            $amenityCosts = 0;
-            $selectedAmenities = [];
-            if (isset($_POST['amenities']) && is_array($_POST['amenities'])) {
-                foreach ($_POST['amenities'] as $amenityId) {
-                    $amenityId = (int)$amenityId;  // Validate as integer
-                    if ($amenityId > 0) {
-                        // FIXED: Use prepared statement instead of direct concatenation
-                        $amenity = get_single_result(
-                            "SELECT * FROM amenities WHERE amenity_id = ? AND branch_id = ?",
-                            [$amenityId, $branchId]
-                        );
-                        if ($amenity) {
-                            $amenityCosts += $amenity['hourly_rate'] * $totalDays; // Assuming daily rate
-                            $selectedAmenities[] = $amenity;
-                        }
-                    }
-                }
-            }
-            $totalAmount = $unitAmount + $amenityCosts + $cleaningFee + $serviceFee;
-            
-            // Apply Promo Code if provided
-            $promo_code = isset($_POST['promo_code']) ? sanitize_input($_POST['promo_code']) : '';
-            $discountAmount = 0;
-            if (!empty($promo_code)) {
-                $promo = get_single_result("
-                    SELECT p.*, u.role as creator_role 
-                    FROM promos p 
-                    LEFT JOIN users u ON p.created_by = u.user_id 
-                    WHERE p.code = ? AND p.is_active = 1 LIMIT 1
-                ", [$promo_code]);
-                
-                if ($promo) {
-                    $valid_promo = true;
-                    
-                    if (!empty($promo['expires_at']) && strtotime($promo['expires_at']) < time()) {
-                        $valid_promo = false;
-                    }
-                    if (!empty($promo['usage_limit']) && (int) $promo['used_count'] >= (int) $promo['usage_limit']) {
-                        $valid_promo = false;
-                    }
-                    
-                    if (isset($promo['creator_role']) && in_array($promo['creator_role'], ['host', 'manager'])) {
-                        if (!isset($unit['host_id']) || (int) $promo['created_by'] !== (int) $unit['host_id']) {
-                            $valid_promo = false;
-                        }
-                    }
-                    
-                    if ($valid_promo) {
-                        $value = (float)$promo['value'];
-                        if ($promo['type'] === 'percentage') {
-                            $discountAmount = $unitAmount * ($value / 100.0);
-                        } else {
-                            $discountAmount = $value;
-                        }
-                    }
-                }
-            }
-            
-            $totalAmount = max(0, $totalAmount - $discountAmount);
-            
-            // Read extra guest info and booking type
-            $bookingType = sanitize_input($_POST['booking_type'] ?? 'request');
-            $guestFullname = sanitize_input($_POST['guest_fullname'] ?? ($_SESSION['fullname'] ?? ''));
-            $guestPhone = sanitize_input($_POST['guest_phone'] ?? ($_SESSION['phone'] ?? ''));
-            $purposeOfStay = sanitize_input($_POST['purpose_of_stay'] ?? '');
-            $numAdults = max(1, (int)($_POST['num_adults'] ?? 1));
-            $numChildren = max(0, (int)($_POST['num_children'] ?? 0));
-            $maxOcc = max(1, (int)($unit['max_occupancy'] ?? 10));
-            if ($numAdults + $numChildren > $maxOcc) {
-                $error = 'Guest count exceeds this unit\'s maximum occupancy (' . $maxOcc . ').';
-            }
-
-            // I-create ang reservation
-            $reservationId = empty($error) ? createReservation(
-                $_SESSION['user_id'], 
-                $unitId, 
-                $branchId, 
-                $checkInDate, 
-                $checkOutDate, 
-                $totalAmount, 
-                $securityDeposit, 
-                $specialRequests,
-                $numAdults,
-                $numChildren
-            ) : false;
-            
-            if ($reservationId) {
-                // Mark submission time IMMEDIATELY to prevent race conditions
-                $_SESSION['last_booking_submission'] = time();
-                
-                // I-create ang amenity bookings kung may selected amenities
-                if (!empty($selectedAmenities)) {
-                    foreach ($selectedAmenities as $amenity) {
-                        $amenityBookingId = bookAmenity(
-                            $_SESSION['user_id'],
-                            $amenity['amenity_id'],
-                            $branchId,
-                            $checkInDate,
-                            '00:00:00',
-                            '23:59:59',
-                            $amenity['hourly_rate'] * $totalDays
-                        );
-                    }
-                }
-                
-                // Mag-send ng notification
-                $amenityText = !empty($selectedAmenities) ? " with amenities: " . implode(', ', array_column($selectedAmenities, 'amenity_name')) : "";
-                sendNotification(
-                    $_SESSION['user_id'],
-                    "Reservation Created",
-                    "Your reservation for Unit " . $unit['unit_number'] . $amenityText . " has been created successfully. Reservation ID: " . $reservationId,
-                    'booking',
-                    'system'
-                );
-
-                // Handle government ID upload if provided
-                if (isset($_FILES['government_id']) && $_FILES['government_id']['error'] === UPLOAD_ERR_OK) {
-                    $uploadDir = dirname(__FILE__, 2) . '/uploads/ids/';
-                    if (!is_dir($uploadDir)) mkdir($uploadDir, 0755, true);
-                    $origName = basename($_FILES['government_id']['name']);
-                    $ext = pathinfo($origName, PATHINFO_EXTENSION);
-                    $allowed = ['jpg','jpeg','png','pdf'];
-                    if (in_array(strtolower($ext), $allowed) && $_FILES['government_id']['size'] <= 5 * 1024 * 1024) {
-                        $targetName = 'reservation_' . $reservationId . '_' . time() . '.' . $ext;
-                        $targetPath = $uploadDir . $targetName;
-                        if (move_uploaded_file($_FILES['government_id']['tmp_name'], $targetPath)) {
-                            // Try to store path in reservations table (if column exists)
-                            $relativePath = 'uploads/ids/' . $targetName;
-                            try {
-                                execute_query("UPDATE reservations SET government_id_path = ? WHERE reservation_id = ?", [$relativePath, $reservationId]);
-                            } catch (Exception $ex) {
-                                // ignore if column doesn't exist
-                            }
-                        }
-                    }
-                }
-
-                $message = "Reservation created successfully! Reservation ID: " . $reservationId;
-                // Mark booking as Pending Payment for manual receipt flow
-                try {
-                    execute_query("UPDATE reservations SET status = 'pending', payment_status = 'pending' WHERE reservation_id = ?", [$reservationId]);
-                } catch (Exception $ex) {
-                    // ignore if columns differ in DB
-                }
-                $availableUnits = []; // I-clear ang search results
-
-                // If instant booking requested, mark approved and redirect to checkout to pay
-                if ($bookingType === 'instant') {
-                    // Try to set reservation to approved so checkout will allow payment
-                    try {
-                        execute_query("UPDATE reservations SET reservation_status = 'approved', approved_by = ? , approved_at = NOW() WHERE reservation_id = ?", [$_SESSION['user_id'], $reservationId]);
-                    } catch (Exception $ex) {
-                        // ignore
-                    }
-
-                    // Redirect renter to checkout to complete payment
-                    header('Location: ../renter/checkout.php?type=reservation&id=' . $reservationId);
-                    exit;
-                }
-            } else {
-                // I-check kung may existing pending reservation - FIXED: CRITICAL #4 SQL Injection
-                $existingReservation = get_single_result(
-                    "SELECT reservation_id FROM reservations 
-                    WHERE user_id = ? 
-                    AND status = 'pending' 
-                    AND (
-                        (check_in_date <= ? AND check_out_date > ?) OR
-                        (check_in_date < ? AND check_out_date >= ?) OR
-                        (check_in_date >= ? AND check_out_date <= ?)
-                    )",
-                    [$_SESSION['user_id'], $checkOutDate, $checkInDate, $checkOutDate, $checkInDate, $checkInDate, $checkOutDate]
-                );
-                
-                if ($existingReservation) {
-                    $error = "You already have a pending reservation for overlapping dates. Please remove your existing booking first or choose different dates.";
-                } else {
-                    $error = "Failed to create reservation. Unit may no longer be available.";
-                }
-            }
-        } else {
-            $error = "Invalid unit or branch selected.";
-        }
-        }
-    }
-}
 
 // Kumuha ng lahat ng branches
 $branches = mysqli_query($conn, "SELECT * FROM branches WHERE is_active = 1 ORDER BY branch_name");
@@ -385,6 +146,24 @@ $branches = mysqli_query($conn, "SELECT * FROM branches WHERE is_active = 1 ORDE
             </div>
         </div>
     </nav>
+
+    <!-- Flash Messages -->
+    <?php if (isset($_SESSION['flash_error'])): ?>
+        <div class="max-w-7xl mx-auto px-4 mt-4">
+            <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative shadow-sm">
+                <i class="fas fa-exclamation-circle mr-2"></i> <?php echo htmlspecialchars($_SESSION['flash_error']); ?>
+            </div>
+        </div>
+        <?php unset($_SESSION['flash_error']); ?>
+    <?php endif; ?>
+    <?php if (isset($_SESSION['flash_success'])): ?>
+        <div class="max-w-7xl mx-auto px-4 mt-4">
+            <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative shadow-sm">
+                <i class="fas fa-check-circle mr-2"></i> <?php echo htmlspecialchars($_SESSION['flash_success']); ?>
+            </div>
+        </div>
+        <?php unset($_SESSION['flash_success']); ?>
+    <?php endif; ?>
 
     <!-- Hero Section -->
     <section class="relative bg-gradient-to-br from-blue-600 to-blue-800 py-16 mb-8">
@@ -657,10 +436,14 @@ $branches = mysqli_query($conn, "SELECT * FROM branches WHERE is_active = 1 ORDE
                                             </span>
                                         </div>
                                     </div>
-                                    
-                                    <button type="submit" name="reserve_unit" class="btn-modern btn-luxury-primary w-full mt-6 justify-center text-lg">
-                                        <i class="fas fa-calendar-plus"></i> Reserve This Unit
-                                    </button>
+                                    <div class="mt-6 flex flex-col gap-3">
+                                        <button type="submit" name="action_type" value="book" formaction="booking_summary.php" class="btn-modern btn-luxury-primary w-full justify-center text-lg">
+                                            <i class="fas fa-bolt"></i> Book Now
+                                        </button>
+                                        <button type="submit" name="action_type" value="reserve" formaction="process_reservation.php" class="btn-modern !bg-white !text-gray-700 border border-gray-300 hover:!bg-gray-50 w-full justify-center text-lg">
+                                            <i class="fas fa-clock"></i> Reserve Unit (10 Min Hold)
+                                        </button>
+                                    </div>
                                 </form>
                             </div>
                         </div>

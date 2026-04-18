@@ -306,7 +306,7 @@ $serviceFee = isset($unit['service_fee']) ? (float) $unit['service_fee'] : 0.0;
                             </div>
                         </div>
 
-                        <form method="POST" action="reserve_unit.php" class="space-y-4">
+                        <form method="POST" class="space-y-4">
                             <input type="hidden" name="csrf_token" value="<?php echo generateCSRFToken(); ?>">
                             <input type="hidden" name="unit_id" value="<?php echo $unitId; ?>">
                             <input type="hidden" name="branch_id" value="<?php echo $unit['branch_id']; ?>">
@@ -441,13 +441,13 @@ $serviceFee = isset($unit['service_fee']) ? (float) $unit['service_fee'] : 0.0;
 
                             <!-- Buttons -->
                             <div class="space-y-2 pt-4">
-                                <button type="submit" name="book_now"
+                                <button type="submit" name="action_type" value="book" formaction="booking_summary.php"
                                     class="w-full px-6 py-3 bg-gradient-to-r from-orange-500 to-red-500 text-white font-semibold rounded-lg hover:opacity-95 transition shadow-md">
-                                    Book Now
+                                    <i class="fas fa-bolt"></i> Book Now
                                 </button>
-                                <button type="submit" name="reserve_unit"
+                                <button type="submit" name="action_type" value="reserve" formaction="process_reservation.php"
                                     class="w-full px-6 py-3 border border-gray-300 text-gray-900 font-semibold rounded-lg hover:bg-gray-50 transition">
-                                    Reserve
+                                    <i class="fas fa-clock"></i> Reserve Unit (10 Min Hold)
                                 </button>
                             </div>
                         </form>

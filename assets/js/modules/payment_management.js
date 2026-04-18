@@ -48,10 +48,11 @@ function initializePaymentDetails() {
     document.querySelectorAll('.view-payment').forEach(button => {
         button.addEventListener('click', function() {
             const paymentId = this.getAttribute('data-payment-id');
+            const paymentProof = this.getAttribute('data-payment-proof');
             const modalContent = document.getElementById('paymentDetailsContent');
             
             showLoading(modalContent);
-            loadPaymentDetails(paymentId, modalContent);
+            loadPaymentDetails(paymentId, modalContent, paymentProof);
         });
     });
 }
@@ -65,14 +66,56 @@ function showLoading(container) {
     `;
 }
 
-function loadPaymentDetails(paymentId, container) {
+function loadPaymentDetails(paymentId, container, paymentProof) {
     // For demo purposes - in production, you would make an AJAX call
     setTimeout(() => {
-        container.innerHTML = generatePaymentDetailsHTML(paymentId);
-    }, 1000);
+        container.innerHTML = generatePaymentDetailsHTML(paymentId, paymentProof);
+    }, 500);
 }
 
-function generatePaymentDetailsHTML(paymentId) {
+function generatePaymentDetailsHTML(paymentId, paymentProof) {
+    let proofHtml = '';
+    if (paymentProof && paymentProof.trim() !== '') {
+        // If it's a PDF, show a link, otherwise an image
+        if (paymentProof.toLowerCase().endsWith('.pdf')) {
+            proofHtml = `
+            <div class="row mt-3">
+                <div class="col-12">
+                    <div class="payment-detail-item">
+                        <div class="payment-detail-label">Payment Proof</div>
+                        <div class="payment-detail-value">
+                            <a href="../${paymentProof}" target="_blank" class="btn btn-sm btn-outline-primary"><i class="fas fa-file-pdf"></i> View PDF Receipt</a>
+                        </div>
+                    </div>
+                </div>
+            </div>`;
+        } else {
+            proofHtml = `
+            <div class="row mt-3">
+                <div class="col-12">
+                    <div class="payment-detail-item">
+                        <div class="payment-detail-label">Payment Proof</div>
+                        <div class="payment-detail-value">
+                            <a href="../${paymentProof}" target="_blank">
+                                <img src="../${paymentProof}" alt="Payment Proof" class="img-fluid rounded border" style="max-height: 200px; object-fit: contain;">
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>`;
+        }
+    } else {
+        proofHtml = `
+        <div class="row mt-3">
+            <div class="col-12">
+                <div class="payment-detail-item">
+                    <div class="payment-detail-label">Payment Proof</div>
+                    <div class="payment-detail-value text-muted"><em>No proof uploaded</em></div>
+                </div>
+            </div>
+        </div>`;
+    }
+
     return `
         <div class="row">
             <div class="col-md-6">
@@ -142,6 +185,7 @@ function generatePaymentDetailsHTML(paymentId) {
                 </div>
             </div>
         </div>
+        ${proofHtml}
         <div class="mt-3">
             <small class="text-muted">
                 <i class="fas fa-info-circle me-1"></i>

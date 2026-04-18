@@ -126,10 +126,15 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['initiate_payment'])) {
         } else if (!$bookingDetails) {
             $error = "Booking details not found.";
         } else {
-            // Calculate total with fees
-            $subtotal = (float)$bookingDetails['total_amount'];
-            $fee = ($subtotal * $paymentMethods[$paymentMethod]['fee']) / 100;
-            $total = $subtotal + $fee;
+            // Calculate total with new breakdown: Base + Service Fee (5%) + VAT (12%) + Security Deposit
+            $base_price = (float)$bookingDetails['total_amount'];
+            $sec_deposit = (float)($bookingDetails['security_deposit'] ?? 0);
+            $service_fee = $base_price * 0.05;
+            $vat = ($base_price + $service_fee) * 0.12;
+            $subtotal = $base_price + $sec_deposit + $service_fee + $vat;
+            
+            $gateway_fee = ($subtotal * $paymentMethods[$paymentMethod]['fee']) / 100;
+            $total = $subtotal + $gateway_fee;
             
             // Store payment session data
             $_SESSION['pending_payment'] = [
@@ -137,8 +142,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['initiate_payment'])) {
                 'id' => $id,
                 'booking_id' => $type == 'reservation' ? $bookingDetails['reservation_id'] : $bookingDetails['booking_id'],
                 'method' => $paymentMethod,
+                'base_price' => $base_price,
+                'sec_deposit' => $sec_deposit,
+                'service_fee' => $service_fee,
+                'vat' => $vat,
                 'subtotal' => $subtotal,
-                'fee' => $fee,
+                'fee' => $gateway_fee,
                 'total' => $total,
                 'created_at' => date('Y-m-d H:i:s')
             ];
@@ -346,31 +355,34 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['initiate_payment'])) {
                         
                         <!-- Pricing Breakdown -->
                             <div class="pricing-breakdown">
+                                <?php 
+                                    $base_ui = (float)$bookingDetails['total_amount'];
+                                    $sec_deposit_ui = (float)($bookingDetails['security_deposit'] ?? 0);
+                                    $service_fee_ui = $base_ui * 0.05;
+                                    $vat_ui = ($base_ui + $service_fee_ui) * 0.12;
+                                    $grand_total_ui = $base_ui + $sec_deposit_ui + $service_fee_ui + $vat_ui;
+                                ?>
                                 <div class="pricing-row">
-                                    <span>Subtotal</span>
-                                    <span>₱<?php echo number_format($bookingDetails['total_amount'], 2); ?></span>
+                                    <span>Base Amount</span>
+                                    <span>₱<?php echo number_format($base_ui, 2); ?></span>
                                 </div>
-                                <?php if (!empty($bookingDetails['security_deposit'])): ?>
+                                <?php if ($sec_deposit_ui > 0): ?>
                                 <div class="pricing-row">
-                                    <span>Security Deposit</span>
-                                    <span>₱<?php echo number_format($bookingDetails['security_deposit'], 2); ?></span>
-                                </div>
-                                <?php endif; ?>
-                                <?php if (!empty($bookingDetails['cleaning_fee'])): ?>
-                                <div class="pricing-row">
-                                    <span>Cleaning Fee</span>
-                                    <span>₱<?php echo number_format($bookingDetails['cleaning_fee'], 2); ?></span>
-                                </div>
-                                <?php endif; ?>
-                                <?php if (!empty($bookingDetails['service_fee'])): ?>
-                                <div class="pricing-row">
-                                    <span>Service Fee</span>
-                                    <span>₱<?php echo number_format($bookingDetails['service_fee'], 2); ?></span>
+                                    <span>Security Deposit (Refundable)</span>
+                                    <span>₱<?php echo number_format($sec_deposit_ui, 2); ?></span>
                                 </div>
                                 <?php endif; ?>
+                                <div class="pricing-row">
+                                    <span>Booking Service Fee (5%)</span>
+                                    <span>₱<?php echo number_format($service_fee_ui, 2); ?></span>
+                                </div>
+                                <div class="pricing-row">
+                                    <span>VAT (12%)</span>
+                                    <span>₱<?php echo number_format($vat_ui, 2); ?></span>
+                                </div>
                                 <div class="pricing-row total">
-                                    <span>Total Amount</span>
-                                    <span>₱<?php echo number_format($bookingDetails['total_amount'] + ($bookingDetails['security_deposit'] ?? 0) + ($bookingDetails['cleaning_fee'] ?? 0) + ($bookingDetails['service_fee'] ?? 0), 2); ?></span>
+                                    <span>Total Amount to Pay</span>
+                                    <span>₱<?php echo number_format($grand_total_ui, 2); ?> <span class="text-sm font-normal text-gray-500">(+ gateway fee if applicable)</span></span>
                                 </div>
                             </div>
                     </div>
@@ -440,7 +452,34 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['initiate_payment'])) {
     </div>
     
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="../assets/js/renter/checkout.js"></script>
     <script src="../assets/js/renter/ui.js"></script>
+    <?php if (isset($type) && $type == 'reservation' && isset($id)): ?>
+    <script>
+        // Set up long polling for Real-Time Unavailability alerts
+        setInterval(() => {
+            fetch('../modules/api/check_booking_status.php?reservation_id=<?php echo $id; ?>')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status) {
+                        const s = data.status.toLowerCase();
+                        if (s === 'cancelled' || s === 'expired') {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Reservation Expired!',
+                                text: 'Your 10-minute hold window has expired or the unit was booked by someone else. Redirecting...',
+                                allowOutsideClick: false,
+                                confirmButtonColor: '#f97316'
+                            }).then(() => {
+                                window.location.href = 'my_bookings.php';
+                            });
+                        }
+                    }
+                })
+                .catch(error => console.error('Polling error:', error));
+        }, 5000); // Check every 5 seconds
+    </script>
+    <?php endif; ?>
 </body>
 </html>

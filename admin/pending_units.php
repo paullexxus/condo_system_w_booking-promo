@@ -22,11 +22,36 @@ if (isset($_SESSION['error_message'])) {
 // Handle approve action
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['approve_unit'])) {
     $unit_id = (int)($_POST['unit_id'] ?? 0);
+    $admin_id = $_SESSION['user_id'];
+    
     if ($unit_id > 0) {
-        if (execute_query("UPDATE units SET approval_status = 'approved', rejection_reason = NULL WHERE unit_id = ?", [$unit_id])) {
+        // Fetch host_id for notification
+        $unit_info = get_single_result("SELECT host_id, unit_name FROM units WHERE unit_id = ?", [$unit_id]);
+        
+        $stmt = $conn->prepare("UPDATE units SET approval_status = 'approved', is_available = 1, rejection_reason = NULL WHERE unit_id = ? AND approval_status = 'pending'");
+        $stmt->bind_param("i", $unit_id);
+        $stmt->execute();
+        
+        if ($stmt->affected_rows > 0) {
             $_SESSION['success_message'] = "Unit approved successfully. It is now visible to renters.";
+            
+            // Log to audit table
+            execute_query(
+                "INSERT INTO audit_logs (user_id, action_type, entity_id, entity_type, details) VALUES (?, 'approve_unit', ?, 'unit', ?)",
+                [$admin_id, $unit_id, "[UNIT-".$unit_id."] APPROVE | PENDING -> APPROVED | N/A"]
+            );
+            
+            // Notify Host
+            if ($unit_info) {
+                $host_id = (int)$unit_info['host_id'];
+                $msg = "Your unit '" . $unit_info['unit_name'] . "' has been approved and is now live.";
+                execute_query(
+                    "INSERT INTO notifications (user_id, related_id, type, priority, title, message, redirect_url) VALUES (?, ?, 'system', 'normal', 'Unit Approved', ?, 'unit_management.php')",
+                    [$host_id, $unit_id, $msg]
+                );
+            }
         } else {
-            $_SESSION['error_message'] = "Failed to approve unit.";
+            $_SESSION['error_message'] = "Failed to approve unit. It may have already been processed by another administrator.";
         }
     } else {
         $_SESSION['error_message'] = "Invalid unit ID.";
@@ -38,6 +63,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['approve_unit'])) {
 // Handle reject action
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['reject_unit'])) {
     $unit_id = (int)($_POST['unit_id'] ?? 0);
+    $admin_id = $_SESSION['user_id'];
     $rejection_reason = trim($_POST['rejection_reason'] ?? '');
     
     if ($unit_id <= 0) {
@@ -45,10 +71,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['reject_unit'])) {
     } elseif (empty($rejection_reason)) {
         $_SESSION['error_message'] = "Rejection reason is required.";
     } else {
-        if (execute_query("UPDATE units SET approval_status = 'rejected', rejection_reason = ? WHERE unit_id = ?", [sanitize_input($rejection_reason), $unit_id])) {
+        $unit_info = get_single_result("SELECT host_id, unit_name FROM units WHERE unit_id = ?", [$unit_id]);
+        
+        $reason = sanitize_input($rejection_reason);
+        $stmt = $conn->prepare("UPDATE units SET approval_status = 'rejected', is_available = 0, rejection_reason = ? WHERE unit_id = ? AND approval_status = 'pending'");
+        $stmt->bind_param("si", $reason, $unit_id);
+        $stmt->execute();
+        
+        if ($stmt->affected_rows > 0) {
             $_SESSION['success_message'] = "Unit rejected. Host has been notified of the reason.";
+            
+            // Log to audit table
+            execute_query(
+                "INSERT INTO audit_logs (user_id, action_type, entity_id, entity_type, details) VALUES (?, 'reject_unit', ?, 'unit', ?)",
+                [$admin_id, $unit_id, "[UNIT-".$unit_id."] REJECT | PENDING -> REJECTED | Reason: " . $reason]
+            );
+            
+            // Notify Host
+            if ($unit_info) {
+                $host_id = (int)$unit_info['host_id'];
+                $msg = "Your unit '" . $unit_info['unit_name'] . "' was rejected. Reason: " . $rejection_reason;
+                execute_query(
+                    "INSERT INTO notifications (user_id, related_id, type, priority, title, message, admin_message, redirect_url) VALUES (?, ?, 'system', 'normal', 'Unit Rejected', ?, ?, 'unit_management.php')",
+                    [$host_id, $unit_id, $msg, $reason]
+                );
+            }
         } else {
-            $_SESSION['error_message'] = "Failed to reject unit.";
+            $_SESSION['error_message'] = "Failed to reject unit. It may have already been processed by another administrator.";
         }
     }
     header("Location: pending_units.php");
@@ -142,7 +191,7 @@ try {
                     </thead>
                     <tbody>
                         <?php foreach ($pending_units as $u): ?>
-                        <tr>
+                        <tr id="unit_row_<?= (int)$u['unit_id'] ?>">
                             <td>
                                 <strong><?= htmlspecialchars($u['unit_name'] ?? $u['unit_number'] ?? 'Unit #' . $u['unit_id']) ?></strong>
                                 <br><small class="text-muted"><?= htmlspecialchars($u['unit_type'] ?? 'N/A') ?> • <?= (int)($u['max_occupancy'] ?? 0) ?> persons</small>
@@ -202,5 +251,22 @@ try {
     </main>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const unitId = urlParams.get('unit_id');
+        if (unitId) {
+            const row = document.getElementById('unit_row_' + unitId);
+            if (row) {
+                row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                row.style.transition = "background-color 2s";
+                row.style.backgroundColor = "#fff3cd"; // Highlight warning color
+                setTimeout(() => {
+                    row.style.backgroundColor = ""; // Fade out
+                }, 4000);
+            }
+        }
+    });
+</script>
 </body>
 </html>

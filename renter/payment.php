@@ -24,13 +24,35 @@ if (isset($_GET['type']) && isset($_GET['id'])) {
     } else {
         if ($type == 'reservation') {
             $reservation = get_single_result(
-                "SELECT r.*, u.unit_number, u.unit_type, b.branch_name, b.address 
+                "SELECT r.*, u.unit_number, u.unit_type, b.branch_name, b.address, b.is_active as branch_active 
                 FROM reservations r 
                 JOIN units u ON r.unit_id = u.unit_id 
                 JOIN branches b ON r.branch_id = b.branch_id 
                 WHERE r.reservation_id = ? AND r.user_id = ?",
                 [$id, $_SESSION['user_id']]
             );
+            
+            // Strict Payment Validations
+            if ($reservation) {
+                // Check if already paid or cancelled
+                if ($reservation['status'] !== 'pending') {
+                    $_SESSION['flash_error'] = "This reservation is already " . htmlspecialchars($reservation['status']) . ". Payment is no longer required or possible.";
+                    header('Location: my_bookings.php');
+                    exit;
+                }
+                
+                // Check for hold expiration
+                if (!empty($reservation['hold_expiry']) && strtotime($reservation['hold_expiry']) < time()) {
+                    execute_query("UPDATE reservations SET status = 'expired' WHERE reservation_id = ?", [$id]);
+                    $_SESSION['flash_error'] = "Your reservation hold has expired. The unit is no longer reserved for you. Please book again.";
+                    header('Location: my_bookings.php');
+                    exit;
+                }
+            } else {
+                $_SESSION['flash_error'] = "Invalid or unauthorized reservation access.";
+                header('Location: my_bookings.php');
+                exit;
+            }
         } elseif ($type == 'amenity') {
             $amenityBooking = get_single_result(
                 "SELECT ab.*, a.name AS amenity_name, '' AS description, b.branch_name 
@@ -59,30 +81,42 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['process_payment'])) {
         $amenityBookingId = $amenityBooking['booking_id'];
     }
     
-    // I-process ang payment
-    $paymentId = processPayment($reservationId, $amenityBookingId, $_SESSION['user_id'], $amount, $paymentMethod, $transactionReference);
-    
-    if ($paymentId) {
-        // I-update ang status ng reservation o amenity booking
-        if ($reservation) {
-            $sql = "UPDATE reservations SET payment_status = 'paid' WHERE reservation_id = ?";
-            execute_query($sql, [$reservationId]);
-        } elseif ($amenityBooking) {
-            $sql = "UPDATE amenity_bookings SET status = 'confirmed' WHERE booking_id = ?";
-            execute_query($sql, [$amenityBookingId]);
-        }
+    // Handle payment proof upload
+    $paymentProofPath = '';
+    if (isset($_FILES['payment_proof']) && $_FILES['payment_proof']['error'] === UPLOAD_ERR_OK) {
+        $uploadDir = dirname(__FILE__, 2) . '/uploads/receipts/';
+        if (!is_dir($uploadDir)) mkdir($uploadDir, 0755, true);
         
-        // Mag-send ng notification
-        $title = $reservation ? "Payment Confirmed - Unit Reservation" : "Payment Confirmed - Amenity Booking";
-        $message = $reservation ? 
-            "Your payment for Unit " . $reservation['unit_number'] . " has been confirmed." :
-            "Your payment for " . $amenityBooking['amenity_name'] . " has been confirmed.";
+        $origName = basename($_FILES['payment_proof']['name']);
+        $ext = pathinfo($origName, PATHINFO_EXTENSION);
+        $allowed = ['jpg','jpeg','png','pdf'];
+        
+        if (in_array(strtolower($ext), $allowed) && $_FILES['payment_proof']['size'] <= 5 * 1024 * 1024) {
+            $prefix = $reservationId ? "res_{$reservationId}" : "am_{$amenityBookingId}";
+            $targetName = 'payment_' . $prefix . '_' . time() . '.' . $ext;
+            $targetPath = $uploadDir . $targetName;
             
-        sendNotification($_SESSION['user_id'], $title, $message, 'payment', 'system');
-        
-        $message = "Payment processed successfully! Payment ID: " . $paymentId;
+            if (move_uploaded_file($_FILES['payment_proof']['tmp_name'], $targetPath)) {
+                $paymentProofPath = 'uploads/receipts/' . $targetName;
+            } else {
+                $error = "Failed to upload payment proof.";
+            }
+        } else {
+            $error = "Invalid file format or file size too large (max 5MB).";
+        }
     } else {
-        $error = "Failed to process payment. Please try again.";
+        $error = "Payment proof is required. Please upload your receipt.";
+    }
+    
+    if (empty($error)) {
+        // I-process ang payment with proof
+        $paymentId = processPayment($reservationId, $amenityBookingId, $_SESSION['user_id'], $amount, $paymentMethod, $transactionReference, 'pending', $paymentProofPath);
+        
+        if ($paymentId) {
+            $message = "Payment processed successfully! Payment ID: " . $paymentId . ". Awaiting admin verification.";
+        } else {
+            $error = "Failed to process payment. Please try again.";
+        }
     }
 }
 
@@ -162,6 +196,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['process_payment'])) {
                 <div class="payment-card">
                     <h3><i class="fas fa-credit-card"></i> Secure Payment</h3>
                     <p class="mb-0">Complete your payment to confirm your booking</p>
+                    <?php if ($reservation && $reservation['status'] === 'pending' && !empty($reservation['hold_expiry'])): ?>
+                        <div class="mt-2 text-warning fw-bold">
+                            <i class="fas fa-clock"></i> Hold expires in: <span id="payment-timer" data-expires="<?php echo $reservation['hold_expiry']; ?>">--:--</span>
+                        </div>
+                    <?php endif; ?>
                 </div>
 
                 <!-- Messages -->
@@ -187,50 +226,76 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['process_payment'])) {
                                 <h5><i class="fas fa-credit-card"></i> Select Payment Method</h5>
                             </div>
                             <div class="card-body">
-                                <form method="POST" id="paymentForm">
-                                    <input type="hidden" name="amount" value="<?php echo $reservation ? $reservation['total_amount'] : $amenityBooking['total_amount']; ?>">
+                                <form method="POST" id="paymentForm" enctype="multipart/form-data">
+                                    <?php 
+                                        if ($reservation) {
+                                            $base_ui = (float)$reservation['total_amount'];
+                                            $sec_deposit = (float)($reservation['security_deposit'] ?? 0);
+                                            $service_fee = $base_ui * 0.05;
+                                            $vat = ($base_ui + $service_fee) * 0.12;
+                                            $totalToPay = $base_ui + $sec_deposit + $service_fee + $vat;
+                                        } else {
+                                            $totalToPay = $amenityBooking['total_amount'];
+                                        }
+                                        $partialAmount = $reservation ? round($totalToPay * 0.5, 2) : 0;
+                                    ?>
+                                    
+                                    <!-- Payment Choice -->
+                                    <?php if ($reservation): ?>
+                                    <div class="mb-4">
+                                        <label class="form-label fw-bold">Payment Plan</label>
+                                        <div class="d-flex gap-3">
+                                            <div class="form-check card border p-3 flex-fill">
+                                                <input class="form-check-input" type="radio" name="payment_plan" id="planFull" value="full" checked onchange="updatePaymentAmount(<?php echo $totalToPay; ?>)">
+                                                <label class="form-check-label" for="planFull">
+                                                    <strong>Full Payment</strong><br>
+                                                    <small class="text-muted"><?php echo format_currency($totalToPay); ?></small>
+                                                </label>
+                                            </div>
+                                            <div class="form-check card border p-3 flex-fill">
+                                                <input class="form-check-input" type="radio" name="payment_plan" id="planPartial" value="partial" onchange="updatePaymentAmount(<?php echo $partialAmount; ?>)">
+                                                <label class="form-check-label" for="planPartial">
+                                                    <strong>Partial (50%)</strong><br>
+                                                    <small class="text-muted"><?php echo format_currency($partialAmount); ?></small>
+                                                </label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <?php endif; ?>
+
+                                    <input type="hidden" name="amount" id="paymentAmountInput" value="<?php echo $totalToPay; ?>">
+                                    <input type="hidden" name="is_partial" id="isPartialInput" value="0">
                                     
                                     <div class="row">
                                         <!-- GCash -->
-                                        <div class="col-md-6 mb-3">
+                                        <div class="col-md-4 mb-3">
                                             <div class="card payment-method-card" onclick="selectPaymentMethod('gcash')">
                                                 <div class="card-body text-center">
                                                     <i class="fas fa-mobile-alt fa-2x text-success mb-3"></i>
                                                     <h6>GCash</h6>
-                                                    <small class="text-muted">Pay using GCash wallet</small>
+                                                    <small class="text-muted">E-Wallet</small>
                                                 </div>
                                             </div>
                                         </div>
                                         
                                         <!-- PayMaya -->
-                                        <div class="col-md-6 mb-3">
+                                        <div class="col-md-4 mb-3">
                                             <div class="card payment-method-card" onclick="selectPaymentMethod('paymaya')">
                                                 <div class="card-body text-center">
                                                     <i class="fas fa-credit-card fa-2x text-primary mb-3"></i>
                                                     <h6>PayMaya</h6>
-                                                    <small class="text-muted">Pay using PayMaya wallet</small>
+                                                    <small class="text-muted">E-Wallet</small>
                                                 </div>
                                             </div>
                                         </div>
                                         
-                                        <!-- Bank Transfer -->
-                                        <div class="col-md-6 mb-3">
-                                            <div class="card payment-method-card" onclick="selectPaymentMethod('bank_transfer')">
+                                        <!-- PayPal -->
+                                        <div class="col-md-4 mb-3">
+                                            <div class="card payment-method-card" onclick="selectPaymentMethod('paypal')">
                                                 <div class="card-body text-center">
-                                                    <i class="fas fa-university fa-2x text-info mb-3"></i>
-                                                    <h6>Bank Transfer</h6>
-                                                    <small class="text-muted">Direct bank transfer</small>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        
-                                        <!-- Credit Card -->
-                                        <div class="col-md-6 mb-3">
-                                            <div class="card payment-method-card" onclick="selectPaymentMethod('credit_card')">
-                                                <div class="card-body text-center">
-                                                    <i class="fas fa-credit-card fa-2x text-warning mb-3"></i>
-                                                    <h6>Credit Card</h6>
-                                                    <small class="text-muted">Visa, Mastercard, etc.</small>
+                                                    <i class="fab fa-paypal fa-2x text-info mb-3"></i>
+                                                    <h6>PayPal</h6>
+                                                    <small class="text-muted">International</small>
                                                 </div>
                                             </div>
                                         </div>
@@ -244,6 +309,14 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['process_payment'])) {
                                                placeholder="Enter your transaction reference number">
                                         <small class="form-text text-muted">
                                             Please provide the reference number from your payment confirmation.
+                                        </small>
+                                    </div>
+                                    
+                                    <div class="mb-4" id="paymentProofDiv" style="display: none;">
+                                        <label class="form-label fw-bold">Payment Proof / Receipt <span class="text-danger">*</span></label>
+                                        <input type="file" class="form-control" name="payment_proof" id="paymentProofInput" accept="image/*,.pdf">
+                                        <small class="form-text text-muted">
+                                            Please upload a screenshot or PDF of your transaction receipt. Required for verification.
                                         </small>
                                     </div>
                                     
@@ -273,24 +346,29 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['process_payment'])) {
                                 </div>
                                 
                                 <div class="d-flex justify-content-between mb-2">
-                                    <span>Rental Amount:</span>
-                                    <span><?php echo format_currency($reservation['total_amount']); ?></span>
-                                </div>
-                                
-                                <?php if ($reservation['security_deposit'] > 0): ?>
-                                    <div class="d-flex justify-content-between mb-2">
-                                        <span>Security Deposit:</span>
-                                        <span><?php echo format_currency($reservation['security_deposit']); ?></span>
+                                    <span>Base Rental Amount:</span>
+                                    <span><?php echo format_currency($base_ui); ?></span>
                                     </div>
-                                <?php endif; ?>
-                                
-                                <hr>
-                                <div class="d-flex justify-content-between">
-                                    <strong>Total Amount:</strong>
-                                    <strong><?php echo format_currency($reservation['total_amount'] + $reservation['security_deposit']); ?></strong>
-                                </div>
-                                
-                            <?php elseif ($amenityBooking): ?>
+                                    <?php if ($sec_deposit > 0): ?>
+                                        <div class="d-flex justify-content-between mb-2 text-muted">
+                                            <span style="font-size: 0.9em;">Security Deposit (Refundable):</span>
+                                            <span style="font-size: 0.9em;"><?php echo format_currency($sec_deposit); ?></span>
+                                        </div>
+                                    <?php endif; ?>
+                                    <div class="d-flex justify-content-between mb-2 text-muted">
+                                        <span style="font-size: 0.9em;">Service Fee (5%):</span>
+                                        <span style="font-size: 0.9em;"><?php echo format_currency($service_fee); ?></span>
+                                    </div>
+                                    <div class="d-flex justify-content-between mb-2 text-muted">
+                                        <span style="font-size: 0.9em;">VAT (12%):</span>
+                                        <span style="font-size: 0.9em;"><?php echo format_currency($vat); ?></span>
+                                    </div>
+                                    <hr>
+                                    <div class="d-flex justify-content-between">
+                                        <strong>Total Required:</strong>
+                                        <strong id="summaryTotalDisplay" class="text-primary fs-5"><?php echo format_currency($totalToPay); ?></strong>
+                                    </div>
+                                <?php elseif ($amenityBooking): ?>
                                 <div class="mb-3">
                                     <strong>Amenity Booking</strong><br>
                                     <small class="text-muted">

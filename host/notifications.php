@@ -344,6 +344,9 @@ $page_title = 'Notifications';
                                 </div>
                             </div>
                             <div class="notification-actions">
+                                <a href="reservations.php" title="View Reservation" style="color:#3498db;padding:4px 8px;transition:color 0.3s;display:inline-block;" onmouseover="this.style.color='#2c3e50'" onmouseout="this.style.color='#3498db'">
+                                    <i class="fas fa-eye"></i> View
+                                </a>
                                 <?php if (!$notif['is_read']): ?>
                                 <form method="POST" style="display:inline;">
                                     <input type="hidden" name="action" value="mark_read">
@@ -396,6 +399,9 @@ $page_title = 'Notifications';
                                 </div>
                             </div>
                             <div class="notification-actions">
+                                <a href="payment_management.php" title="View Payment" style="color:#27ae60;padding:4px 8px;transition:color 0.3s;display:inline-block;" onmouseover="this.style.color='#2c3e50'" onmouseout="this.style.color='#27ae60'">
+                                    <i class="fas fa-eye"></i> View
+                                </a>
                                 <?php if (!$notif['is_read']): ?>
                                 <form method="POST" style="display:inline;">
                                     <input type="hidden" name="action" value="mark_read">
@@ -448,6 +454,9 @@ $page_title = 'Notifications';
                                 </div>
                             </div>
                             <div class="notification-actions">
+                                <a href="unit_management.php" title="View Unit" style="color:#f39c12;padding:4px 8px;transition:color 0.3s;display:inline-block;" onmouseover="this.style.color='#2c3e50'" onmouseout="this.style.color='#f39c12'">
+                                    <i class="fas fa-eye"></i> View
+                                </a>
                                 <?php if (!$notif['is_read']): ?>
                                 <form method="POST" style="display:inline;">
                                     <input type="hidden" name="action" value="mark_read">
@@ -506,6 +515,15 @@ $page_title = 'Notifications';
                                 </div>
                             </div>
                             <div class="notification-actions">
+                                <?php 
+                                    $sys_view_link = 'host_dashboard.php';
+                                    if (strpos(strtolower($notif['title']), 'message') !== false) {
+                                        $sys_view_link = 'messages.php';
+                                    }
+                                ?>
+                                <a href="<?php echo $sys_view_link; ?>" title="View Details" style="color:#95a5a6;padding:4px 8px;transition:color 0.3s;display:inline-block;" onmouseover="this.style.color='#2c3e50'" onmouseout="this.style.color='#95a5a6'">
+                                    <i class="fas fa-eye"></i> View
+                                </a>
                                 <?php if (!$notif['is_read']): ?>
                                 <form method="POST" style="display:inline;">
                                     <input type="hidden" name="action" value="mark_read">

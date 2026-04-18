@@ -52,11 +52,26 @@ if ($existing) {
     exit;
 }
 
-// Insert review (approve immediately)
+// Auto-Moderation: Prohibited Words Check
+$prohibitedWords = ['scam', 'fake', 'bullshit', 'fuck', 'shit', 'asshole', 'bitch', 'crap'];
+$isApproved = 1; // Default to approved
+foreach ($prohibitedWords as $word) {
+    if (stripos($comment, $word) !== false) {
+        $isApproved = 0; // Flag for manual admin review
+        break;
+    }
+}
+
+// Insert review
 try {
     $unitId = $res['unit_id'] ?? null;
-    execute_query("INSERT INTO reviews (user_id, unit_id, reservation_id, rating, comment, is_approved, created_at) VALUES (?, ?, ?, ?, ?, 1, NOW())", [$_SESSION['user_id'], $unitId, $reservationId, $rating, $comment]);
-    $_SESSION['flash_success'] = 'Thank you! Your review has been submitted.';
+    execute_query("INSERT INTO reviews (user_id, unit_id, reservation_id, rating, comment, is_approved, created_at) VALUES (?, ?, ?, ?, ?, ?, NOW())", [$_SESSION['user_id'], $unitId, $reservationId, $rating, $comment, $isApproved]);
+    
+    if ($isApproved === 1) {
+        $_SESSION['flash_success'] = 'Thank you! Your review has been published.';
+    } else {
+        $_SESSION['flash_success'] = 'Your review was submitted but is currently under moderation due to our community guidelines.';
+    }
 } catch (Exception $e) {
     $_SESSION['flash_error'] = 'Failed to submit review.';
 }

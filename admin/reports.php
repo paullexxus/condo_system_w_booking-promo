@@ -70,6 +70,15 @@ if ($useDb) {
             JOIN branches b ON r.branch_id = b.branch_id
             ORDER BY r.created_at DESC");
 
+        // System Revenue
+        $monthly_revenue = fetch_all($mysqli, "
+            SELECT DATE_FORMAT(payment_date, '%Y-%m') as month, SUM(amount) as total
+            FROM payments
+            WHERE payment_status = 'paid' AND payment_date >= DATE_SUB(NOW(), INTERVAL 12 MONTH)
+            GROUP BY month
+            ORDER BY month ASC
+        ");
+
     } catch (Exception $e) {
         // If any database error occurs, use fallback data
         error_log("Database error in reports: " . $e->getMessage());
@@ -92,6 +101,10 @@ if (!$useDb) {
     $reservations = [
         ["id"=>"R001","customer"=>"John Doe","unit_number"=>"Unit 101","location"=>"Central Branch","check_in_date"=>"2025-12-01","check_out_date"=>"2025-12-05","price"=>"₱20,000","status"=>"confirmed","created_at"=>"2025-11-15 14:30:25"],
     ];
+    $monthly_revenue = [
+        ["month"=>"2025-01", "total"=>15000],
+        ["month"=>"2025-02", "total"=>25000],
+    ];
 }
 ?>
 <!DOCTYPE html>
@@ -106,6 +119,8 @@ if (!$useDb) {
         <!-- DataTables -->
         <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
         <link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.4.1/css/buttons.bootstrap5.min.css">
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     </head>
     <body>
     <!-- Sidebar -->
@@ -126,8 +141,8 @@ if (!$useDb) {
                     <button class="btn-print" onclick="window.print()">
                         <i class="fas fa-print"></i> Print Report
                     </button>
-                    <button class="btn-print" onclick="window.location.href='?print=1'">
-                        <i class="fas fa-file-pdf"></i> Print View
+                    <button class="btn-print" onclick="downloadPDF()">
+                        <i class="fas fa-file-pdf"></i> Download PDF
                     </button>
                 </div>
             </div>
@@ -155,6 +170,14 @@ if (!$useDb) {
             <!-- Search Box -->
             <div class="search-box no-print">
                 <input type="search" id="globalSearch" placeholder="Search across all reports..." class="form-control">
+            </div>
+
+            <!-- Revenue Chart (Admin) -->
+            <div class="section-module">
+                <h2><i class="fas fa-chart-line"></i> Total Platform Revenue (Last 12 Months)</h2>
+                <div style="height: 350px;">
+                    <canvas id="adminRevenueChart"></canvas>
+                </div>
             </div>
 
             <!-- Users Section -->
@@ -320,6 +343,50 @@ if (!$useDb) {
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="../assets/js/admin/reports.js"></script>
     <script>
+        // Chart Initialization
+        document.addEventListener('DOMContentLoaded', function() {
+            var ctx = document.getElementById('adminRevenueChart');
+            if(ctx) {
+                var monthlyData = <?php echo json_encode($monthly_revenue); ?>;
+                var labels = monthlyData.map(item => {
+                    const date = new Date(item.month + '-01');
+                    return date.toLocaleString('default', { month: 'short', year: 'numeric' });
+                });
+                var dataPoints = monthlyData.map(item => item.total);
+                
+                new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'System Revenue (₱)',
+                            data: dataPoints,
+                            borderColor: '#e67e22',
+                            backgroundColor: 'rgba(230, 126, 34, 0.2)',
+                            borderWidth: 2,
+                            fill: true,
+                            tension: 0.4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    callback: function(value) { return '₱' + value.toLocaleString(); }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+        });
+
         // Auto-print if in print mode
         <?php if ($isPrint): ?>
         window.onload = function() {
@@ -330,6 +397,17 @@ if (!$useDb) {
             }, 500);
         }
         <?php endif; ?>
+
+        function downloadPDF() {
+            const element = document.getElementById('printableArea');
+            html2pdf().set({
+                margin: 0.5,
+                filename: 'Admin_Report_<?php echo date("Y_m_d_H_i"); ?>.pdf',
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2 },
+                jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
+            }).from(element).save();
+        }
     </script>
 </body>
 </html>

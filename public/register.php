@@ -242,6 +242,17 @@ if (isset($_POST['register'])) {
                     </div>
                 </div>
 
+                <!-- Terms & Conditions -->
+                <div class="flex items-start mt-4">
+                    <div class="flex items-center h-5">
+                        <input id="terms" name="terms" type="checkbox" required
+                            class="w-4 h-4 border border-gray-300 rounded bg-gray-50 focus:ring-3 focus:ring-orange-300">
+                    </div>
+                    <label for="terms" class="ml-2 text-sm font-medium text-gray-900">
+                        I agree to the <a href="#" onclick="openModal('termsModal'); return false;" class="text-orange-600 hover:underline">Terms and Conditions</a> and Privacy Policy.
+                    </label>
+                </div>
+
                 <!-- Submit Button -->
                 <button type="submit" name="register" 
                     class="w-full inline-flex items-center justify-center rounded-lg px-6 py-3 text-white font-semibold shadow-lg hover:shadow-xl transition mt-8 bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600">
@@ -279,7 +290,50 @@ if (isset($_POST['register'])) {
         </div>
     </div>
 
+    <!-- Terms and Conditions Modal -->
+    <div id="termsModal" class="fixed inset-0 z-50 hidden bg-black bg-opacity-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-3xl max-h-[80vh] flex flex-col">
+            <div class="p-6 border-b border-gray-200 flex justify-between items-center">
+                <h3 class="text-xl font-bold text-gray-900">Terms and Conditions</h3>
+                <button onclick="closeModal('termsModal')" class="text-gray-400 hover:text-gray-600">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+            <div class="p-6 overflow-y-auto flex-1 space-y-4 text-sm text-gray-600">
+                <h4 class="font-bold text-gray-900">1. Introduction</h4>
+                <p>Welcome to BookIT. By registering, you agree to abide by our policies regarding property rental and reservations.</p>
+                
+                <h4 class="font-bold text-gray-900">2. Booking and Payments</h4>
+                <p>All bookings require a valid payment method. Confirmed reservations are bound by our 10-minute payment hold window. Failure to submit verified payments within this window will result in automated forfeiture of your held reservation dates.</p>
+                
+                <h4 class="font-bold text-gray-900">3. Cancellations</h4>
+                <p>Cancellations are subject to the specific unit's cancellation policy (Flexible, Moderate, Strict). Booking Service Fees are non-refundable.</p>
+
+                <h4 class="font-bold text-gray-900">4. User Conduct</h4>
+                <p>Abusive behavior, prohibited language in reviews or messages, and fraudulent payments will result in permanent account suspension and potential legal action.</p>
+            </div>
+            <div class="p-6 border-t border-gray-200 bg-gray-50 rounded-b-xl flex justify-end">
+                <button onclick="document.getElementById('terms').checked = true; closeModal('termsModal');" class="bg-orange-500 hover:bg-orange-600 text-white px-6 py-2 rounded-lg font-semibold transition">I Accept</button>
+            </div>
+        </div>
+    </div>
+
     <script>
+        function openModal(id) {
+            document.getElementById(id).classList.remove('hidden');
+        }
+        function closeModal(id) {
+            document.getElementById(id).classList.add('hidden');
+        }
+
+        // Close on outside click
+        window.onclick = function(event) {
+            const modal = document.getElementById('termsModal');
+            if (event.target === modal) {
+                closeModal('termsModal');
+            }
+        }
+
         // Password visibility toggle
         function togglePasswordVisibility(fieldId, iconId) {
             const field = document.getElementById(fieldId);
@@ -336,14 +390,19 @@ if (isset($_POST['register'])) {
         document.getElementById('registerForm').addEventListener('submit', function(e) {
             const password = passwordInput.value;
             const confirmPassword = confirmPasswordInput.value;
+            const termsChecked = document.getElementById('terms').checked;
             const errorBox = document.getElementById('jsErrorBox');
             const errorMsg = document.getElementById('jsErrorMsg');
-            const successBox = document.getElementById('jsSuccessBox');
-            const successMsg = document.getElementById('jsSuccessMsg');
 
-            // Hide both boxes by default
+            // Hide boxes by default
             errorBox.classList.add('hidden');
-            successBox.classList.add('hidden');
+
+            if (!termsChecked) {
+                e.preventDefault();
+                errorMsg.textContent = 'You must agree to the Terms and Conditions.';
+                errorBox.classList.remove('hidden');
+                return;
+            }
 
             if (!/^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[\W_]).{8,}$/.test(password)) {
                 e.preventDefault();
@@ -361,9 +420,6 @@ if (isset($_POST['register'])) {
                 confirmPasswordInput.focus();
                 return;
             }
-            // Optionally, show success box on client-side (for demo)
-            // successMsg.textContent = 'Registration successful!';
-            // successBox.classList.remove('hidden');
         });
     </script>
 </body>

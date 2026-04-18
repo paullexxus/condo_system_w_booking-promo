@@ -8,15 +8,22 @@ if ($user_role === 'manager') {
     $user_role = 'host';
 }
 
-// Get unread notification count for hosts
 $unread_notifs = 0;
-if (($user_role === 'host') && isset($_SESSION['user_id'])) {
+$urgent_notifs = 0;
+if (isset($_SESSION['user_id'])) {
     global $conn;
     if (isset($conn)) {
-        $host_id = (int)$_SESSION['user_id'];
-        $notif_res = $conn->query("SELECT COUNT(*) as cnt FROM notifications WHERE user_id = $host_id AND is_read = 0");
-        if ($notif_res) {
-            $unread_notifs = $notif_res->fetch_assoc()['cnt'];
+        $user_id = (int)$_SESSION['user_id'];
+        $notif_res = $conn->query("
+            SELECT 
+                SUM(CASE WHEN is_read = 0 THEN 1 ELSE 0 END) as total_unread,
+                SUM(CASE WHEN is_read = 0 AND priority IN ('urgent', 'overdue') THEN 1 ELSE 0 END) as total_urgent
+            FROM notifications 
+            WHERE user_id = $user_id
+        ");
+        if ($notif_res && $row = $notif_res->fetch_assoc()) {
+            $unread_notifs = (int)$row['total_unread'];
+            $urgent_notifs = (int)$row['total_urgent'];
         }
     }
 }
@@ -54,6 +61,7 @@ function isActivePattern($menu_key, $current_page) {
         'Payment Management' => ['payment_management.php', 'payment_details.php'],
         'Amenity Management' => ['amenity_management.php', 'amenity_bookings.php', 'add_amenity.php', 'edit_amenity.php'],
         'Reports' => ['reports.php', 'report_generator.php'],
+        'Notifications' => ['notifications.php'],
         'Settings' => ['settings.php', 'profile.php']
     ];
 
@@ -139,7 +147,8 @@ function isActivePattern($menu_key, $current_page) {
                         <i class="fas fa-bell"></i> 
                         <span>Notifications</span>
                         <?php if (isset($unread_notifs) && $unread_notifs > 0): ?>
-                            <span class="badge" style="margin-left: auto; background-color: #e74c3c; color: white; padding: 2px 6px; font-size: 11px; border-radius: 10px;"><?php echo $unread_notifs; ?></span>
+                            <?php $badgeColor = (isset($urgent_notifs) && $urgent_notifs > 0) ? '#e74c3c' : '#3498db'; ?>
+                            <span class="badge" style="margin-left: auto; background-color: <?php echo $badgeColor; ?>; color: white; padding: 2px 6px; font-size: 11px; border-radius: 10px;"><?php echo $unread_notifs; ?></span>
                         <?php endif; ?>
                     </a>
                 </li>
@@ -237,6 +246,17 @@ function isActivePattern($menu_key, $current_page) {
                     </a>
                 </li>
                 <li>
+                    <a href="<?php echo SITE_URL; ?>/admin/notifications.php" 
+                       class="<?php echo isActivePattern('Notifications', $current_page) ? 'active' : ''; ?>">
+                        <i class="fas fa-bell"></i> 
+                        <span>Notifications</span>
+                        <?php if (isset($unread_notifs) && $unread_notifs > 0): ?>
+                            <?php $badgeColor = (isset($urgent_notifs) && $urgent_notifs > 0) ? '#e74c3c' : '#3498db'; ?>
+                            <span class="badge" style="margin-left: auto; background-color: <?php echo $badgeColor; ?>; color: white; padding: 2px 6px; font-size: 11px; border-radius: 10px;"><?php echo $unread_notifs; ?></span>
+                        <?php endif; ?>
+                    </a>
+                </li>
+                <li>
                     <a href="<?php echo SITE_URL; ?>/admin/settings.php" 
                        class="<?php echo isActivePattern('Settings', $current_page) ? 'active' : ''; ?>">
                         <i class="fas fa-cog"></i> 
@@ -263,3 +283,61 @@ function isActivePattern($menu_key, $current_page) {
         </a>
     </div>
 </aside>
+
+<?php if ($user_role === 'admin'): ?>
+<!-- Global Admin Notification Escalation System -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    // Escalate only once every 5 minutes per session to prevent spamming AJAX
+    const lastCheck = sessionStorage.getItem('lastEscalationCheck');
+    const now = new Date().getTime();
+    if (lastCheck && (now - parseInt(lastCheck)) < 5 * 60 * 1000) {
+        return; 
+    }
+    sessionStorage.setItem('lastEscalationCheck', now.toString());
+
+    fetch('<?php echo SITE_URL; ?>/ajax/admin_escalation.php')
+        .then(r => r.json())
+        .then(data => {
+            if (data.error) return; // Unauthorized or other error
+
+            if (data.urgent_count > 0 || data.overdue_count > 0) {
+                // Try to inject banner into standard dashboard header if available
+                const mainContent = document.querySelector('.page-header') || document.querySelector('.dashboard-header');
+                if (mainContent && !document.getElementById('escalationBanner')) {
+                    const banner = document.createElement('div');
+                    banner.id = 'escalationBanner';
+                    banner.style = "background: #ffeaa7; border-left: 4px solid #e74c3c; padding: 15px; margin: 15px 30px; border-radius: 5px; color: #d35400; font-weight: bold; display: flex; align-items: center; gap: 10px;";
+                    banner.innerHTML = `<i class="fas fa-exclamation-triangle"></i> ⚠️ You have (${data.urgent_count + data.overdue_count}) pending reviews older than 3 days. Please review immediately. <a href="<?php echo SITE_URL; ?>/admin/notifications.php" style="margin-left:auto; background: #e74c3c; color: white; padding: 5px 10px; border-radius: 4px; text-decoration: none;">Go to Notifications</a>`;
+                    mainContent.parentNode.insertBefore(banner, mainContent.nextSibling);
+                }
+            }
+            
+            // Show popups
+            if (data.new_popups && data.new_popups.length > 0) {
+                let popupHtml = '<ul style="text-align:left; font-size:14px;">';
+                data.new_popups.forEach(p => {
+                    popupHtml += `<li><strong>${p.title}</strong>: ${p.message}</li>`;
+                });
+                popupHtml += '</ul>';
+                
+                Swal.fire({
+                    title: '⚠️ Action Required',
+                    html: popupHtml,
+                    icon: 'warning',
+                    confirmButtonText: 'View Notifications',
+                    confirmButtonColor: '#e74c3c',
+                    showCancelButton: true,
+                    cancelButtonText: 'Later'
+                }).then((res) => {
+                    if (res.isConfirmed) {
+                        window.location.href = '<?php echo SITE_URL; ?>/admin/notifications.php';
+                    }
+                });
+            }
+        })
+        .catch(e => console.error("Escalation check failed", e));
+});
+</script>
+<?php endif; ?>

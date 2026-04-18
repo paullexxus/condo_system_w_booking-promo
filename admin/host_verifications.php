@@ -68,60 +68,69 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         if ($_POST['action'] === 'approve') {
             $conn->begin_transaction();
             try {
-                // Update Application Status
-                mysqli_query($conn, "UPDATE host_applications SET status = 'approved', admin_notes = '$admin_notes', reviewed_by = $admin_id, reviewed_at = NOW() WHERE application_id = $app_id");
-                
-                // Update User Role to Host
-                mysqli_query($conn, "UPDATE users SET role = 'host' WHERE user_id = $user_id");
-                
-                $log_action = $old_status === 'rejected' ? 'Admin Approved Rejected Application' : 'Admin Approved Application';
-                $log_details = "Notes: $admin_notes";
-                mysqli_query($conn, "INSERT INTO audit_logs (user_id, action_type, entity_type, entity_id, details) VALUES ($admin_id, '$log_action', 'host_application', $app_id, '$log_details')");
-                
-                // Shoot Approved Email
-                @include_once '../includes/email_integration.php';
-                if (function_exists('sendHostApplicationApprovedEmail')) {
-                    @sendHostApplicationApprovedEmail($user_email, $user_name);
+                // Update Application Status with Lock
+                mysqli_query($conn, "UPDATE host_applications SET status = 'approved', admin_notes = '$admin_notes', reviewed_by = $admin_id, reviewed_at = NOW() WHERE application_id = $app_id AND status = '$old_status'");
+                if (mysqli_affected_rows($conn) > 0) {
+                    // Update User Role to Host
+                    mysqli_query($conn, "UPDATE users SET role = 'host' WHERE user_id = $user_id");
+                    
+                    $log_details = "[HOSTAPP-".$app_id."] APPROVE | ".strtoupper($old_status)." -> APPROVED | Notes: $admin_notes";
+                    mysqli_query($conn, "INSERT INTO audit_logs (user_id, action_type, entity_type, entity_id, details) VALUES ($admin_id, 'approve_host', 'host_application', $app_id, '$log_details')");
+                    
+                    // Shoot Approved Email
+                    @include_once '../includes/email_integration.php';
+                    if (function_exists('sendHostApplicationApprovedEmail')) {
+                        @sendHostApplicationApprovedEmail($user_email, $user_name);
+                    }
+
+                    // Insert Notification
+                    $notif_title = "🎉 Host Application Approved";
+                    $notif_msg = "Your application has been approved. You can now start listing your property.";
+                    mysqli_query($conn, "INSERT INTO notifications (user_id, title, message, admin_message, status, type) VALUES ($user_id, '$notif_title', '$notif_msg', '$admin_notes', 'approved', 'system')");
+
+                    $conn->commit();
+                    $success_msg = "Host application successfully approved.";
+                } else {
+                    $conn->rollback();
+                    $error_msg = "Failed to approve. Record may have been modified by another admin.";
                 }
-
-                // Insert Notification
-                $notif_title = "🎉 Host Application Approved";
-                $notif_msg = "Your application has been approved. You can now start listing your property.";
-                mysqli_query($conn, "INSERT INTO notifications (user_id, title, message, admin_message, status, type) VALUES ($user_id, '$notif_title', '$notif_msg', '$admin_notes', 'approved', 'system')");
-
-                $conn->commit();
-                $success_msg = "Host application successfully approved.";
             } catch (Exception $e) {
                 $conn->rollback();
                 $error_msg = "Error approving application.";
             }
         } elseif ($_POST['action'] === 'reject') {
-            mysqli_query($conn, "UPDATE host_applications SET status = 'rejected', admin_notes = '$admin_notes', reviewed_by = $admin_id, reviewed_at = NOW() WHERE application_id = $app_id");
+            mysqli_query($conn, "UPDATE host_applications SET status = 'rejected', admin_notes = '$admin_notes', reviewed_by = $admin_id, reviewed_at = NOW() WHERE application_id = $app_id AND status = '$old_status'");
             
-            $log_action = 'Admin Rejected Application';
-            $log_details = "Reason: $admin_notes";
-            mysqli_query($conn, "INSERT INTO audit_logs (user_id, action_type, entity_type, entity_id, details) VALUES ($admin_id, '$log_action', 'host_application', $app_id, '$log_details')");
-            
-            // Shoot Rejected Email
-            @include_once '../includes/email_integration.php';
-            if (function_exists('sendHostApplicationRejectedEmail')) {
-                @sendHostApplicationRejectedEmail($user_email, $user_name, $admin_notes);
+            if (mysqli_affected_rows($conn) > 0) {
+                $log_details = "[HOSTAPP-".$app_id."] REJECT | ".strtoupper($old_status)." -> REJECTED | Reason: $admin_notes";
+                mysqli_query($conn, "INSERT INTO audit_logs (user_id, action_type, entity_type, entity_id, details) VALUES ($admin_id, 'reject_host', 'host_application', $app_id, '$log_details')");
+                
+                // Shoot Rejected Email
+                @include_once '../includes/email_integration.php';
+                if (function_exists('sendHostApplicationRejectedEmail')) {
+                    @sendHostApplicationRejectedEmail($user_email, $user_name, $admin_notes);
+                }
+
+                // Insert Notification
+                $notif_title = "❌ Host Application Rejected";
+                $notif_msg = "Your application was not approved. Please check the reason below.";
+                mysqli_query($conn, "INSERT INTO notifications (user_id, title, message, admin_message, status, type) VALUES ($user_id, '$notif_title', '$notif_msg', '$admin_notes', 'rejected', 'system')");
+
+                $success_msg = "Host application rejected.";
+            } else {
+                $error_msg = "Failed to reject. Record may have been modified by another admin.";
             }
-
-            // Insert Notification
-            $notif_title = "❌ Host Application Rejected";
-            $notif_msg = "Your application was not approved. Please check the reason below.";
-            mysqli_query($conn, "INSERT INTO notifications (user_id, title, message, admin_message, status, type) VALUES ($user_id, '$notif_title', '$notif_msg', '$admin_notes', 'rejected', 'system')");
-
-            $success_msg = "Host application rejected.";
         } elseif ($_POST['action'] === 'reopen') {
-            mysqli_query($conn, "UPDATE host_applications SET status = 'pending', admin_notes = '$admin_notes', reviewed_by = $admin_id, reviewed_at = NOW() WHERE application_id = $app_id");
+            mysqli_query($conn, "UPDATE host_applications SET status = 'pending', admin_notes = '$admin_notes', reviewed_by = $admin_id, reviewed_at = NOW() WHERE application_id = $app_id AND status = '$old_status'");
             
-            $log_action = 'Admin Re-opened Application';
-            $log_details = "Notes: $admin_notes";
-            mysqli_query($conn, "INSERT INTO audit_logs (user_id, action_type, entity_type, entity_id, details) VALUES ($admin_id, '$log_action', 'host_application', $app_id, '$log_details')");
-            
-            $success_msg = "Host application re-opened and set to pending.";
+            if (mysqli_affected_rows($conn) > 0) {
+                $log_details = "[HOSTAPP-".$app_id."] REOPEN | ".strtoupper($old_status)." -> PENDING | Notes: $admin_notes";
+                mysqli_query($conn, "INSERT INTO audit_logs (user_id, action_type, entity_type, entity_id, details) VALUES ($admin_id, 'reopen_host', 'host_application', $app_id, '$log_details')");
+                
+                $success_msg = "Host application re-opened and set to pending.";
+            } else {
+                $error_msg = "Failed to re-open. Record may have been modified by another admin.";
+            }
         }
         }
     }
@@ -409,6 +418,17 @@ while ($row = mysqli_fetch_assoc($result)) {
   function closeModal() {
     document.getElementById('modalBackdrop').style.display = 'none';
     document.getElementById('reviewModal').style.display = 'none';
+  }
+
+  // Auto-open modal if application_id is provided in URL
+  const urlParams = new URLSearchParams(window.location.search);
+  const targetAppId = urlParams.get('application_id');
+  if (targetAppId) {
+      const allApps = <?php echo json_encode($applications); ?>;
+      const targetApp = allApps.find(app => String(app.application_id) === String(targetAppId));
+      if (targetApp) {
+          viewApplication(targetApp);
+      }
   }
 </script>
 

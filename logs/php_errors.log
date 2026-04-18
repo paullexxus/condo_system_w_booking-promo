@@ -2836,3 +2836,333 @@ Stack trace:
 [13-Apr-2026 14:12:28 Asia/Manila] PHPMailer: Email sent to: cabajar@gmail.com
 [13-Apr-2026 14:12:32 Asia/Manila] PHPMailer: Email sent to: cabajar@gmail.com
 [13-Apr-2026 14:21:43 Asia/Manila] PHPMailer: Email sent to: cabajar@gmail.com
+[15-Apr-2026 07:37:49 Asia/Manila] PHP Fatal error:  Uncaught Error: Class "mysqli" not found in C:\wamp64\www\BookIT\config\db.php:8
+Stack trace:
+#0 C:\wamp64\www\BookIT\scratch\get_schema_fixed.php(2): require()
+#1 {main}
+  thrown in C:\wamp64\www\BookIT\config\db.php on line 8
+[15-Apr-2026 08:09:47 Asia/Manila] PHP Fatal error:  Uncaught mysqli_sql_exception: Duplicate column name 'deleted_by_sender' in C:\wamp64\www\BookIT\scratch\alter_db_delete.php:15
+Stack trace:
+#0 C:\wamp64\www\BookIT\scratch\alter_db_delete.php(15): mysqli->query('ALTER TABLE mes...')
+#1 {main}
+  thrown in C:\wamp64\www\BookIT\scratch\alter_db_delete.php on line 15
+[16-Apr-2026 00:18:31 Asia/Manila] Exception in execute_query: Unknown column 'file_type' in 'field list'
+[16-Apr-2026 00:18:35 Asia/Manila] Exception in execute_query: Unknown column 'file_type' in 'field list'
+[16-Apr-2026 00:20:28 Asia/Manila] Exception in execute_query: Unknown column 'file_type' in 'field list'
+[16-Apr-2026 00:20:52 Asia/Manila] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown database 'condo_rental_reservation_db' in C:\wamp64\www\BookIT\config\db.php:8
+Stack trace:
+#0 C:\wamp64\www\BookIT\config\db.php(8): mysqli->__construct('localhost', 'root', Object(SensitiveParameterValue), 'condo_rental_re...')
+#1 C:\wamp64\www\BookIT\includes\functions.php(5): include_once('C:\\wamp64\\www\\B...')
+#2 C:\wamp64\www\BookIT\ajax\messages_api.php(4): include('C:\\wamp64\\www\\B...')
+#3 {main}
+  thrown in C:\wamp64\www\BookIT\config\db.php on line 8
+[16-Apr-2026 00:20:54 Asia/Manila] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown database 'condo_rental_reservation_db' in C:\wamp64\www\BookIT\config\db.php:8
+Stack trace:
+#0 C:\wamp64\www\BookIT\config\db.php(8): mysqli->__construct('localhost', 'root', Object(SensitiveParameterValue), 'condo_rental_re...')
+#1 C:\wamp64\www\BookIT\includes\functions.php(5): include_once('C:\\wamp64\\www\\B...')
+#2 C:\wamp64\www\BookIT\ajax\messages_api.php(4): include('C:\\wamp64\\www\\B...')
+#3 {main}
+  thrown in C:\wamp64\www\BookIT\config\db.php on line 8
+[16-Apr-2026 00:20:54 Asia/Manila] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown database 'condo_rental_reservation_db' in C:\wamp64\www\BookIT\config\db.php:8
+Stack trace:
+#0 C:\wamp64\www\BookIT\config\db.php(8): mysqli->__construct('localhost', 'root', Object(SensitiveParameterValue), 'condo_rental_re...')
+#1 C:\wamp64\www\BookIT\includes\functions.php(5): include_once('C:\\wamp64\\www\\B...')
+#2 C:\wamp64\www\BookIT\ajax\messages_api.php(4): include('C:\\wamp64\\www\\B...')
+#3 {main}
+  thrown in C:\wamp64\www\BookIT\config\db.php on line 8
+[16-Apr-2026 00:20:58 Asia/Manila] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown database 'condo_rental_reservation_db' in C:\wamp64\www\BookIT\config\db.php:8
+Stack trace:
+#0 C:\wamp64\www\BookIT\config\db.php(8): mysqli->__construct('localhost', 'root', Object(SensitiveParameterValue), 'condo_rental_re...')
+#1 C:\wamp64\www\BookIT\includes\functions.php(5): include_once('C:\\wamp64\\www\\B...')
+#2 C:\wamp64\www\BookIT\ajax\messages_api.php(4): include('C:\\wamp64\\www\\B...')
+#3 {main}
+  thrown in C:\wamp64\www\BookIT\config\db.php on line 8
+[16-Apr-2026 00:20:59 Asia/Manila] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown database 'condo_rental_reservation_db' in C:\wamp64\www\BookIT\config\db.php:8
+Stack trace:
+#0 C:\wamp64\www\BookIT\config\db.php(8): mysqli->__construct('localhost', 'root', Object(SensitiveParameterValue), 'condo_rental_re...')
+#1 C:\wamp64\www\BookIT\includes\functions.php(5): include_once('C:\\wamp64\\www\\B...')
+#2 C:\wamp64\www\BookIT\ajax\messages_api.php(4): include('C:\\wamp64\\www\\B...')
+#3 {main}
+  thrown in C:\wamp64\www\BookIT\config\db.php on line 8
+[16-Apr-2026 00:21:03 Asia/Manila] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown database 'condo_rental_reservation_db' in C:\wamp64\www\BookIT\config\db.php:8
+Stack trace:
+#0 C:\wamp64\www\BookIT\config\db.php(8): mysqli->__construct('localhost', 'root', Object(SensitiveParameterValue), 'condo_rental_re...')
+#1 C:\wamp64\www\BookIT\includes\functions.php(5): include_once('C:\\wamp64\\www\\B...')
+#2 C:\wamp64\www\BookIT\ajax\messages_api.php(4): include('C:\\wamp64\\www\\B...')
+#3 {main}
+  thrown in C:\wamp64\www\BookIT\config\db.php on line 8
+[16-Apr-2026 00:21:04 Asia/Manila] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown database 'condo_rental_reservation_db' in C:\wamp64\www\BookIT\config\db.php:8
+Stack trace:
+#0 C:\wamp64\www\BookIT\config\db.php(8): mysqli->__construct('localhost', 'root', Object(SensitiveParameterValue), 'condo_rental_re...')
+#1 C:\wamp64\www\BookIT\includes\functions.php(5): include_once('C:\\wamp64\\www\\B...')
+#2 C:\wamp64\www\BookIT\ajax\messages_api.php(4): include('C:\\wamp64\\www\\B...')
+#3 {main}
+  thrown in C:\wamp64\www\BookIT\config\db.php on line 8
+[16-Apr-2026 00:21:08 Asia/Manila] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown database 'condo_rental_reservation_db' in C:\wamp64\www\BookIT\config\db.php:8
+Stack trace:
+#0 C:\wamp64\www\BookIT\config\db.php(8): mysqli->__construct('localhost', 'root', Object(SensitiveParameterValue), 'condo_rental_re...')
+#1 C:\wamp64\www\BookIT\includes\functions.php(5): include_once('C:\\wamp64\\www\\B...')
+#2 C:\wamp64\www\BookIT\ajax\messages_api.php(4): include('C:\\wamp64\\www\\B...')
+#3 {main}
+  thrown in C:\wamp64\www\BookIT\config\db.php on line 8
+[16-Apr-2026 00:21:09 Asia/Manila] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown database 'condo_rental_reservation_db' in C:\wamp64\www\BookIT\config\db.php:8
+Stack trace:
+#0 C:\wamp64\www\BookIT\config\db.php(8): mysqli->__construct('localhost', 'root', Object(SensitiveParameterValue), 'condo_rental_re...')
+#1 C:\wamp64\www\BookIT\includes\functions.php(5): include_once('C:\\wamp64\\www\\B...')
+#2 C:\wamp64\www\BookIT\ajax\messages_api.php(4): include('C:\\wamp64\\www\\B...')
+#3 {main}
+  thrown in C:\wamp64\www\BookIT\config\db.php on line 8
+[16-Apr-2026 00:21:13 Asia/Manila] PHP Fatal error:  Uncaught mysqli_sql_exception: Table 'condo_rental_reservation_db.messages' doesn't exist in C:\wamp64\www\BookIT\config\db.php:85
+Stack trace:
+#0 C:\wamp64\www\BookIT\config\db.php(85): mysqli->prepare('SELECT * FROM m...')
+#1 C:\wamp64\www\BookIT\ajax\messages_api.php(41): get_multiple_results('SELECT * FROM m...', Array)
+#2 {main}
+  thrown in C:\wamp64\www\BookIT\config\db.php on line 85
+[16-Apr-2026 00:21:14 Asia/Manila] PHP Fatal error:  Uncaught mysqli_sql_exception: Table 'condo_rental_reservation_db.messages' doesn't exist in C:\wamp64\www\BookIT\config\db.php:85
+Stack trace:
+#0 C:\wamp64\www\BookIT\config\db.php(85): mysqli->prepare('SELECT * FROM m...')
+#1 C:\wamp64\www\BookIT\ajax\messages_api.php(41): get_multiple_results('SELECT * FROM m...', Array)
+#2 {main}
+  thrown in C:\wamp64\www\BookIT\config\db.php on line 85
+[16-Apr-2026 00:21:30 Asia/Manila] Exception in execute_query: Unknown column 'file_type' in 'field list'
+[16-Apr-2026 00:23:04 Asia/Manila] Exception in execute_query: Unknown column 'file_type' in 'field list'
+[16-Apr-2026 00:33:26 Asia/Manila] WARNING: Using test PayMongo keys. Set PAYMONGO_* in .env for proper configuration.
+[16-Apr-2026 01:07:19 Asia/Manila] PHP Fatal error:  Uncaught Error: Class "mysqli" not found in C:\wamp64\www\BookIT\config\db.php:8
+Stack trace:
+#0 C:\wamp64\www\BookIT\init_audit.php(2): require()
+#1 {main}
+  thrown in C:\wamp64\www\BookIT\config\db.php on line 8
+[16-Apr-2026 09:48:17 Asia/Manila] PHP Fatal error:  Uncaught Error: Class "mysqli" not found in C:\wamp64\www\BookIT\config\db.php:8
+Stack trace:
+#0 C:\wamp64\www\BookIT\scratch\check_schema.php(2): require_once()
+#1 {main}
+  thrown in C:\wamp64\www\BookIT\config\db.php on line 8
+[16-Apr-2026 09:49:26 Asia/Manila] PHP Fatal error:  Uncaught Error: Class "mysqli" not found in C:\wamp64\www\BookIT\config\db.php:8
+Stack trace:
+#0 C:\wamp64\www\BookIT\scratch\alter_db.php(2): require_once()
+#1 {main}
+  thrown in C:\wamp64\www\BookIT\config\db.php on line 8
+[16-Apr-2026 09:49:44 Asia/Manila] PHP Fatal error:  Uncaught mysqli_sql_exception: You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near 'IF NOT EXISTS email_sent TINYINT(1) DEFAULT 0' at line 1 in C:\wamp64\www\BookIT\scratch\alter_db.php:5
+Stack trace:
+#0 C:\wamp64\www\BookIT\scratch\alter_db.php(5): mysqli->query('ALTER TABLE not...')
+#1 {main}
+  thrown in C:\wamp64\www\BookIT\scratch\alter_db.php on line 5
+[16-Apr-2026 09:49:44 Asia/Manila] PHP Fatal error:  Uncaught mysqli_sql_exception: You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near 'IF NOT EXISTS email_sent TINYINT(1) DEFAULT 0' at line 1 in C:\wamp64\www\BookIT\scratch\alter_db.php:5
+Stack trace:
+#0 C:\wamp64\www\BookIT\scratch\alter_db.php(5): mysqli->query('ALTER TABLE not...')
+#1 {main}
+  thrown in C:\wamp64\www\BookIT\scratch\alter_db.php on line 5
+[16-Apr-2026 10:03:17 Asia/Manila] PHP Fatal error:  Uncaught Error: Class "mysqli" not found in C:\wamp64\www\BookIT\config\db.php:8
+Stack trace:
+#0 C:\wamp64\www\BookIT\update_db_schema.php(3): require_once()
+#1 {main}
+  thrown in C:\wamp64\www\BookIT\config\db.php on line 8
+[16-Apr-2026 10:18:10 Asia/Manila] PHP Fatal error:  Uncaught ArgumentCountError: The number of elements in the type definition string must match the number of bind variables in C:\wamp64\www\BookIT\host\unit_management.php:99
+Stack trace:
+#0 C:\wamp64\www\BookIT\host\unit_management.php(99): mysqli_stmt->bind_param('siisddsiidsiiss...', '4545', 10, '6', '', 5000.0, 0.0, 'nightly', '5', 50.0, 'single', 6, 2, 'Cauliflower Str...', '12', 'P\xC3\xA1sig', 14.586275, 121.07305)
+#1 {main}
+  thrown in C:\wamp64\www\BookIT\host\unit_management.php on line 99
+[16-Apr-2026 10:29:53 Asia/Manila] PHP Fatal error:  Uncaught ArgumentCountError: The number of elements in the type definition string must match the number of bind variables in C:\wamp64\www\BookIT\host\unit_management.php:99
+Stack trace:
+#0 C:\wamp64\www\BookIT\host\unit_management.php(99): mysqli_stmt->bind_param('siisddsiidsiiss...', '4545', 10, '6', '', 5000.0, 0.0, 'nightly', '5', 50.0, 'single', 6, 2, 'Cauliflower Str...', '12', 'P\xC3\xA1sig', 14.586275, 121.07305)
+#1 {main}
+  thrown in C:\wamp64\www\BookIT\host\unit_management.php on line 99
+[16-Apr-2026 19:20:31 Asia/Manila] PHP Fatal error:  Uncaught Error: Class "mysqli" not found in C:\wamp64\www\BookIT\config\db.php:8
+Stack trace:
+#0 C:\wamp64\www\BookIT\includes\functions.php(5): include_once()
+#1 C:\wamp64\www\BookIT\host\unit_management.php(8): include('C:\\wamp64\\www\\B...')
+#2 C:\wamp64\www\BookIT\test.php(8): include('C:\\wamp64\\www\\B...')
+#3 {main}
+  thrown in C:\wamp64\www\BookIT\config\db.php on line 8
+[16-Apr-2026 19:49:01 Asia/Manila] PHP Fatal error:  Uncaught ArgumentCountError: The number of elements in the type definition string must match the number of bind variables in C:\wamp64\www\BookIT\host\unit_management.php:103
+Stack trace:
+#0 C:\wamp64\www\BookIT\host\unit_management.php(103): mysqli_stmt->bind_param('siisddsiidsiiss...', 'faf', 10, '6', '', 123.0, 0.0, 'nightly', '6', 15.0, 'single', 1, 1, 'Doctor Lucio Ch...', 'gsgsgs', 'P\xC3\xA1sig', 14.600495, 121.083516)
+#1 {main}
+  thrown in C:\wamp64\www\BookIT\host\unit_management.php on line 103
+[16-Apr-2026 19:53:59 Asia/Manila] PHP Fatal error:  Uncaught ArgumentCountError: The number of elements in the type definition string must match the number of bind variables in C:\wamp64\www\BookIT\host\unit_management.php:103
+Stack trace:
+#0 C:\wamp64\www\BookIT\host\unit_management.php(103): mysqli_stmt->bind_param('siisddsisisssis...', 'faf', 10, '6', '', 123.0, 0.0, 'nightly', '6', 15.0, 'single', 1, 1, 'Doctor Lucio Ch...', 'gsgsgs', 'P\xC3\xA1sig', 14.600495, 121.083516)
+#1 {main}
+  thrown in C:\wamp64\www\BookIT\host\unit_management.php on line 103
+[16-Apr-2026 19:54:02 Asia/Manila] PHP Fatal error:  Uncaught ArgumentCountError: The number of elements in the type definition string must match the number of bind variables in C:\wamp64\www\BookIT\host\unit_management.php:103
+Stack trace:
+#0 C:\wamp64\www\BookIT\host\unit_management.php(103): mysqli_stmt->bind_param('siisddsisisssis...', 'faf', 10, '6', '', 123.0, 0.0, 'nightly', '6', 15.0, 'single', 1, 1, 'Doctor Lucio Ch...', 'gsgsgs', 'P\xC3\xA1sig', 14.600495, 121.083516)
+#1 {main}
+  thrown in C:\wamp64\www\BookIT\host\unit_management.php on line 103
+[16-Apr-2026 19:54:17 Asia/Manila] PHP Fatal error:  Uncaught ArgumentCountError: The number of elements in the type definition string must match the number of bind variables in C:\wamp64\www\BookIT\host\unit_management.php:103
+Stack trace:
+#0 C:\wamp64\www\BookIT\host\unit_management.php(103): mysqli_stmt->bind_param('siisddsisisssis...', 'faf', 10, '6', '', 123.0, 0.0, 'nightly', '6', 15.0, 'single', 1, 1, 'Doctor Lucio Ch...', 'gsgsgs', 'P\xC3\xA1sig', 14.600495, 121.083516)
+#1 {main}
+  thrown in C:\wamp64\www\BookIT\host\unit_management.php on line 103
+[16-Apr-2026 19:54:20 Asia/Manila] PHP Fatal error:  Uncaught ArgumentCountError: The number of elements in the type definition string must match the number of bind variables in C:\wamp64\www\BookIT\host\unit_management.php:103
+Stack trace:
+#0 C:\wamp64\www\BookIT\host\unit_management.php(103): mysqli_stmt->bind_param('siisddsisisssis...', 'faf', 10, '6', '', 123.0, 0.0, 'nightly', '6', 15.0, 'single', 1, 1, 'Doctor Lucio Ch...', 'gsgsgs', 'P\xC3\xA1sig', 14.600495, 121.083516)
+#1 {main}
+  thrown in C:\wamp64\www\BookIT\host\unit_management.php on line 103
+[16-Apr-2026 21:29:23 Asia/Manila] PHPMailer: Email sent to: caliuagking@gmail.com
+[16-Apr-2026 21:30:25 Asia/Manila] PHPMailer: Email sent to: caliuagking@gmail.com
+[16-Apr-2026 21:30:29 Asia/Manila] PHPMailer: Email sent to: caliuagking@gmail.com
+[16-Apr-2026 21:41:46 Asia/Manila] Exception in execute_query: Unknown column 'checked_in_by' in 'field list'
+[16-Apr-2026 22:40:03 Asia/Manila] WARNING: Using test PayMongo keys. Set PAYMONGO_* in .env for proper configuration.
+[17-Apr-2026 00:20:38 Asia/Manila] PHP Fatal error:  Uncaught Error: Class "mysqli" not found in C:\wamp64\www\BookIT\config\db.php:8
+Stack trace:
+#0 C:\wamp64\www\BookIT\check_schema.php(2): include()
+#1 {main}
+  thrown in C:\wamp64\www\BookIT\config\db.php on line 8
+[17-Apr-2026 00:28:41 Asia/Manila] PHP Fatal error:  Uncaught Error: Class "mysqli" not found in C:\wamp64\www\BookIT\config\db.php:8
+Stack trace:
+#0 C:\wamp64\www\BookIT\apply_migration.php(2): require_once()
+#1 {main}
+  thrown in C:\wamp64\www\BookIT\config\db.php on line 8
+[17-Apr-2026 00:53:05 Asia/Manila] PHP Fatal error:  Uncaught mysqli_sql_exception: You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near 'IF EXISTS expires_at hold_expiry TIMESTAMP NULL DEFAULT NULL' at line 1 in C:\wamp64\www\BookIT\migrations\migrate_v2.php:17
+Stack trace:
+#0 C:\wamp64\www\BookIT\migrations\migrate_v2.php(17): mysqli->query('ALTER TABLE res...')
+#1 {main}
+  thrown in C:\wamp64\www\BookIT\migrations\migrate_v2.php on line 17
+[17-Apr-2026 10:09:44 Asia/Manila] PHP Fatal error:  Uncaught Error: Class "mysqli" not found in C:\wamp64\www\BookIT\config\db.php:8
+Stack trace:
+#0 C:\wamp64\www\BookIT\cron\lifecycle_automation.php(6): require_once()
+#1 {main}
+  thrown in C:\wamp64\www\BookIT\config\db.php on line 8
+[17-Apr-2026 10:58:23 Asia/Manila] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown column 'payment_reference' in 'where clause' in C:\wamp64\www\BookIT\public\seed_demo_data.php:5
+Stack trace:
+#0 C:\wamp64\www\BookIT\public\seed_demo_data.php(5): mysqli->query('SELECT count(*)...')
+#1 {main}
+  thrown in C:\wamp64\www\BookIT\public\seed_demo_data.php on line 5
+[17-Apr-2026 10:58:23 Asia/Manila] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown column 'payment_reference' in 'where clause' in C:\wamp64\www\BookIT\public\seed_demo_data.php:5
+Stack trace:
+#0 C:\wamp64\www\BookIT\public\seed_demo_data.php(5): mysqli->query('SELECT count(*)...')
+#1 {main}
+  thrown in C:\wamp64\www\BookIT\public\seed_demo_data.php on line 5
+[17-Apr-2026 11:00:40 Asia/Manila] WARNING: Using test PayMongo keys. Set PAYMONGO_* in .env for proper configuration.
+[17-Apr-2026 11:01:26 Asia/Manila] WARNING: Using test PayMongo keys. Set PAYMONGO_* in .env for proper configuration.
+[17-Apr-2026 11:01:56 Asia/Manila] PHP Fatal error:  Uncaught Error: Class "mysqli" not found in C:\wamp64\www\BookIT\config\db.php:8
+Stack trace:
+#0 C:\wamp64\www\BookIT\public\seed_demo_data.php(2): require_once()
+#1 {main}
+  thrown in C:\wamp64\www\BookIT\config\db.php on line 8
+[17-Apr-2026 11:09:17 Asia/Manila] Exception in execute_query: You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near 'IF NOT EXISTS otp_code VARCHAR(10) NULL, ADD COLUMN IF NOT EXISTS otp_expiry DAT' at line 1
+[17-Apr-2026 11:09:17 Asia/Manila] Exception in execute_query: Unknown column 'otp_code' in 'field list'
+[17-Apr-2026 11:34:45 Asia/Manila] WARNING: Using test PayMongo keys. Set PAYMONGO_* in .env for proper configuration.
+[17-Apr-2026 15:05:24 Asia/Manila] PHPMailer: Email sent to: monkeydluffy@gmail.com
+[17-Apr-2026 15:06:55 Asia/Manila] PHPMailer: Email sent to: monkeydluffy@gmail.com
+[17-Apr-2026 15:07:28 Asia/Manila] WARNING: Using test PayMongo keys. Set PAYMONGO_* in .env for proper configuration.
+[17-Apr-2026 21:43:41 Asia/Manila] WARNING: Using test PayMongo keys. Set PAYMONGO_* in .env for proper configuration.
+[18-Apr-2026 06:32:45 Asia/Manila] PHP Fatal error:  Uncaught Error: Class "mysqli" not found in C:\wamp64\www\BookIT\config\db.php:8
+Stack trace:
+#0 C:\wamp64\www\BookIT\apply_migration.php(3): require_once()
+#1 {main}
+  thrown in C:\wamp64\www\BookIT\config\db.php on line 8
+[18-Apr-2026 06:33:25 Asia/Manila] PHP Fatal error:  Uncaught Error: Class "mysqli" not found in C:\wamp64\www\BookIT\config\db.php:8
+Stack trace:
+#0 C:\wamp64\www\BookIT\apply_migration.php(3): require_once()
+#1 {main}
+  thrown in C:\wamp64\www\BookIT\config\db.php on line 8
+[18-Apr-2026 06:37:34 Asia/Manila] PHP Fatal error:  Uncaught Error: Class "mysqli" not found in C:\wamp64\www\BookIT\config\db.php:8
+Stack trace:
+#0 C:\wamp64\www\BookIT\scratch\verify_hardening.php(3): include()
+#1 {main}
+  thrown in C:\wamp64\www\BookIT\config\db.php on line 8
+[18-Apr-2026 06:38:18 Asia/Manila] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown column 'id' in 'where clause' in C:\wamp64\www\BookIT\scratch\verify_hardening.php:13
+Stack trace:
+#0 C:\wamp64\www\BookIT\scratch\verify_hardening.php(13): mysqli->query('UPDATE audit_lo...')
+#1 {main}
+  thrown in C:\wamp64\www\BookIT\scratch\verify_hardening.php on line 13
+[18-Apr-2026 06:39:53 Asia/Manila] PHP Fatal error:  Uncaught mysqli_sql_exception: DATA INTEGRITY VIOLATION: Audit logs are immutable and cannot be updated. in C:\wamp64\www\BookIT\scratch\verify_hardening.php:13
+Stack trace:
+#0 C:\wamp64\www\BookIT\scratch\verify_hardening.php(13): mysqli->query('UPDATE audit_lo...')
+#1 {main}
+  thrown in C:\wamp64\www\BookIT\scratch\verify_hardening.php on line 13
+[18-Apr-2026 06:40:44 Asia/Manila] PHP Fatal error:  Uncaught mysqli_sql_exception: DATA INTEGRITY VIOLATION: Audit logs are immutable and cannot be updated. in C:\wamp64\www\BookIT\scratch\verify_hardening.php:13
+Stack trace:
+#0 C:\wamp64\www\BookIT\scratch\verify_hardening.php(13): mysqli->query('UPDATE audit_lo...')
+#1 {main}
+  thrown in C:\wamp64\www\BookIT\scratch\verify_hardening.php on line 13
+[18-Apr-2026 06:40:54 Asia/Manila] PHP Fatal error:  Uncaught mysqli_sql_exception: DATA INTEGRITY VIOLATION: Audit logs are immutable and cannot be updated. in C:\wamp64\www\BookIT\scratch\verify_hardening.php:13
+Stack trace:
+#0 C:\wamp64\www\BookIT\scratch\verify_hardening.php(13): mysqli->query('UPDATE audit_lo...')
+#1 {main}
+  thrown in C:\wamp64\www\BookIT\scratch\verify_hardening.php on line 13
+[18-Apr-2026 06:42:55 Asia/Manila] PHP Fatal error:  Uncaught mysqli_sql_exception: DATA INTEGRITY VIOLATION: Audit logs are immutable and cannot be updated. in C:\wamp64\www\BookIT\scratch\verify_hardening.php:13
+Stack trace:
+#0 C:\wamp64\www\BookIT\scratch\verify_hardening.php(13): mysqli->query('UPDATE audit_lo...')
+#1 {main}
+  thrown in C:\wamp64\www\BookIT\scratch\verify_hardening.php on line 13
+[18-Apr-2026 06:43:23 Asia/Manila] PHP Fatal error:  Uncaught mysqli_sql_exception: DATA INTEGRITY VIOLATION: Audit logs are immutable and cannot be updated. in C:\wamp64\www\BookIT\scratch\verify_hardening.php:13
+Stack trace:
+#0 C:\wamp64\www\BookIT\scratch\verify_hardening.php(13): mysqli->query('UPDATE audit_lo...')
+#1 {main}
+  thrown in C:\wamp64\www\BookIT\scratch\verify_hardening.php on line 13
+[18-Apr-2026 06:44:10 Asia/Manila] PHP Fatal error:  Uncaught mysqli_sql_exception: DATA INTEGRITY VIOLATION: Audit logs are immutable and cannot be updated. in C:\wamp64\www\BookIT\scratch\verify_hardening.php:13
+Stack trace:
+#0 C:\wamp64\www\BookIT\scratch\verify_hardening.php(13): mysqli->query('UPDATE audit_lo...')
+#1 {main}
+  thrown in C:\wamp64\www\BookIT\scratch\verify_hardening.php on line 13
+[18-Apr-2026 06:45:17 Asia/Manila] PHP Fatal error:  Uncaught mysqli_sql_exception: DATA INTEGRITY VIOLATION: Audit logs are immutable and cannot be updated. in C:\wamp64\www\BookIT\scratch\verify_hardening.php:13
+Stack trace:
+#0 C:\wamp64\www\BookIT\scratch\verify_hardening.php(13): mysqli->query('UPDATE audit_lo...')
+#1 {main}
+  thrown in C:\wamp64\www\BookIT\scratch\verify_hardening.php on line 13
+[18-Apr-2026 06:55:00 Asia/Manila] WARNING: Using test PayMongo keys. Set PAYMONGO_* in .env for proper configuration.
+[18-Apr-2026 06:59:38 Asia/Manila] WARNING: Using test PayMongo keys. Set PAYMONGO_* in .env for proper configuration.
+[18-Apr-2026 07:03:47 Asia/Manila] WARNING: Using test PayMongo keys. Set PAYMONGO_* in .env for proper configuration.
+[18-Apr-2026 07:06:33 Asia/Manila] WARNING: Using test PayMongo keys. Set PAYMONGO_* in .env for proper configuration.
+[18-Apr-2026 07:06:42 Asia/Manila] WARNING: Using test PayMongo keys. Set PAYMONGO_* in .env for proper configuration.
+[18-Apr-2026 07:07:12 Asia/Manila] WARNING: Using test PayMongo keys. Set PAYMONGO_* in .env for proper configuration.
+[18-Apr-2026 07:07:14 Asia/Manila] WARNING: Using test PayMongo keys. Set PAYMONGO_* in .env for proper configuration.
+[18-Apr-2026 07:20:11 Asia/Manila] WARNING: Using test PayMongo keys. Set PAYMONGO_* in .env for proper configuration.
+[18-Apr-2026 07:43:16 Asia/Manila] SESSION EXPIRED: Inactivity timeout reached for User ID: 9
+[18-Apr-2026 12:08:28 Asia/Manila] SESSION EXPIRED: Inactivity timeout reached for User ID: 9
+[18-Apr-2026 12:22:28 Asia/Manila] process_reservation: createReservation failed.
+[18-Apr-2026 12:34:30 Asia/Manila] SESSION EXPIRED: Inactivity timeout reached for User ID: 10
+[18-Apr-2026 12:34:54 Asia/Manila] Exception in execute_query: Unknown column 'checked_in_by' in 'field list'
+[18-Apr-2026 12:34:59 Asia/Manila] Exception in execute_query: Unknown column 'checked_in_by' in 'field list'
+[18-Apr-2026 12:35:08 Asia/Manila] Exception in execute_query: Unknown column 'checked_out_by' in 'field list'
+[18-Apr-2026 12:38:13 Asia/Manila] process_reservation: validation failed. branchID: 4, unitID: 34, dates: -
+[18-Apr-2026 16:19:58 Asia/Manila] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown column 'u.cancellation_policy' in 'field list' in C:\wamp64\www\BookIT\config\db.php:25
+Stack trace:
+#0 C:\wamp64\www\BookIT\config\db.php(25): mysqli->prepare('SELECT r.*, u.c...')
+#1 C:\wamp64\www\BookIT\renter\my_bookings.php(50): get_single_result('SELECT r.*, u.c...', Array)
+#2 {main}
+  thrown in C:\wamp64\www\BookIT\config\db.php on line 25
+[18-Apr-2026 16:22:49 Asia/Manila] PHP Fatal error:  Uncaught Error: Class "mysqli" not found in C:\wamp64\www\BookIT\config\db.php:8
+Stack trace:
+#0 C:\wamp64\www\BookIT\check_schema.php(2): include()
+#1 {main}
+  thrown in C:\wamp64\www\BookIT\config\db.php on line 8
+[18-Apr-2026 16:23:19 Asia/Manila] PHP Fatal error:  Uncaught Error: Class "mysqli" not found in C:\wamp64\www\BookIT\config\db.php:8
+Stack trace:
+#0 C:\wamp64\www\BookIT\scratch\check_units.php(8): include()
+#1 {main}
+  thrown in C:\wamp64\www\BookIT\config\db.php on line 8
+[18-Apr-2026 16:28:43 Asia/Manila] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown column 'u.cancellation_policy' in 'field list' in C:\wamp64\www\BookIT\config\db.php:25
+Stack trace:
+#0 C:\wamp64\www\BookIT\config\db.php(25): mysqli->prepare('SELECT r.*, u.c...')
+#1 C:\wamp64\www\BookIT\renter\my_bookings.php(50): get_single_result('SELECT r.*, u.c...', Array)
+#2 {main}
+  thrown in C:\wamp64\www\BookIT\config\db.php on line 25
+[18-Apr-2026 16:32:24 Asia/Manila] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown column 'u.cancellation_policy' in 'field list' in C:\wamp64\www\BookIT\config\db.php:25
+Stack trace:
+#0 C:\wamp64\www\BookIT\config\db.php(25): mysqli->prepare('SELECT r.*, u.c...')
+#1 C:\wamp64\www\BookIT\renter\my_bookings.php(50): get_single_result('SELECT r.*, u.c...', Array)
+#2 {main}
+  thrown in C:\wamp64\www\BookIT\config\db.php on line 25
+[18-Apr-2026 16:35:21 Asia/Manila] PHP Fatal error:  Uncaught Error: Class "mysqli" not found in C:\wamp64\www\BookIT\config\db.php:8
+Stack trace:
+#0 C:\wamp64\www\BookIT\check_columns.php(2): require_once()
+#1 {main}
+  thrown in C:\wamp64\www\BookIT\config\db.php on line 8
+[18-Apr-2026 16:36:30 Asia/Manila] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown column 'u.cancellation_policy' in 'field list' in C:\wamp64\www\BookIT\config\db.php:25
+Stack trace:
+#0 C:\wamp64\www\BookIT\config\db.php(25): mysqli->prepare('SELECT r.*, u.c...')
+#1 C:\wamp64\www\BookIT\renter\my_bookings.php(50): get_single_result('SELECT r.*, u.c...', Array)
+#2 {main}
+  thrown in C:\wamp64\www\BookIT\config\db.php on line 25
+[18-Apr-2026 16:38:26 Asia/Manila] PHP Fatal error:  Uncaught mysqli_sql_exception: Table 'condo_rental_reservation_db.schema_migrations' doesn't exist in C:\wamp64\www\BookIT\verify_fix.php:12
+Stack trace:
+#0 C:\wamp64\www\BookIT\verify_fix.php(12): mysqli->query('SELECT * FROM s...')
+#1 {main}
+  thrown in C:\wamp64\www\BookIT\verify_fix.php on line 12
+[18-Apr-2026 16:53:29 Asia/Manila] WARNING: Using test PayMongo keys. Set PAYMONGO_* in .env for proper configuration.
+[18-Apr-2026 16:59:05 Asia/Manila] WARNING: Using test PayMongo keys. Set PAYMONGO_* in .env for proper configuration.
+[18-Apr-2026 16:59:19 Asia/Manila] SESSION EXPIRED: Inactivity timeout reached for User ID: 1

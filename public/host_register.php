@@ -75,8 +75,8 @@ if (isset($_POST['register'])) {
             try {
                 $hashed_password = password_hash($password, PASSWORD_DEFAULT);
                 
-                // 1. Insert user as RENTER first (Pending host status)
-                $stmt_user = $conn->prepare("INSERT INTO users (full_name, email, password, phone, role, is_active) VALUES (?, ?, ?, ?, 'renter', 1)");
+                // 1. Insert user as PENDING_HOST first
+                $stmt_user = $conn->prepare("INSERT INTO users (full_name, email, password, phone, role, is_active) VALUES (?, ?, ?, ?, 'pending_host', 1)");
                 $stmt_user->bind_param("ssss", $host_name, $email, $hashed_password, $phone);
                 $stmt_user->execute();
                 $new_user_id = $conn->insert_id;
@@ -111,7 +111,7 @@ if (isset($_POST['register'])) {
                 $_SESSION['user_id'] = $new_user_id;
                 $_SESSION['fullname'] = $host_name;
                 $_SESSION['email'] = $email;
-                $_SESSION['role'] = 'renter'; // Temp renter role while pending
+                $_SESSION['role'] = 'pending_host'; // Set to pending_host role while under review
                 
                 header("Location: ../renter/my_application.php?success=1");
                 exit();
@@ -406,8 +406,8 @@ if (isset($_POST['register'])) {
                         <span class="text-sm text-gray-700">Confirm all information is true and accurate</span>
                     </label>
                     <label class="flex items-start cursor-pointer">
-                        <input type="checkbox" name="agree_terms" value="1" required class="mt-1 mr-3 w-5 h-5 text-orange-600 border-gray-300 rounded focus:ring-orange-500">
-                        <span class="text-sm text-gray-700">Agree to Host Policies and Terms of Service</span>
+                        <input type="checkbox" id="terms" name="agree_terms" value="1" required class="mt-1 mr-3 w-5 h-5 text-orange-600 border-gray-300 rounded focus:ring-orange-500">
+                        <span class="text-sm text-gray-700">Agree to <a href="#" onclick="openModal('termsModal'); return false;" class="text-orange-600 hover:underline">Host Policies and Terms of Service</a></span>
                     </label>
                     <label class="flex items-start cursor-pointer">
                         <input type="checkbox" name="ack_verify" value="1" required class="mt-1 mr-3 w-5 h-5 text-orange-600 border-gray-300 rounded focus:ring-orange-500">
@@ -443,7 +443,49 @@ if (isset($_POST['register'])) {
         </div>
     </div>
 
+    <!-- Terms and Conditions Modal -->
+    <div id="termsModal" class="fixed inset-0 z-50 hidden bg-black bg-opacity-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-3xl max-h-[80vh] flex flex-col">
+            <div class="p-6 border-b border-gray-200 flex justify-between items-center">
+                <h3 class="text-xl font-bold text-gray-900">Host Policies and Terms of Service</h3>
+                <button onclick="closeModal('termsModal')" class="text-gray-400 hover:text-gray-600">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+            <div class="p-6 overflow-y-auto flex-1 space-y-4 text-sm text-gray-600">
+                <h4 class="font-bold text-gray-900">1. Verification and Acceptance</h4>
+                <p>All host applications are subject to mandatory verification by administrators. Submission of this form does not guarantee acceptance.</p>
+                
+                <h4 class="font-bold text-gray-900">2. Revenue Sharing</h4>
+                <p>By listing properties on BookIT, you agree to our platform revenue sharing structure (10% Admin Booking Fee, 90% Host Return).</p>
+                
+                <h4 class="font-bold text-gray-900">3. Accurate Representation</h4>
+                <p>Hosts must provide accurate unit descriptions, locations, and pricing. Fraudulent listings will result in irreversible bans and potential legal pursuit.</p>
+
+                <h4 class="font-bold text-gray-900">4. Misconduct</h4>
+                <p>Any circumvention of the system, offensive dialogue within reviews/messages, or falsifying uploaded certificates will immediately suspend your payout release pipeline.</p>
+            </div>
+            <div class="p-6 border-t border-gray-200 bg-gray-50 rounded-b-xl flex justify-end">
+                <button onclick="document.getElementById('terms').checked = true; closeModal('termsModal');" class="bg-orange-500 hover:bg-orange-600 text-white px-6 py-2 rounded-lg font-semibold transition">I Accept</button>
+            </div>
+        </div>
+    </div>
+
     <script>
+        function openModal(id) {
+            document.getElementById(id).classList.remove('hidden');
+        }
+        function closeModal(id) {
+            document.getElementById(id).classList.add('hidden');
+        }
+
+        // Close on outside click
+        window.onclick = function(event) {
+            const modal = document.getElementById('termsModal');
+            if (event.target === modal) {
+                closeModal('termsModal');
+            }
+        }
         // Password visibility toggle
         function togglePasswordVisibility(fieldId, iconId) {
             const field = document.getElementById(fieldId);

@@ -90,7 +90,7 @@ if ($overlapBookings) {
 $overlapReservations = get_single_result(
     "SELECT reservation_id FROM reservations
      WHERE unit_id = ?
-       AND status IN ('confirmed','checked_in')
+       AND (status IN ('confirmed','checked_in') OR (status = 'pending' AND (hold_expiry IS NULL OR hold_expiry > NOW())))
        AND NOT (check_out_date <= ? OR check_in_date >= ?)
      LIMIT 1",
     [$unit_id, $check_in, $check_out]

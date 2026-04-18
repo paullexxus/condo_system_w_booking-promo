@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Unit Management - BookIT</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="../assets/css/sidebar.css">
+    <link rel="stylesheet" href="../assets/css/sidebar-common.css">
+    <link rel="stylesheet" href="../assets/css/host/unit_management.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #f5f7fa;
+            color: #2c3e50;
+        }
+        
+        .main-container {
+            display: flex;
+            min-height: 100vh;
+        }
+        
+        .content {
+            flex: 1;
+            padding: 30px;
+            max-width: 100%;
+            width: 100%;
+            margin-left: 280px;
+        }
+    </style>
+</head>
+<body>
+    <div class="main-container">
+        
+<!-- =================== BUILT-IN SIDEBAR =================== -->
+<aside class="sidebar" id="sidebar">
+    <div class="brand">
+        <i class="fas fa-building"></i>
+        <span>BookIT Host</span>
+    </div>
+    <nav class="sidebar-menu">
+        <ul>
+                            <!-- HOST/MANAGER MENU -->
+                <li>
+                    <a href="http://localhost/BookIT/host/host_dashboard.php" 
+                       class="">
+                        <i class="fas fa-tachometer-alt"></i> 
+                        <span>Dashboard</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="http://localhost/BookIT/host/unit_management.php" 
+                       class="">
+                        <i class="fas fa-home"></i> 
+                        <span>Unit Management</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="http://localhost/BookIT/host/reservations.php" 
+                       class="">
+                        <i class="fas fa-calendar-check"></i> 
+                        <span>Reservations</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="http://localhost/BookIT/host/payment_management.php" 
+                       class="">
+                        <i class="fas fa-credit-card"></i> 
+                        <span>Payments</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="http://localhost/BookIT/host/amenities.php" 
+                       class="">
+                        <i class="fas fa-star"></i> 
+                        <span>Amenities</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="http://localhost/BookIT/host/reviews.php" 
+                       class="">
+                        <i class="fas fa-comments"></i> 
+                        <span>Feedback & Reviews</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="http://localhost/BookIT/host/messages.php" 
+                       class="">
+                        <i class="fas fa-inbox"></i> 
+                        <span>Messages</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="http://localhost/BookIT/host/notifications.php" 
+                       class="">
+                        <i class="fas fa-bell"></i> 
+                        <span>Notifications</span>
+                                            </a>
+                </li>
+                <li>
+                    <a href="http://localhost/BookIT/host/profile.php" 
+                       class="">
+                        <i class="fas fa-user-cog"></i> 
+                        <span>Profile & Settings</span>
+                    </a>
+                </li>
+                    </ul>
+    </nav>
+
+    <!-- =================== PROFILE SECTION =================== -->
+    <div class="sidebar-profile">
+        <div class="profile-info">
+            <div class="profile-avatar">
+                <i class="fas fa-user-circle"></i>
+            </div>
+            <div class="profile-details">
+                <span class="profile-name">Admin</span>
+                <span class="profile-role">Host</span>
+            </div>
+        </div>
+        <a href="http://localhost/BookIT/public/logout.php" class="logout-btn">
+            <i class="fas fa-sign-out-alt"></i>
+        </a>
+    </div>
+</aside>
+
+        
+        <div class="content">
+            <div class="page-header">
+                <h1><i class="fas fa-building"></i> Unit Management</h1>
+                <div class="header-actions">
+                    <button class="btn btn-primary" onclick="openAddUnitModal()">
+                        <i class="fas fa-plus"></i> Add New Unit
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Success/Error Alert -->
+                        
+            <!-- Filters -->
+            <div class="filters">
+                <div class="filter-group">
+                    <label>Search</label>
+                    <input type="text" id="searchInput" placeholder="Unit name or ID...">
+                </div>
+                <div class="filter-group">
+                    <label>Status</label>
+                    <select id="statusFilter">
+                        <option value="">All Status</option>
+                        <option value="available">Available</option>
+                        <option value="occupied">Occupied</option>
+                        <option value="maintenance">Under Maintenance</option>
+                    </select>
+                </div>
+                <div class="view-toggle" style="margin-left: auto;">
+                    <button class="view-btn active" data-view="grid">
+                        <i class="fas fa-th"></i> Grid
+                    </button>
+                    <button class="view-btn" data-view="list">
+                        <i class="fas fa-list"></i> List
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Units Container -->
+                        <div class="empty-state">
+                <i class="fas fa-home"></i>
+                <h2>No Units Yet</h2>
+                <p>Start by adding your first condo unit to manage bookings and reservations.</p>
+                <button class="btn btn-primary" onclick="openAddUnitModal()">
+                </i> Add Your First Unit
+                </button>
+            </div>
+                    </div>
+    </div>
+    
+    <!-- Add/Edit Unit Modal -->
+    <div id="unitModal" class="modal fade" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalTitle">Add New Unit</h5>
+                    <button type="button" class="btn-close" onclick="closeUnitModal()"></button>
+                </div>
+                <div class="modal-body">
+                    <form method="POST" id="unitForm" enctype="multipart/form-data">
+                <input type="hidden" name="action" id="formAction" value="add_unit">
+                <input type="hidden" name="unit_id" id="unitId">
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Branch</label>
+                        <select name="branch_id" id="branchSelect" required>
+                            <option value="">Select Branch</option>
+                                                            <option value="2">
+                                    BookIT BGC — Taguig                                </option>
+                                                            <option value="4">
+                                    BookIT Caloocan — caloocan                                </option>
+                                                            <option value="1">
+                                    BookIT Makati — Makati                                </option>
+                                                            <option value="6">
+                                    BookIT malabon — malabon                                </option>
+                                                            <option value="5">
+                                    BookIT manila — manila                                </option>
+                                                            <option value="3">
+                                    BookIT Ortigas — Pasig                                </option>
+                                                    </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Unit Name / No.</label>
+                        <input type="text" name="unit_name" id="unitName" placeholder="e.g., Unit 101 or Penthouse" required>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Street Address</label>
+                        <input type="text" name="street_address" id="streetAddress" placeholder="e.g., 123 Main Street" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Unit Number</label>
+                        <input type="text" name="unit_number" id="unitNumber" placeholder="e.g., 101, 201, Suite A" required>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>City</label>
+                        <input type="text" name="city" id="city" placeholder="e.g., Manila, Makati" required>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label><i class="fas fa-map"></i> Property Location</label>
+                    <div id="unitMap" style="width: 100%; height: 300px; border-radius: 8px; border: 2px solid #dee2e6; margin-bottom: 10px; background: linear-gradient(135deg, #f5f7fa 0%, #e9ecef 100%); display: flex; align-items: center; justify-content: center;">
+                        <div style="text-align: center; color: #666;">
+                            <i class="fas fa-spinner fa-spin" style="font-size: 32px; color: #3498db; margin-bottom: 10px; display: block;"></i>
+                            <p>Loading map...</p>
+                        </div>
+                    </div>
+                    <small class="form-text text-muted d-block mb-2">Click on map to select property location</small>
+                    <div class="row g-2">
+                        <div class="col-6">
+                            <input type="hidden" name="latitude" id="latitude">
+                            <input type="text" class="form-control" id="latDisplay" placeholder="Latitude">
+                        </div>
+                        <div class="col-6">
+                            <input type="hidden" name="longitude" id="longitude">
+                            <input type="text" class="form-control" id="lngDisplay" placeholder="Longitude">
+                        </div>
+                    </div>
+                </div>
+                
+                
+                <div class="form-group">
+                    <label><i class="fas fa-image"></i> Unit Photos</label>
+                    <div style="border: 2px dashed #ddd; border-radius: 6px; padding: 30px; text-align: center; cursor: pointer; transition: all 0.3s;" id="uploadArea">
+                        <i class="fas fa-cloud-upload-alt" style="font-size: 32px; color: #3498db; margin-bottom: 10px; display: block;"></i>
+                        <div style="font-weight: 500; color: #2c3e50; margin-bottom: 5px;">Drag photos here or click to browse</div>
+                        <div style="font-size: 12px; color: #999;">Support: JPG, PNG (Max 5MB per image)</div>
+                        <input type="file" name="photos[]" id="photoInput" multiple accept="image/*" style="display: none;">
+                    </div>
+                    <div id="photoPreview" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 10px; margin-top: 15px;"></div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Price Rate (₱)</label>
+                        <input type="number" name="price" id="price" placeholder="e.g., 2500" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Pricing Type</label>
+                        <select name="pricing_type" id="pricingType" required>
+                            <option value="daily">Daily / Nightly</option>
+                            <option value="monthly">Monthly</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Capacity (Guests)</label>
+                        <input type="number" name="capacity" id="capacity" placeholder="e.g., 4" min="1" required>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Floor Area (sqm)</label>
+                        <input type="number" name="sqm" id="sqm" placeholder="e.g., 35.5" step="0.01" min="0">
+                    </div>
+                    <div class="form-group">
+                        <label>Bed Type</label>
+                        <select name="bed_type" id="bedType">
+                            <option value="">Select Bed Type</option>
+                            <option value="single">Single Bed</option>
+                            <option value="double deck">Double Deck / Bunk Bed</option>
+                            <option value="queen">Queen Size</option>
+                            <option value="king">King Size</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Number of Beds</label>
+                        <input type="number" name="num_beds" id="numBeds" placeholder="e.g., 1" min="1" value="1">
+                    </div>
+                    <div class="form-group">
+                        <label>Number of Bathrooms</label>
+                        <input type="number" name="num_bathrooms" id="numBathrooms" placeholder="e.g., 1" min="1" value="1">
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label>Status</label>
+                    <select name="status" id="status" required>
+                        <option value="available">Available</option>
+                        <option value="maintenance">Under Maintenance</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label>Amenities</label>
+                    <div class="amenities-list">
+                                                                                                                    <div class="amenity-checkbox">
+                                    <input type="checkbox" name="amenities[]" value="2" id="amenity-2">
+                                    <label for="amenity-2">Air Conditioning</label>
+                                </div>
+                                                                                            <div class="amenity-checkbox">
+                                    <input type="checkbox" name="amenities[]" value="4" id="amenity-4">
+                                    <label for="amenity-4">Parking</label>
+                                </div>
+                                                                                            <div class="amenity-checkbox">
+                                    <input type="checkbox" name="amenities[]" value="3" id="amenity-3">
+                                    <label for="amenity-3">Swimming Pool</label>
+                                </div>
+                                                                                            <div class="amenity-checkbox">
+                                    <input type="checkbox" name="amenities[]" value="5" id="amenity-5">
+                                    <label for="amenity-5">TV</label>
+                                </div>
+                                                                                            <div class="amenity-checkbox">
+                                    <input type="checkbox" name="amenities[]" value="1" id="amenity-1">
+                                    <label for="amenity-1">WiFi</label>
+                                </div>
+                                                                        </div>
+                </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeUnitModal()">Cancel</button>
+                    <button type="submit" form="unitForm" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Save Unit
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- View Unit Modal -->
+    <div id="viewModal" class="modal fade" tabindex="-1">
+        <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content border-0 shadow-lg" style="border-radius: 16px; overflow: hidden;">
+                <div class="modal-header border-0 py-3 px-4 align-items-center" style="background: #f8fafc;">
+                    <span class="small text-uppercase fw-bold text-muted mb-0" style="letter-spacing: 0.08em;">Listing preview</span>
+                    <button type="button" class="btn-close" onclick="closeViewModal()" aria-label="Close"></button>
+                </div>
+                <div class="modal-body pt-3 px-4 pb-4" id="viewContent" style="background: #f1f5f9;"></div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Delete Confirmation Modal (Bootstrap 5: needs .modal-dialog for centering, width, and click-through fix) -->
+    <div id="deleteModal" class="modal fade" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered delete-confirm-dialog">
+            <div class="modal-content confirmation-modal shadow border-0">
+                <div class="modal-header border-0 pb-0 pt-3 px-3 flex-column align-items-center position-relative">
+                    <h5 class="modal-title text-center fw-bold mb-0" id="deleteModalLabel" style="font-size: 1.1rem; color: #2c3e50;">
+                        <i class="fas fa-exclamation-triangle text-danger me-2"></i>Confirm Delete
+                    </h5>
+                    <button type="button" class="btn-close position-absolute top-0 end-0 m-2" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body text-center px-4 py-3">
+                    <p class="mb-2" style="font-size: 15px; color: #2c3e50;">Are you sure you want to delete <strong id="deleteUnitName"></strong>?</p>
+                    <p class="text-muted small mb-0">This action cannot be undone.</p>
+                    <form method="POST" id="deleteForm" class="mt-4">
+                        <input type="hidden" name="action" value="delete_unit">
+                        <input type="hidden" name="unit_id" id="deleteUnitId">
+                        <div class="d-flex gap-2 justify-content-center flex-wrap delete-confirm-actions">
+                            <button type="button" class="btn btn-secondary px-4" data-bs-dismiss="modal">Cancel</button>
+                            <button type="submit" class="btn btn-danger px-4">Delete Unit</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <script src="../assets/js/host/unit_management.js"></script>
+
+    <script>
+        // Modal Management Functions
+        function openAddUnitModal() {
+            document.getElementById('unitForm').reset();
+            document.getElementById('formAction').value = 'add_unit';
+            document.getElementById('modalTitle').textContent = 'Add New Unit';
+            document.getElementById('unitId').value = '';
+            mapInitialized = false;
+            const unitModal = new bootstrap.Modal(document.getElementById('unitModal'));
+            unitModal.show();
+        }
+
+        function openEditModal(unitId) {
+            // Fetch unit data and populate form
+            fetch(`../ajax/get_unit.php?unit_id=${unitId}`)
+                .then(r => r.json())
+                .then(data => {
+                    if (data.success) {
+                        const unit = data.unit;
+                        document.getElementById('unitForm').reset();
+                        document.getElementById('formAction').value = 'edit_unit';
+                        document.getElementById('modalTitle').textContent = 'Edit Unit';
+                        document.getElementById('unitId').value = unitId;
+                        document.getElementById('unitName').value = unit.unit_name;
+                        document.getElementById('branchSelect').value = unit.branch_id;
+                        document.getElementById('streetAddress').value = unit.street_address || '';
+                        document.getElementById('unitNumber').value = unit.unit_number || '';
+                        document.getElementById('city').value = unit.city || '';
+                        document.getElementById('latitude').value = unit.latitude || '';
+                        document.getElementById('longitude').value = unit.longitude || '';
+                        document.getElementById('latDisplay').value = unit.latitude || '';
+                        document.getElementById('lngDisplay').value = unit.longitude || '';
+                        document.getElementById('price').value = (unit.pricing_type === 'monthly' ? unit.price_per_month : unit.price_per_night) || 0;
+                        document.getElementById('pricingType').value = unit.pricing_type || 'monthly';
+                        document.getElementById('capacity').value = unit.max_occupancy;
+                        document.getElementById('status').value = unit.is_available ? 'available' : 'maintenance';
+                        document.getElementById('sqm').value = unit.sqm || '';
+                        document.getElementById('bedType').value = unit.bed_type || '';
+                        document.getElementById('numBeds').value = unit.num_beds || 1;
+                        document.getElementById('numBathrooms').value = unit.num_bathrooms || 1;
+
+                        document.querySelectorAll('#unitForm input[name="amenities[]"]').forEach(cb => { cb.checked = false; });
+                        if (unit.amenity_ids && unit.amenity_ids.length) {
+                            unit.amenity_ids.forEach(function (id) {
+                                const cb = document.getElementById('amenity-' + id);
+                                if (cb) cb.checked = true;
+                            });
+                        }
+                        
+                        mapInitialized = false;
+                        const unitModal = new bootstrap.Modal(document.getElementById('unitModal'));
+                        unitModal.show();
+                    }
+                });
+        }
+
+        function closeUnitModal() {
+            const unitModal = bootstrap.Modal.getInstance(document.getElementById('unitModal'));
+            if (unitModal) unitModal.hide();
+        }
+
+        function initUnitViewLeaflet(unitId) {
+            const el = document.getElementById('uvm-leaflet-' + unitId);
+            if (!el || typeof L === 'undefined') return;
+            const lat = parseFloat(el.dataset.lat);
+            const lng = parseFloat(el.dataset.lng);
+            if (Number.isNaN(lat) || Number.isNaN(lng)) return;
+            const map = L.map(el, { scrollWheelZoom: false }).setView([lat, lng], 15);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 19,
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+            }).addTo(map);
+            L.marker([lat, lng]).addTo(map);
+            setTimeout(function () { map.invalidateSize(); }, 200);
+        }
+
+        function openViewModal(unitId) {
+            fetch(`../ajax/get_unit_view.php?unit_id=${unitId}`)
+                .then(r => r.text())
+                .then(html => {
+                    document.getElementById('viewContent').innerHTML = html;
+                    const viewModalEl = document.getElementById('viewModal');
+                    const onShown = function () {
+                        initUnitViewLeaflet(unitId);
+                        viewModalEl.removeEventListener('shown.bs.modal', onShown);
+                    };
+                    viewModalEl.addEventListener('shown.bs.modal', onShown);
+                    const viewModal = bootstrap.Modal.getOrCreateInstance(viewModalEl);
+                    viewModal.show();
+                });
+        }
+
+        function closeViewModal() {
+            const viewModal = bootstrap.Modal.getInstance(document.getElementById('viewModal'));
+            if (viewModal) viewModal.hide();
+        }
+
+        function fromUnitViewOpenEdit(unitId) {
+            const vm = bootstrap.Modal.getInstance(document.getElementById('viewModal'));
+            if (vm) vm.hide();
+            setTimeout(function () { openEditModal(unitId); }, 400);
+        }
+
+        function fromUnitViewOpenDelete(unitId, unitName) {
+            const vm = bootstrap.Modal.getInstance(document.getElementById('viewModal'));
+            if (vm) vm.hide();
+            setTimeout(function () { openDeleteConfirm(unitId, unitName); }, 400);
+        }
+
+        function closeDeleteConfirm() {
+            const el = document.getElementById('deleteModal');
+            const dm = bootstrap.Modal.getInstance(el);
+            if (dm) dm.hide();
+        }
+
+        function openDeleteConfirm(unitId, unitName) {
+            document.getElementById('deleteUnitName').textContent = unitName;
+            document.getElementById('deleteUnitId').value = unitId;
+            const el = document.getElementById('deleteModal');
+            const deleteModal = bootstrap.Modal.getOrCreateInstance(el);
+            deleteModal.show();
+        }
+    </script>
+    <script>
+        // Initialize map when modal opens
+        let unitMap;
+        let unitMarker;
+        const defaultCenter = [14.5995, 121.0855]; // Manila, PH
+        let mapInitialized = false;
+
+        function initUnitMap() {
+            if (mapInitialized || !document.getElementById('unitMap')) return;
+            
+            const mapElement = document.getElementById('unitMap');
+            mapElement.innerHTML = '';
+            
+            try {
+                unitMap = L.map('unitMap').setView(defaultCenter, 13);
+                
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    maxZoom: 19,
+                    attribution: '© OpenStreetMap contributors'
+                }).addTo(unitMap);
+
+                // Load saved coordinates if editing
+                const savedLat = document.getElementById('latitude').value;
+                const savedLng = document.getElementById('longitude').value;
+                if (savedLat && savedLng) {
+                    const savedPosition = [parseFloat(savedLat), parseFloat(savedLng)];
+                    unitMap.setView(savedPosition, 16);
+                    placeUnitMarker(savedPosition[0], savedPosition[1]);
+                }
+
+                // Click map to place marker
+                unitMap.on('click', function(e) {
+                    placeUnitMarker(e.latlng.lat, e.latlng.lng);
+                    reverseGeocode(e.latlng.lat, e.latlng.lng);
+                });
+
+                const streetAddress = document.getElementById('streetAddress');
+                const cityInput = document.getElementById('city');
+                const latDisplay = document.getElementById('latDisplay');
+                const lngDisplay = document.getElementById('lngDisplay');
+                
+                function reverseGeocode(lat, lon) {
+                    fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`)
+                        .then(res => res.json())
+                        .then(data => {
+                            if (data && data.address) {
+                                const city = data.address.city || data.address.town || data.address.village || data.address.county || '';
+                                const road = data.address.road || '';
+                                const house_number = data.address.house_number || '';
+                                const suburb = data.address.suburb || data.address.neighbourhood || '';
+                                
+                                let street = [];
+                                if (house_number) street.push(house_number);
+                                if (road) street.push(road);
+                                if (suburb) street.push(suburb);
+                                
+                                if (streetAddress && street.length > 0) streetAddress.value = street.join(', ');
+                                if (cityInput && city) cityInput.value = city;
+                            }
+                        }).catch(e => console.log('Reverse geocoding error', e));
+                }
+
+                // Set up simple manual geocoding if place input loses focus
+                function geocodeAddress() {
+                    const street = streetAddress ? streetAddress.value : '';
+                    const city = cityInput ? cityInput.value : '';
+                    const addr = `${street}, ${city}, Philippines`.trim();
+                    
+                    if (addr.length > 5 && addr !== ', , Philippines') {
+                        fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(addr)}&limit=1`)
+                            .then(res => res.json())
+                            .then(data => {
+                                if (data && data.length > 0) {
+                                    const lat = parseFloat(data[0].lat);
+                                    const lon = parseFloat(data[0].lon);
+                                    unitMap.setView([lat, lon], 16);
+                                    placeUnitMarker(lat, lon);
+                                }
+                            }).catch(e => console.log('Geocoding error', e));
+                    }
+                }
+
+                let geocodeTimeout;
+                function debouncedGeocode() {
+                    clearTimeout(geocodeTimeout);
+                    geocodeTimeout = setTimeout(geocodeAddress, 800);
+                }
+                
+                if(streetAddress) streetAddress.addEventListener('input', debouncedGeocode);
+                if(cityInput) cityInput.addEventListener('input', debouncedGeocode);
+                
+                function updateMapFromCoordinates() {
+                    const lat = parseFloat(latDisplay.value);
+                    const lng = parseFloat(lngDisplay.value);
+                    
+                    if (!isNaN(lat) && !isNaN(lng)) {
+                        unitMap.setView([lat, lng], 16);
+                        placeUnitMarker(lat, lng);
+                        reverseGeocode(lat, lng);
+                    }
+                }
+                
+                let coordTimeout;
+                function debouncedCoordUpdate() {
+                    clearTimeout(coordTimeout);
+                    coordTimeout = setTimeout(updateMapFromCoordinates, 1000);
+                }
+                
+                if (latDisplay) latDisplay.addEventListener('input', debouncedCoordUpdate);
+                if (lngDisplay) lngDisplay.addEventListener('input', debouncedCoordUpdate);
+                
+                mapInitialized = true;
+                
+                // Fix map rendering issues in Bootstrap modals
+                setTimeout(() => {
+                    unitMap.invalidateSize();
+                }, 100);
+            } catch (error) {
+                console.error('Map initialization failed:', error);
+                mapElement.innerHTML = '<div style=\"display: flex; align-items: center; justify-content: center; height: 100%; flex-direction: column;\"><i class=\"fas fa-exclamation-circle\" style=\"font-size: 40px; color: #e74c3c; margin-bottom: 10px;\"></i><p style=\"color: #666; margin: 0;\">Map error</p><p style=\"font-size: 12px; color: #999; margin: 5px 0 0 0;\">Please enter coordinates manually</p></div>';
+                mapInitialized = true;
+            }
+        }
+
+        function placeUnitMarker(lat, lng) {
+            if (unitMarker) {
+                unitMap.removeLayer(unitMarker);
+            }
+
+            unitMarker = L.marker([lat, lng]).addTo(unitMap);
+            unitMarker.bindPopup('Property Location').openPopup();
+
+            // Update fields
+            document.getElementById('latitude').value = lat.toFixed(6);
+            document.getElementById('longitude').value = lng.toFixed(6);
+            document.getElementById('latDisplay').value = lat.toFixed(6);
+            document.getElementById('lngDisplay').value = lng.toFixed(6);
+        }
+
+        // Initialize map when modal opens
+        document.addEventListener('DOMContentLoaded', function() {
+            const unitModal = document.getElementById('unitModal');
+            if (unitModal) {
+                unitModal.addEventListener('shown.bs.modal', function() {
+                    initUnitMap();
+                    if(unitMap) { setTimeout(() => unitMap.invalidateSize(), 500); }
+                });
+            }
+        });
+    </script>
+</body>
+</html>

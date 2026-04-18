@@ -208,6 +208,19 @@ $stats = get_single_result("
     WHERE r.unit_id IN (SELECT unit_id FROM units WHERE host_id = ?)
 ", [$host_id]);
 
+// Fetch monthly revenue for graph
+$monthly_revenue = get_multiple_results("
+    SELECT DATE_FORMAT(p.payment_date, '%Y-%m') as month, SUM(p.amount) as total
+    FROM payments p
+    LEFT JOIN reservations r ON p.reservation_id = r.reservation_id
+    WHERE r.unit_id IN (SELECT unit_id FROM units WHERE host_id = ?) 
+      AND p.payment_status = 'paid'
+      AND p.payment_date >= DATE_SUB(NOW(), INTERVAL 12 MONTH)
+    GROUP BY month
+    ORDER BY month ASC
+", [$host_id]);
+
+
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -219,6 +232,7 @@ $stats = get_single_result("
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="../assets/css/sidebar.css">
     <link rel="stylesheet" href="../assets/css/sidebar-common.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         * {
             margin: 0;
@@ -561,6 +575,16 @@ $stats = get_single_result("
                 </div>
             </div>
             
+            <!-- Revenue Tracking Graph -->
+            <div class="section">
+                <div class="section-header">
+                    <h2><i class="fas fa-chart-line"></i> Revenue Tracking (Last 12 Months)</h2>
+                </div>
+                <div style="height: 350px;">
+                    <canvas id="revenueChart"></canvas>
+                </div>
+            </div>
+            
             <!-- Payment Methods Section -->
             <div class="section">
                 <div class="section-header">
@@ -820,7 +844,52 @@ $stats = get_single_result("
     </div>
     
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
+        // Chart Initialization
+        document.addEventListener('DOMContentLoaded', function() {
+            var ctx = document.getElementById('revenueChart');
+            if(ctx) {
+                var monthlyData = <?php echo json_encode($monthly_revenue); ?>;
+                var labels = monthlyData.map(item => {
+                    const date = new Date(item.month + '-01');
+                    return date.toLocaleString('default', { month: 'short', year: 'numeric' });
+                });
+                var dataPoints = monthlyData.map(item => item.total);
+                
+                new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Revenue (₱)',
+                            data: dataPoints,
+                            borderColor: '#3498db',
+                            backgroundColor: 'rgba(52, 152, 219, 0.2)',
+                            borderWidth: 2,
+                            fill: true,
+                            tension: 0.4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    callback: function(value) { return '₱' + value.toLocaleString(); }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+        });
+
         function updatePaymentMethodFields() {
             const methodType = document.getElementById('methodType').value;
             document.getElementById('paymongoFields').style.display = methodType === 'paymongo' ? 'block' : 'none';

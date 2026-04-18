@@ -6,51 +6,64 @@ include '../includes/session.php';
 include '../includes/functions.php';
 checkRole(['admin']);
 
-// Additional statistics using your existing functions - UPDATED
-$totalUsers = 0;
-$totalBranches = 0;
-$totalUnits = 0;
-$totalReservations = 0;
-$totalRevenue = 0;
+// Bulletproof #5: Dashboard Stat Caching (30s TTL)
+$cachedStats = getCache('admin_dashboard_stats');
+if ($cachedStats) {
+    extract($cachedStats);
+} else {
+    // Additional statistics using your existing functions - UPDATED
+    $totalUsers = 0;
+    $totalBranches = 0;
+    $totalUnits = 0;
+    $totalReservations = 0;
+    $totalRevenue = 0;
+    
+    // Total Users (Host & Renters) - Only active
+    $result = $conn->query("SELECT COUNT(*) as cnt FROM users WHERE is_active = 1");
+    if ($result && $row = $result->fetch_assoc()) $totalUsers = (int)$row['cnt'];
+    
+    // Total Branches - Only active
+    $result = $conn->query("SELECT COUNT(*) as cnt FROM branches WHERE is_active = 1");
+    if ($result && $row = $result->fetch_assoc()) $totalBranches = (int)$row['cnt'];
+    
+    // Total Units (Listings) - Only from active branches
+    $result = $conn->query("SELECT COUNT(*) as cnt FROM units u 
+                           JOIN branches b ON u.branch_id = b.branch_id 
+                           WHERE b.is_active = 1");
+    if ($result && $row = $result->fetch_assoc()) $totalUnits = (int)$row['cnt'];
+    
+    // Total Reservations - Only from active branches
+    $result = $conn->query("SELECT COUNT(*) as cnt FROM reservations r 
+                           JOIN branches b ON r.branch_id = b.branch_id 
+                           WHERE b.is_active = 1");
+    if ($result && $row = $result->fetch_assoc()) $totalReservations = (int)$row['cnt'];
+    
+    // Total Revenue (from reservations) - Only from active branches
+    $result = $conn->query("SELECT SUM(r.total_amount) as total FROM reservations r 
+                           JOIN branches b ON r.branch_id = b.branch_id 
+                           WHERE r.status IN ('confirmed', 'checked_in', 'completed') 
+                           AND b.is_active = 1");
+    if ($result && $row = $result->fetch_assoc()) $totalRevenue = (float)$row['total'];
+    
+    // CORRECTED: Booking Rate Calculation - Number of unique booked units from ACTIVE branches
+    $result = $conn->query("SELECT COUNT(DISTINCT r.unit_id) as booked_units 
+                           FROM reservations r 
+                           JOIN branches b ON r.branch_id = b.branch_id 
+                           WHERE r.status IN ('confirmed', 'checked_in') 
+                           AND b.is_active = 1");
+    $bookedUnits = 0;
+    if ($result && $row = $result->fetch_assoc()) $bookedUnits = (int)$row['booked_units'];
+    
+    // Calculate booking rate (max 100%) - Only from active branches
+    $bookingRate = $totalUnits > 0 ? min(round(($bookedUnits / $totalUnits) * 100, 1), 100) : 0;
+    
+    setCache('admin_dashboard_stats', compact('totalUsers', 'totalBranches', 'totalUnits', 'totalReservations', 'totalRevenue', 'bookedUnits', 'bookingRate'), 30);
+}
 
-// Total Users (Host & Renters) - Only active
-$result = $conn->query("SELECT COUNT(*) as cnt FROM users WHERE is_active = 1");
-if ($result && $row = $result->fetch_assoc()) $totalUsers = (int)$row['cnt'];
-
-// Total Branches - Only active
-$result = $conn->query("SELECT COUNT(*) as cnt FROM branches WHERE is_active = 1");
-if ($result && $row = $result->fetch_assoc()) $totalBranches = (int)$row['cnt'];
-
-// Total Units (Listings) - Only from active branches
-$result = $conn->query("SELECT COUNT(*) as cnt FROM units u 
-                       JOIN branches b ON u.branch_id = b.branch_id 
-                       WHERE b.is_active = 1");
-if ($result && $row = $result->fetch_assoc()) $totalUnits = (int)$row['cnt'];
-
-// Total Reservations - Only from active branches
-$result = $conn->query("SELECT COUNT(*) as cnt FROM reservations r 
-                       JOIN branches b ON r.branch_id = b.branch_id 
-                       WHERE b.is_active = 1");
-if ($result && $row = $result->fetch_assoc()) $totalReservations = (int)$row['cnt'];
-
-// Total Revenue (from reservations) - Only from active branches
-$result = $conn->query("SELECT SUM(r.total_amount) as total FROM reservations r 
-                       JOIN branches b ON r.branch_id = b.branch_id 
-                       WHERE r.status IN ('confirmed', 'checked_in', 'completed') 
-                       AND b.is_active = 1");
-if ($result && $row = $result->fetch_assoc()) $totalRevenue = (float)$row['total'];
-
-// CORRECTED: Booking Rate Calculation - Number of unique booked units from ACTIVE branches
-$result = $conn->query("SELECT COUNT(DISTINCT r.unit_id) as booked_units 
-                       FROM reservations r 
-                       JOIN branches b ON r.branch_id = b.branch_id 
-                       WHERE r.status IN ('confirmed', 'checked_in') 
-                       AND b.is_active = 1");
-$bookedUnits = 0;
-if ($result && $row = $result->fetch_assoc()) $bookedUnits = (int)$row['booked_units'];
-
-// Calculate booking rate (max 100%) - Only from active branches
-$bookingRate = $totalUnits > 0 ? min(round(($bookedUnits / $totalUnits) * 100, 1), 100) : 0;
+// System Health Data (Real-time, No Cache for accuracy)
+$health = getSystemHealth();
+$recentErrors = get_multiple_results("SELECT * FROM system_errors ORDER BY created_at DESC LIMIT 5");
+$recentAudit = get_multiple_results("SELECT * FROM audit_logs ORDER BY created_at DESC LIMIT 5");
 
 // Reservation Status Breakdown
 $reservationStats = [
@@ -195,9 +208,23 @@ $usersByRoleJson = json_encode($usersByRole);
 
   <!-- =================== DASHBOARD CONTENT =================== -->
   <main class="content">
-    <div class="dashboard-header">
+    <div class="dashboard-header" style="display: flex; justify-content: space-between; align-items: center;">
       <h1>Admin Dashboard Overview</h1>
+      <div class="system-health-badge" style="padding: 8px 15px; border-radius: 20px; font-weight: bold; background: <?php echo $health['status'] === 'OK' ? '#e6fffa' : '#fff5f5'; ?>; color: <?php echo $health['status'] === 'OK' ? '#2d3748' : '#c53030'; ?>; border: 1px solid <?php echo $health['status'] === 'OK' ? '#38a169' : '#e53e3e'; ?>;">
+        <i class="fas fa-heartbeat"></i> System Health: <?php echo $health['status']; ?>
+      </div>
     </div>
+    
+    <?php if ($health['status'] !== 'OK'): ?>
+    <div class="alert alert-warning" style="background: #fffaf0; border-left: 4px solid #ed8936; padding: 15px; margin-bottom: 20px; border-radius: 4px;">
+        <strong><i class="fas fa-exclamation-triangle"></i> System Warnings:</strong>
+        <ul style="margin: 10px 0 0 20px;">
+            <?php foreach ($health['warnings'] as $warning): ?>
+                <li><?php echo htmlspecialchars($warning); ?></li>
+            <?php endforeach; ?>
+        </ul>
+    </div>
+    <?php endif; ?>
     
     <!-- Statistics Cards -->
     <div class="stats-container">
@@ -378,6 +405,47 @@ $usersByRoleJson = json_encode($usersByRole);
           </li>
         <?php endif; ?>
       </ul>
+    </div>
+
+    <!-- Recent System Activity (Elite Hardening Feed) -->
+    <div class="stats-breakdown" style="grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px;">
+      <!-- System Errors -->
+      <div class="breakdown-card" style="margin-top: 0;">
+        <h3 style="color: #c53030;"><i class="fas fa-bug"></i> Recent System Errors</h3>
+        <ul class="activity-list" style="list-style: none; padding: 0;">
+          <?php if (!empty($recentErrors)): ?>
+            <?php foreach ($recentErrors as $error): ?>
+              <li class="activity-item" style="border-left: 3px solid #f56565; padding: 10px; margin-bottom: 10px; background: #fffaf0;">
+                <div class="activity-info">
+                  <h4 style="font-size: 13px; margin: 0; color: #742a2a;"><?php echo htmlspecialchars(substr($error['message'], 0, 50)); ?>...</h4>
+                  <small style="color: #9b2c2c;"><?php echo date('M d, H:i', strtotime($error['created_at'])); ?> | Severity: <?php echo $error['severity']; ?></small>
+                </div>
+              </li>
+            <?php endforeach; ?>
+          <?php else: ?>
+            <li class="activity-item"><div class="activity-info"><p>System healthy - No recent errors.</p></div></li>
+          <?php endif; ?>
+        </ul>
+      </div>
+
+      <!-- Audit Feed -->
+      <div class="breakdown-card" style="margin-top: 0;">
+        <h3 style="color: #2b6cb0;"><i class="fas fa-shield-alt"></i> Security Audit Log</h3>
+        <ul class="activity-list" style="list-style: none; padding: 0;">
+          <?php if (!empty($recentAudit)): ?>
+            <?php foreach ($recentAudit as $log): ?>
+              <li class="activity-item" style="border-left: 3px solid #4299e1; padding: 10px; margin-bottom: 10px; background: #ebf8ff;">
+                <div class="activity-info">
+                  <h4 style="font-size: 13px; margin: 0; color: #2c5282;"><?php echo htmlspecialchars($log['action_type']); ?></h4>
+                  <small style="color: #2b6cb0; word-break: break-all;"><?php echo htmlspecialchars(substr($log['details'], 0, 80)); ?>...</small>
+                </div>
+              </li>
+            <?php endforeach; ?>
+          <?php else: ?>
+            <li class="activity-item"><div class="activity-info"><p>No audit entries yet.</p></div></li>
+          <?php endif; ?>
+        </ul>
+      </div>
     </div>
 
     <!-- Revenue History Section -->
@@ -613,6 +681,8 @@ $usersByRoleJson = json_encode($usersByRole);
         });
     }
   </script>
+
+
 
   <!-- =================== MODALS =================== -->
   

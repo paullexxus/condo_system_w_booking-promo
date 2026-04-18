@@ -169,6 +169,26 @@ if ($selected_host_id) {
                         </div>
                     </div>
 
+                    <!-- Search & Filter Bar -->
+                    <div class="px-6 py-3 border-b border-gray-200 bg-white flex justify-between items-center z-10">
+                        <div class="flex gap-2" id="filterGroup">
+                            <button type="button" class="px-3 py-1 text-sm rounded-full bg-blue-100 text-blue-700 font-medium transition-colors filter-btn" data-filter="all">All</button>
+                            <button type="button" class="px-3 py-1 text-sm rounded-full bg-gray-100 text-gray-600 hover:bg-gray-200 font-medium transition-colors filter-btn" data-filter="image"><i class="fas fa-image mr-1"></i>Images</button>
+                            <button type="button" class="px-3 py-1 text-sm rounded-full bg-gray-100 text-gray-600 hover:bg-gray-200 font-medium transition-colors filter-btn" data-filter="file"><i class="fas fa-file-alt mr-1"></i>Files</button>
+                        </div>
+                        <div class="relative flex items-center gap-2">
+                            <div class="relative w-64">
+                                <input type="text" id="chatSearch" class="w-full pl-8 pr-3 py-1.5 text-sm border border-gray-300 rounded-full focus:outline-none focus:border-blue-500" placeholder="Search in conversation...">
+                                <i class="fas fa-search absolute left-3 top-2.5 text-gray-400 text-xs"></i>
+                            </div>
+                            <div id="searchNav" class="hidden flex items-center gap-2 text-xs text-gray-500">
+                                <span id="searchCount">0 of 0</span>
+                                <button type="button" id="searchPrev" class="px-2 py-1 bg-gray-100 hover:bg-gray-200 rounded"><i class="fas fa-chevron-up"></i></button>
+                                <button type="button" id="searchNext" class="px-2 py-1 bg-gray-100 hover:bg-gray-200 rounded"><i class="fas fa-chevron-down"></i></button>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- Messages View -->
                     <div class="p-6 messages-box flex flex-col gap-4 bg-gray-50/50" id="chatBox">
                         <!-- Messages injected via JS -->
@@ -178,20 +198,28 @@ if ($selected_host_id) {
                     </div>
 
                     <!-- Input Area -->
-                    <div class="p-4 bg-white border-t border-gray-200">
-                        <form id="sendMessageForm" class="flex items-end gap-2">
+                    <div class="p-4 bg-white border-t border-gray-200 flex flex-col">
+                        <div id="profanityWarning" class="text-red-500 text-xs font-bold mb-2 hidden"><i class="fas fa-exclamation-triangle"></i> This message contains inappropriate language and cannot be sent.</div>
+                        <form id="sendMessageForm" class="flex items-end gap-2" enctype="multipart/form-data">
                             <input type="hidden" name="receiver_id" value="<?php echo $selected_host_id; ?>">
+                            
+                            <label for="attachmentInput" class="h-[48px] w-[48px] flex items-center justify-center bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-xl cursor-pointer transition-colors" title="Attach Image or Document">
+                                <i class="fas fa-paperclip text-lg"></i>
+                            </label>
+                            <input type="file" name="attachment" id="attachmentInput" class="hidden" accept=".jpg,.jpeg,.png,.gif,.docx">
+
                             <div class="flex-grow relative">
                                 <textarea name="message" id="messageInput" rows="1" class="w-full pl-4 pr-10 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none bg-gray-50" placeholder="Type a secure message..."></textarea>
                                 <div class="absolute right-3 bottom-3 text-gray-400">
                                     <i class="fas fa-lock text-sm" title="E2E Encrypted"></i>
                                 </div>
                             </div>
-                            <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white rounded-xl px-6 py-3 font-medium transition-colors flex items-center gap-2 h-[48px]">
+                            <button type="submit" id="sendBtn" class="bg-blue-600 hover:bg-blue-700 text-white rounded-xl px-6 py-3 font-medium transition-colors flex items-center justify-center gap-2 h-[48px]">
                                 <span>Send</span>
                                 <i class="fas fa-paper-plane text-sm"></i>
                             </button>
                         </form>
+                        <div id="attachmentPreview" class="text-blue-600 text-xs mt-2 hidden font-medium"></div>
                     </div>
                 <?php else: ?>
                     <div class="flex flex-col items-center justify-center h-full text-gray-400">
@@ -207,17 +235,41 @@ if ($selected_host_id) {
         </div>
     </div>
 
+    <!-- Image Lightbox Modal -->
+    <div id="imageModal" class="fixed inset-0 z-[100] hidden flex items-center justify-center bg-black bg-opacity-90">
+        <button onclick="closeFullscreenImage()" class="absolute top-6 right-6 text-white hover:text-gray-300 text-4xl">&times;</button>
+        <img id="fullscreenImg" src="" class="max-h-[90vh] max-w-[90vw] rounded shadow-2xl object-contain">
+    </div>
+
     <!-- JavaScript to handle chat -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script>
+        function openFullscreenImage(src) {
+            $('#fullscreenImg').attr('src', src);
+            $('#imageModal').removeClass('hidden');
+        }
+        function closeFullscreenImage() {
+            $('#imageModal').addClass('hidden');
+        }
+
         $(document).ready(function() {
             const chatBox = $('#chatBox');
             const hostId = <?php echo $selected_host_id; ?>;
             let pollingInterval;
 
             if (hostId > 0) {
+                fetchProhibitedWords();
                 fetchMessages();
                 pollingInterval = setInterval(fetchMessages, 5000); // Poll every 5s
+            }
+
+            let prohibitedWords = [];
+            function fetchProhibitedWords() {
+                $.getJSON('../ajax/messages_api.php', { action: 'fetch_prohibited_words' }, function(res) {
+                    if (res.success && res.words) {
+                        prohibitedWords = res.words;
+                    }
+                });
             }
 
             function fetchMessages() {
@@ -234,26 +286,96 @@ if ($selected_host_id) {
                 });
             }
 
+            window.deleteMessage = function(id, type) {
+                if (!confirm(`Are you sure you want to delete this message ${type === 'everyone' ? 'for everyone' : 'for yourself'}?`)) return;
+                $.post('../ajax/messages_api.php', { action: 'delete_message', message_id: id, delete_type: type }, function(res) {
+                    if (res.success) {
+                        fetchMessages();
+                    } else {
+                        alert(res.message || 'Failed to delete message.');
+                    }
+                }, 'json');
+            }
+
+            let allMessages = [];
+            let currentFilter = 'all';
+            let searchQuery = '';
+
             function renderMessages(messages) {
-                if (messages.length === 0) {
+                allMessages = messages;
+                let filtered = messages;
+
+                if (currentFilter === 'image') filtered = messages.filter(m => m.file_type === 'image');
+                if (currentFilter === 'file') filtered = messages.filter(m => m.file_type === 'file');
+
+                if (filtered.length === 0) {
                     chatBox.html(`
                         <div class="text-center text-gray-400 py-10 flex flex-col items-center">
                             <i class="fas fa-hand-sparkles text-4xl mb-3 text-yellow-400"></i>
-                            <p>No messages yet. Say hello!</p>
+                            <p>${searchQuery || currentFilter !== 'all' ? 'No matching messages found.' : 'No messages yet. Say hello!'}</p>
                         </div>
                     `);
                     return;
                 }
 
                 let html = '';
-                messages.forEach(msg => {
+                filtered.forEach(msg => {
                     const isMine = msg.is_mine;
                     const bubbleClass = isMine ? 'msg-mine' : 'msg-other';
                     
+                    let contentHtml = '';
+                    
+                    if (msg.is_deleted) {
+                        contentHtml = `<div class="text-sm italic text-gray-500 flex items-center gap-2"><i class="fas fa-ban"></i> This message was deleted</div>`;
+                    } else {
+                        let textContent = escapeHtml(msg.message || '');
+                        
+                        if (searchQuery && textContent.toLowerCase().includes(searchQuery.toLowerCase())) {
+                            const regex = new RegExp(`(${searchQuery})`, "gi");
+                            textContent = textContent.replace(regex, "<mark class='search-match bg-yellow-200 rounded px-1'>$1</mark>");
+                        }
+
+                        if (textContent) contentHtml += `<p class="text-sm break-words">${textContent}</p>`;
+
+                        if (msg.file_path) {
+                            if (msg.file_type === 'image') {
+                                contentHtml += `<div class="mt-2"><img src="../${msg.file_path}" class="rounded shadow-sm max-h-[150px] cursor-pointer hover:opacity-90 transition-opacity" onclick="openFullscreenImage('../${escapeHtml(msg.file_path)}')"></div>`;
+                            } else {
+                                contentHtml += `
+                                    <div class="mt-2 border border-gray-200 rounded bg-white text-gray-800 p-2 flex items-center justify-between gap-3 shadow-sm">
+                                        <div class="flex items-center gap-2 text-sm max-w-[200px] overflow-hidden">
+                                            <i class="fas fa-file-word text-blue-500 text-lg"></i>
+                                            <span class="truncate">${escapeHtml(msg.original_file_name)}</span>
+                                        </div>
+                                        <a href="../${msg.file_path}" download class="text-blue-600 hover:text-blue-800" title="Download"><i class="fas fa-download"></i></a>
+                                    </div>
+                                `;
+                            }
+                        }
+                    }
+
+                    let deleteMenu = '';
+                    if (!msg.is_deleted) {
+                        let deleteEveryoneAttr = msg.can_delete_everyone ? '' : 'hidden';
+                        deleteMenu = `
+                            <div class="relative group ml-2 mr-2 mt-1 z-20">
+                                <button class="text-gray-400 hover:text-gray-600 px-2 outline-none focus:outline-none"><i class="fas fa-ellipsis-v"></i></button>
+                                <div class="absolute ${isMine ? 'right-full mr-2' : 'left-full ml-2'} bottom-0 mb-1 hidden group-hover:block bg-white shadow-lg border border-gray-200 rounded py-1 w-36">
+                                    <button onclick="deleteMessage(${msg.message_id}, 'me')" class="w-full text-left px-3 py-1.5 text-xs text-gray-700 hover:bg-gray-100">Delete for me</button>
+                                    <button onclick="deleteMessage(${msg.message_id}, 'everyone')" class="${deleteEveryoneAttr} w-full text-left px-3 py-1.5 text-xs text-red-600 hover:bg-red-50">Delete for everyone</button>
+                                </div>
+                            </div>
+                        `;
+                    }
+
                     html += `
                         <div class="flex flex-col w-full mb-1">
-                            <div class="msg-bubble ${bubbleClass} shadow-sm">
-                                <p class="text-sm break-words">${escapeHtml(msg.message)}</p>
+                            <div class="flex ${isMine ? 'justify-end' : 'justify-start'} items-end">
+                                ${!isMine && deleteMenu ? deleteMenu : ''}
+                                <div class="msg-bubble ${bubbleClass} shadow-sm">
+                                    ${contentHtml}
+                                </div>
+                                ${isMine && deleteMenu ? deleteMenu : ''}
                             </div>
                             <span class="text-[11px] text-gray-400 mt-1 ${isMine ? 'text-right' : 'text-left'}">${msg.sent_at}</span>
                         </div>
@@ -272,28 +394,142 @@ if ($selected_host_id) {
                 }
             }
 
+            let matchIndex = -1;
+            let totalMatches = 0;
+
+            function updateSearchNav() {
+                let matches = $('.search-match');
+                totalMatches = matches.length;
+                if (totalMatches > 0) {
+                    $('#searchNav').removeClass('hidden');
+                    if (matchIndex < 0) matchIndex = 0;
+                    if (matchIndex >= totalMatches) matchIndex = totalMatches - 1;
+                    
+                    $('#searchCount').text(`${matchIndex + 1} of ${totalMatches}`);
+                    
+                    $('.search-match').removeClass('ring-2 ring-blue-500 bg-yellow-400').addClass('bg-yellow-200');
+                    let current = $(matches[matchIndex]);
+                    current.removeClass('bg-yellow-200').addClass('ring-2 ring-blue-500 bg-yellow-400');
+                    
+                    // scroll to it
+                    let scrollTo = current.offset().top - chatBox.offset().top + chatBox.scrollTop() - chatBox.height() / 2;
+                    chatBox.scrollTop(scrollTo);
+                } else {
+                    $('#searchNav').addClass('hidden');
+                }
+            }
+
+            $('#searchNext').on('click', function() {
+                if (totalMatches > 0) {
+                    matchIndex = (matchIndex + 1) % totalMatches;
+                    updateSearchNav();
+                }
+            });
+
+            $('#searchPrev').on('click', function() {
+                if (totalMatches > 0) {
+                    matchIndex = (matchIndex - 1 + totalMatches) % totalMatches;
+                    updateSearchNav();
+                }
+            });
+
+            $('.filter-btn').on('click', function() {
+                $('.filter-btn').removeClass('bg-blue-100 text-blue-700').addClass('bg-gray-100 text-gray-600');
+                $(this).removeClass('bg-gray-100 text-gray-600').addClass('bg-blue-100 text-blue-700');
+                currentFilter = $(this).data('filter');
+                renderMessages(allMessages);
+                setTimeout(scrollToBottom, 50);
+            });
+
+            $('#chatSearch').on('input', function() {
+                searchQuery = $(this).val().trim();
+                matchIndex = -1; // reset
+                renderMessages(allMessages);
+                if (searchQuery) updateSearchNav();
+            });
+
+            // File Attachment UI
+            $('#attachmentInput').on('change', function() {
+                const file = this.files[0];
+                if (file) {
+                    $('#attachmentPreview').removeClass('hidden').html(`<i class="fas fa-paperclip"></i> Attached: ${escapeHtml(file.name)} <button type="button" class="text-red-500 ml-2" onclick="$('#attachmentInput').val(''); $('#attachmentPreview').addClass('hidden');">&times; Remove</button>`);
+                } else {
+                    $('#attachmentPreview').addClass('hidden');
+                }
+            });
+
+            // Profanity Filter Check Dynamic
+            $('#messageInput').on('keyup input', function() {
+                const msg = $(this).val().toLowerCase();
+                let normalizedMsg = msg.replace(/[@$1!034+]/g, match => {
+                    const map = {'@':'a', '$':'s', '1':'i', '!':'i', '0':'o', '3':'e', '4':'a', '+':'t'};
+                    return map[match];
+                });
+                let noSpaceMsg = normalizedMsg.replace(/[\s\.\-_]/g, '');
+
+                let isSevere = false;
+                let isMild = false;
+
+                for (let pw of prohibitedWords) {
+                    let word = pw.word.toLowerCase();
+                    let match = false;
+                    let regex = new RegExp("\\b" + word + "\\b", "i");
+                    
+                    if (regex.test(msg)) {
+                        match = true;
+                    } else if (normalizedMsg.includes(word) || noSpaceMsg.includes(word)) {
+                        match = true;
+                    }
+
+                    if (match) {
+                        if (pw.severity === 'severe') isSevere = true;
+                        if (pw.severity === 'mild') isMild = true;
+                    }
+                }
+
+                if (isSevere) {
+                    $('#profanityWarning').html('<i class="fas fa-exclamation-triangle"></i> This message contains highly inappropriate language and cannot be sent.').removeClass('hidden text-yellow-600').addClass('text-red-500');
+                    $('#sendBtn').prop('disabled', true).addClass('opacity-50 cursor-not-allowed');
+                } else if (isMild) {
+                    $('#profanityWarning').html('<i class="fas fa-info-circle"></i> Note: Mild offensive words will be automatically masked with asterisks.').removeClass('hidden text-red-500').addClass('text-yellow-600');
+                    $('#sendBtn').prop('disabled', false).removeClass('opacity-50 cursor-not-allowed');
+                } else {
+                    $('#profanityWarning').addClass('hidden');
+                    $('#sendBtn').prop('disabled', false).removeClass('opacity-50 cursor-not-allowed');
+                }
+            });
+
             function scrollToBottom() {
                 chatBox.scrollTop(chatBox.prop("scrollHeight"));
             }
 
             $('#sendMessageForm').on('submit', function(e) {
                 e.preventDefault();
-                const btn = $(this).find('button[type="submit"]');
-                const input = $('#messageInput');
-                const msg = input.val().trim();
+                if ($('#sendBtn').prop('disabled')) return;
 
-                if (!msg) return;
+                const btn = $('#sendBtn');
+                const formData = new FormData(this);
+                formData.append('action', 'send_message');
+
+                const msg = $('#messageInput').val().trim();
+                const file = $('#attachmentInput').val();
+
+                if (!msg && !file) return;
 
                 btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i>');
 
                 $.ajax({
                     url: '../ajax/messages_api.php',
                     type: 'POST',
-                    data: $(this).serialize() + '&action=send_message',
+                    data: formData,
+                    contentType: false,
+                    processData: false,
                     dataType: 'json',
                     success: function(res) {
                         if (res.success) {
-                            input.val('');
+                            $('#messageInput').val('').trigger('input');
+                            $('#attachmentInput').val('');
+                            $('#attachmentPreview').addClass('hidden').empty();
                             fetchMessages();
                             setTimeout(scrollToBottom, 300);
                         } else {
@@ -302,7 +538,7 @@ if ($selected_host_id) {
                     },
                     complete: function() {
                         btn.prop('disabled', false).html('<span>Send</span><i class="fas fa-paper-plane text-sm"></i>');
-                        input.focus();
+                        $('#messageInput').focus();
                     }
                 });
             });

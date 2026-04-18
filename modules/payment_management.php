@@ -253,12 +253,20 @@ if ($is_admin) {
 }
 
 // Handle status updates
-if (isset($_POST['update_status'])) {
+// Handle status updates
+if (isset($_POST['update_status']) && $is_admin) {
     $payment_id = $_POST['payment_id'];
     $new_status = $_POST['new_status'];
     $refund_reason = $_POST['refund_reason'] ?? null;
     
-    if ($refund_reason) {
+    // First get the payment to know the reservation ID
+    $payment = get_single_result("SELECT reservation_id, amount FROM payments WHERE payment_id = ?", [$payment_id]);
+    $reservation_id = $payment ? $payment['reservation_id'] : null;
+    
+    if ($new_status === 'paid') {
+        $sql = "UPDATE payments SET payment_status = ?, verified_by_admin = 1, verified_at = NOW() WHERE payment_id = ?";
+        $params = [$new_status, $payment_id];
+    } elseif ($refund_reason) {
         $sql = "UPDATE payments SET payment_status = ?, refund_reason = ? WHERE payment_id = ?";
         $params = [$new_status, $refund_reason, $payment_id];
     } else {
@@ -267,7 +275,39 @@ if (isset($_POST['update_status'])) {
     }
     
     if (execute_query($sql, $params)) {
-        $_SESSION['success_message'] = "Payment status updated successfully!";
+        // If payment is paid, update reservation status
+        if ($new_status === 'paid' && $reservation_id) {
+            $reservation = get_single_result("SELECT total_amount FROM reservations WHERE reservation_id = ?", [$reservation_id]);
+            if ($reservation) {
+                // Apply 50% rule or full payment
+                if ($payment['amount'] >= ($reservation['total_amount'] * 0.5)) {
+                    $new_payment_status = ($payment['amount'] >= $reservation['total_amount']) ? 'paid' : 'partial_paid';
+                    execute_query(
+                        "UPDATE reservations SET status = 'confirmed', payment_status = ? WHERE reservation_id = ?", 
+                        [$new_payment_status, $reservation_id]
+                    );
+                    
+                    // Share revenue
+                    $admin_cut = $payment['amount'] * 0.10;
+                    $host_cut = $payment['amount'] * 0.90;
+                    execute_query(
+                        "UPDATE reservations SET admin_notes = CONCAT(IFNULL(admin_notes,''), '\n[FISCAL] Admin: ₱', ?, ' | Host: ₱', ?) WHERE reservation_id = ?",
+                        [$admin_cut, $host_cut, $reservation_id]
+                    );
+                    
+                    // Notify user
+                    $payment_user = get_single_result("SELECT user_id FROM payments WHERE payment_id = ?", [$payment_id]);
+                    if ($payment_user) {
+                        sendNotification($payment_user['user_id'], 'Payment Verified', 'Good news! Your payment has been verified and your reservation #' . $reservation_id . ' is now confirmed.', 'payment', 'system');
+                    }
+                }
+            }
+        } elseif ($new_status === 'failed' && $reservation_id) {
+            // Un-hold unit? Or let it naturally expire? Let's just update payment_status
+            execute_query("UPDATE reservations SET payment_status = 'failed' WHERE reservation_id = ?", [$reservation_id]);
+        }
+        
+        $_SESSION['success_message'] = "Payment status updated and verified successfully!";
         header("Location: " . $_SERVER['PHP_SELF']);
         exit();
     } else {
@@ -557,6 +597,7 @@ unset($_SESSION['success_message']);
                                     <td>
                                         <button class="btn btn-sm btn-outline-primary view-payment" 
                                                 data-payment-id="<?php echo $payment['payment_id']; ?>"
+                                                data-payment-proof="<?php echo htmlspecialchars($payment['payment_proof'] ?? ''); ?>"
                                                 data-bs-toggle="modal" data-bs-target="#paymentDetailsModal">
                                             <i class="fas fa-eye"></i>
                                         </button>

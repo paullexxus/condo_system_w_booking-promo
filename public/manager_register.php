@@ -17,7 +17,10 @@ if (isset($_POST['register'])) {
 
     // CHECK IF EMAIL EXISTS.
     $check_email = mysqli_query($conn, "SELECT * FROM users WHERE email='$email'");
-    if (mysqli_num_rows($check_email) > 0) {
+    if (empty($_POST['agree_terms'])) {
+        $error = "You must agree to the Terms and Conditions.";
+    }
+    else if (mysqli_num_rows($check_email) > 0) {
         $error = "Email already registered!";
     } 
     elseif ($password != $confirm_password) {
@@ -266,6 +269,13 @@ if (isset($_POST['register'])) {
                             <div class="form-text">Accepted formats: JPG, JPEG, PNG, PDF</div>
                         </div>
 
+                        <div class="form-check mb-4">
+                            <input class="form-check-input" type="checkbox" name="agree_terms" value="1" id="agree_terms" required>
+                            <label class="form-check-label" for="agree_terms">
+                                I agree to the <a href="#" data-bs-toggle="modal" data-bs-target="#termsModal" class="text-primary text-decoration-none">Terms and Conditions</a>
+                            </label>
+                        </div>
+
                         <div class="d-grid">
                             <button type="submit" name="register" class="btn btn-primary btn-register btn-lg">
                                 <i class="fas fa-user-plus"></i> Create Account
@@ -279,6 +289,35 @@ if (isset($_POST['register'])) {
                             </p>
                         </div>
                     </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Terms Modal -->
+    <div class="modal fade" id="termsModal" tabindex="-1" aria-labelledby="termsModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title" id="termsModalLabel">Terms and Conditions for Managers</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <h6 class="fw-bold">1. Introduction</h6>
+                    <p>Welcome to BookIT Manager Registration. By creating a manager account, you agree to abide by our policies.</p>
+                    
+                    <h6 class="fw-bold">2. Verification and Compliance</h6>
+                    <p>All applications require manual review. Fraudulent identity proofs will result in permanent blacklisting.</p>
+                    
+                    <h6 class="fw-bold">3. Cancellations & Operations</h6>
+                    <p>Cancellations are subject to branch limits. You are responsible for accurately mirroring the platform pricing offline.</p>
+
+                    <h6 class="fw-bold">4. Misconduct</h6>
+                    <p>Abusive behavior or circumvention of the system will trigger automatic blocks.</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" onclick="document.getElementById('agree_terms').checked=true;" data-bs-dismiss="modal">I Accept</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                 </div>
             </div>
         </div>

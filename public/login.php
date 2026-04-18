@@ -44,7 +44,13 @@ if (isset($_POST['login'])) {
     // Validate inputs
     else if (empty($email) || empty($password)) {
         $error = "Please fill in all fields.";
-    } else {
+    } 
+    // Bulletproof #4: Bruteforce Throttling
+    else if (!throttleRequest('login', 5, 600)) {
+        $error = "Too many login attempts. Please try again in 10 minutes.";
+        logSystemError("Brute force attempt detected", ['email' => $email]);
+    }
+    else {
         // Check if user exists and is active
         $query = "SELECT * FROM users WHERE email = ? AND is_active = 1 LIMIT 1";
         $stmt = $conn->prepare($query);
@@ -55,30 +61,40 @@ if (isset($_POST['login'])) {
         if ($result && mysqli_num_rows($result) == 1) {
             $user = mysqli_fetch_assoc($result);
             
-            // Verify password
-            if (password_verify($password, $user['password'])) {
-                // Start secure session
-                session_regenerate_id(true);
-                
-                // Store session data
-                $_SESSION['user_id'] = $user['user_id'];
-                $_SESSION['fullname'] = $user['full_name'];
-                $_SESSION['role'] = $user['role'];
-                $_SESSION['email'] = $user['email'];
-                
-                // Redirect by role
-                if ($user['role'] == 'admin') {
-                    header("Location: ../admin/admin_dashboard.php");
-                } elseif ($user['role'] == 'manager' || $user['role'] == 'host') {
-                    header("Location: ../host/host_dashboard.php");
-                } elseif ($user['role'] == 'renter') {
-                    header("Location: index.php");
-                } else {
-                    header("Location: login.php");
-                }
-                exit();
+            if (isset($user['is_suspended']) && $user['is_suspended'] == 1) {
+                $error = "Your account has been suspended. Please contact support.";
             } else {
-                $error = "Incorrect password.";
+                // Verify password
+                if (password_verify($password, $user['password'])) {
+                    // CRITICAL Bulletproof #3: Session Hardening
+                    session_regenerate_id(true);
+                    rotateCSRFToken(); // Rotate on state change
+                    
+                    // CRITICAL Bulletproof #1: Fingerprinting
+                    $fingerprint_subnet = explode('.', $_SERVER['REMOTE_ADDR']);
+                    $subnet = (count($fingerprint_subnet) >= 3) ? $fingerprint_subnet[0].'.'.$fingerprint_subnet[1].'.'.$fingerprint_subnet[2] : $_SERVER['REMOTE_ADDR'];
+                    $_SESSION['fingerprint'] = md5($subnet . $_SERVER['HTTP_USER_AGENT']);
+                    
+                    // Store session data
+                    $_SESSION['user_id'] = $user['user_id'];
+                    $_SESSION['fullname'] = $user['full_name'];
+                    $_SESSION['role'] = $user['role'];
+                    $_SESSION['email'] = $user['email'];
+                    
+                    // Redirect by role
+                    if ($user['role'] == 'admin') {
+                        header("Location: ../admin/admin_dashboard.php");
+                    } elseif ($user['role'] == 'manager' || $user['role'] == 'host') {
+                        header("Location: ../host/host_dashboard.php");
+                    } elseif ($user['role'] == 'renter') {
+                        header("Location: index.php");
+                    } else {
+                        header("Location: login.php");
+                    }
+                    exit();
+                } else {
+                    $error = "Incorrect password.";
+                }
             }
         } else {
             $error = "No account found with that email or account is inactive.";
@@ -142,11 +158,14 @@ if (isset($_GET['code'])) {
             $result = $stmt->get_result();
             
             if ($result && mysqli_num_rows($result) == 1) {
-                // User exists, log them in
+                // User exists, check suspension then log them in
                 $user = mysqli_fetch_assoc($result);
                 
-                // Start secure session
-                session_regenerate_id(true);
+                if (isset($user['is_suspended']) && $user['is_suspended'] == 1) {
+                    $error = "Your account has been suspended. Please contact support.";
+                } else {
+                    // Start secure session
+                    session_regenerate_id(true);
                 
                 // Store session data
                 $_SESSION['user_id'] = $user['user_id'];
@@ -166,6 +185,7 @@ if (isset($_GET['code'])) {
                     header("Location: login.php");
                 }
                 exit();
+                } // End of is_suspended else block
             } else {
                 // User doesn't exist, create new account as renter
                 // Check if email already exists (inactive account)
