@@ -48,7 +48,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['cancel_booking'])) {
         
         // I-check kung pwede pa i-cancel (at least 24 hours before check-in)
         $reservation = get_single_result(
-            "SELECT * FROM reservations WHERE reservation_id = ? AND user_id = ?",
+            "SELECT r.*, u.cancellation_policy, p.payment_id, p.amount as paid_amount, p.transaction_reference 
+             FROM reservations r 
+             JOIN units u ON r.unit_id = u.unit_id
+             LEFT JOIN payments p ON r.reservation_id = p.reservation_id AND p.payment_status IN ('paid', 'completed')
+             WHERE r.reservation_id = ? AND r.user_id = ?",
             [$reservationId, $_SESSION['user_id']]
         );
         
@@ -56,16 +60,61 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['cancel_booking'])) {
             $checkInDate = new DateTime($reservation['check_in_date']);
             $today = new DateTime();
             $hoursUntilCheckIn = $today->diff($checkInDate)->h + ($today->diff($checkInDate)->days * 24);
+            $daysUntilCheckIn = $today->diff($checkInDate)->days;
             
-            if ($hoursUntilCheckIn >= 24 && in_array($reservation['status'], ['confirmed', 'approved'], true)) {
-                // I-cancel ang reservation
-                $sql = "UPDATE reservations SET status = 'cancelled' WHERE reservation_id = ?";
-                if (execute_query($sql, [$reservationId])) {
-                    // Mag-send ng notification
+            if ($hoursUntilCheckIn >= 24 && in_array($reservation['status'], ['confirmed', 'approved', 'pending'], true)) {
+                // Determine Refund Amount based on policy
+                $refundAmount = 0;
+                $policy = strtolower($reservation['cancellation_policy'] ?? 'moderate');
+                $paid = floatval($reservation['paid_amount'] ?? 0);
+                
+                if ($paid > 0) {
+                    if ($policy == 'flexible') {
+                        // Full refund if cancelled 24 hours prior
+                        if ($hoursUntilCheckIn >= 24) $refundAmount = $paid;
+                    } elseif ($policy == 'strict') {
+                        // 50% refund if cancelled 7 days prior, non-refundable afterward.
+                        if ($daysUntilCheckIn >= 7) $refundAmount = $paid * 0.5;
+                    } else {
+                        // moderate (default): Full refund if cancelled 5 days prior, 50% afterward.
+                        if ($daysUntilCheckIn >= 5) {
+                            $refundAmount = $paid;
+                        } else {
+                            $refundAmount = $paid * 0.5;
+                        }
+                    }
+                }
+
+                // Execute Cancellation
+                $conn->begin_transaction();
+                try {
+                    $sql = "UPDATE reservations SET status = 'cancelled' WHERE reservation_id = ?";
+                    execute_query($sql, [$reservationId]);
+
+                    // Add refund record if applicable
+                    if ($refundAmount > 0) {
+                        $reason = "User requested cancellation under " . ucfirst($policy) . " policy.";
+                        $refund_sql = "INSERT INTO refunds (reservation_id, payment_id, amount, reason, status) 
+                                       VALUES (?, ?, ?, ?, 'pending')";
+                        execute_query($refund_sql, [
+                            $reservationId, 
+                            $reservation['transaction_reference'] ?? $reservation['payment_id'], 
+                            $refundAmount, 
+                            $reason
+                        ]);
+                        
+                        // Update payment status to processing_refund (custom logic wrapper)
+                        $pay_sql = "UPDATE payments SET payment_status = 'refunded' WHERE reservation_id = ?";
+                        execute_query($pay_sql, [$reservationId]);
+                    }
+
+                    $conn->commit();
+                    
+                    // Notifications
                     sendNotification(
                         $_SESSION['user_id'],
                         "Reservation Cancelled",
-                        "Your reservation #" . $reservationId . " has been cancelled successfully.",
+                        "Your reservation #" . $reservationId . " has been cancelled. " . ($refundAmount > 0 ? "A refund of ₱" . number_format($refundAmount, 2) . " has been queued." : ""),
                         'booking',
                         'system'
                     );
@@ -82,12 +131,14 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['cancel_booking'])) {
                         );
                     }
                     
-                    $message = "Reservation cancelled successfully!";
-                } else {
-                    $error = "Failed to cancel reservation.";
+                    $message = "Reservation cancelled successfully!" . ($refundAmount > 0 ? " You are eligible for a refund of ₱" . number_format($refundAmount, 2) . "." : "");
+
+                } catch (Exception $e) {
+                    $conn->rollback();
+                    $error = "Failed to cancel reservation due to system error.";
                 }
             } else {
-                $error = "Cannot cancel reservation. Must be cancelled at least 24 hours before check-in.";
+                $error = "Cannot cancel reservation. Must be cancelled at least 24 hours before check-in or is already resolved.";
             }
         } else {
             $error = "Reservation not found.";
