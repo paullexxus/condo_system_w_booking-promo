@@ -29,11 +29,12 @@ $reservations = [];
 $total_count = 0;
 $stats = [
     'pending' => 0,
+    'approved' => 0,
     'confirmed' => 0,
-    'checked-in' => 0,
-    'checked-out' => 0,
+    'checked_in' => 0,
+    'checked_out' => 0,
+    'completed' => 0,
     'cancelled' => 0,
-    'completed' => 0
 ];
 
 // Get branches for filter (Admin only)
@@ -146,8 +147,9 @@ if ($db_connected) {
         $status_counts = get_multiple_results($stats_query, $stats_params);
 
         foreach ($status_counts as $row) {
-            $status_key = strtolower($row['status']);
-            $stats[$status_key] = $row['count'];
+            // DB uses underscores (checked_in); UI historically used hyphens
+            $status_key = strtolower(str_replace('-', '_', (string)$row['status']));
+            $stats[$status_key] = (int)$row['count'];
         }
 
     } catch (Exception $e) {
@@ -201,24 +203,33 @@ if ($db_connected && $user_role === 'admin') {
 <link href="../assets/css/modules/reservations.css" rel="stylesheet">
 </head>
 <body>
-    <?php if (!empty($_SESSION['flash_success'])): ?>
-        <div class="alert alert-success alert-dismissible fade show" role="alert" style="margin:10px;">
-            <?php echo htmlspecialchars($_SESSION['flash_success']); unset($_SESSION['flash_success']); ?>
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
-    <?php endif; ?>
-    <?php if (!empty($_SESSION['flash_error'])): ?>
-        <div class="alert alert-danger alert-dismissible fade show" role="alert" style="margin:10px;">
-            <?php echo htmlspecialchars($_SESSION['flash_error']); unset($_SESSION['flash_error']); ?>
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
-    <?php endif; ?>
 <!-- Sidebar -->
 <?php include '../includes/sidebar.php'; ?>
 
 <!-- Main Content -->
 <div class="content">
     <div class="container-fluid">
+        <?php
+        $flashOk = isset($_SESSION['flash_success']) ? trim((string)$_SESSION['flash_success']) : '';
+        if ($flashOk !== ''):
+            unset($_SESSION['flash_success']);
+        ?>
+            <div class="alert alert-success alert-dismissible fade show mb-4 shadow-sm" role="alert">
+                <i class="fas fa-check-circle me-2"></i> <?php echo htmlspecialchars($flashOk); ?>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        <?php endif; ?>
+        
+        <?php
+        $flashErr = isset($_SESSION['flash_error']) ? trim((string)$_SESSION['flash_error']) : '';
+        if ($flashErr !== ''):
+            unset($_SESSION['flash_error']);
+        ?>
+            <div class="alert alert-danger alert-dismissible fade show mb-4 shadow-sm" role="alert">
+                <i class="fas fa-exclamation-circle me-2"></i> <?php echo htmlspecialchars($flashErr); ?>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        <?php endif; ?>
         <!-- Header -->
         <div class="reservation-header">
             <div>
@@ -307,12 +318,12 @@ if ($db_connected && $user_role === 'admin') {
                 <i class="fas fa-check-circle stat-icon"></i>
             </div>
             <div class="stat-card">
-                <div class="stat-number"><?php echo $db_connected ? ($stats['checked-in'] ?? 0) : '0'; ?></div>
+                <div class="stat-number"><?php echo $db_connected ? ($stats['checked_in'] ?? 0) : '0'; ?></div>
                 <div class="stat-label">Checked-in</div>
                 <i class="fas fa-sign-in-alt stat-icon"></i>
             </div>
             <div class="stat-card">
-                <div class="stat-number"><?php echo $db_connected ? ($stats['checked-out'] ?? 0) : '0'; ?></div>
+                <div class="stat-number"><?php echo $db_connected ? ($stats['checked_out'] ?? 0) : '0'; ?></div>
                 <div class="stat-label">Checked-out</div>
                 <i class="fas fa-sign-out-alt stat-icon"></i>
             </div>
@@ -374,8 +385,9 @@ if ($db_connected && $user_role === 'admin') {
                                             <option value="">All Status</option>
                                             <option value="pending" <?php echo $status_filter == 'pending' ? 'selected' : ''; ?>>Pending</option>
                                             <option value="confirmed" <?php echo $status_filter == 'confirmed' ? 'selected' : ''; ?>>Confirmed</option>
-                                            <option value="checked-in" <?php echo $status_filter == 'checked-in' ? 'selected' : ''; ?>>Checked-in</option>
-                                            <option value="checked-out" <?php echo $status_filter == 'checked-out' ? 'selected' : ''; ?>>Checked-out</option>
+                                            <option value="checked_in" <?php echo $status_filter == 'checked_in' ? 'selected' : ''; ?>>Checked-in</option>
+                                            <option value="checked_out" <?php echo $status_filter == 'checked_out' ? 'selected' : ''; ?>>Checked-out</option>
+                                            <option value="completed" <?php echo $status_filter == 'completed' ? 'selected' : ''; ?>>Completed</option>
                                             <option value="cancelled" <?php echo $status_filter == 'cancelled' ? 'selected' : ''; ?>>Cancelled</option>
                                         </select>
                                     </div>
@@ -457,9 +469,10 @@ if ($db_connected && $user_role === 'admin') {
                                                     $payment_badge_class = [
                                                         'paid' => 'badge-paid',
                                                         'pending' => 'badge-pending-payment',
+                                                        'partial' => 'badge-pending-payment',
                                                         'completed' => 'badge-paid',
-                                                        'refunded' => 'badge-refunded'
-                                                    ][$res['payment_status']] ?? 'badge-secondary';
+                                                        'refunded' => 'badge-refunded',
+                                                    ][strtolower((string)($res['payment_status'] ?? ''))] ?? 'badge-secondary';
                                                     ?>
                                                     <span class="status-badge <?php echo $payment_badge_class; ?>">
                                                         <?php echo ucfirst($res['payment_status']); ?>
@@ -469,14 +482,15 @@ if ($db_connected && $user_role === 'admin') {
                                                     <?php
                                                     $status_mapping = [
                                                         'pending' => 'badge-pending',
+                                                        'approved' => 'badge-confirmed',
                                                         'confirmed' => 'badge-confirmed',
-                                                        'checked-in' => 'badge-checked-in',
-                                                        'checked-out' => 'badge-checked-out',
+                                                        'checked_in' => 'badge-checked-in',
+                                                        'checked_out' => 'badge-checked-out',
                                                         'cancelled' => 'badge-cancelled',
-                                                        'completed' => 'badge-completed'
+                                                        'completed' => 'badge-completed',
                                                     ];
 
-                                                    $status_value = strtolower($res['reservation_status']);
+                                                    $status_value = strtolower(str_replace('-', '_', (string)$res['reservation_status']));
                                                     $status_badge_class = $status_mapping[$status_value] ?? 'badge-secondary';
                                                     ?>
                                                     <span class="status-badge <?php echo $status_badge_class; ?>">
@@ -486,85 +500,49 @@ if ($db_connected && $user_role === 'admin') {
                                                 <td><?php echo date('M j, Y', strtotime($res['created_at'])); ?></td>
                                                 <td>
                                                     <div class="btn-group btn-group-sm">
-                                                        <!-- Server-side action forms (no AJAX) -->
-                                                        <form method="POST" action="process_reservation.php" style="display:inline-block;">
-                                                            <input type="hidden" name="csrf_token" value="<?php echo generateCSRFToken(); ?>">
-                                                            <input type="hidden" name="reservation_id" value="<?php echo $res['reservation_id']; ?>">
-                                                            <button type="submit" name="action" value="view" class="btn btn-outline-primary" title="View Details">
-                                                                <i class="fas fa-eye"></i>
-                                                            </button>
-                                                        </form>
+                                                        <button type="button" class="btn btn-outline-primary view-details" data-id="<?php echo $res['reservation_id']; ?>" title="View Details">
+                                                            <i class="fas fa-eye"></i>
+                                                        </button>
 
-                                                        <form method="GET" action="edit_reservation.php" style="display:inline-block;">
-                                                            <input type="hidden" name="id" value="<?php echo $res['reservation_id']; ?>">
-                                                            <button type="submit" class="btn btn-outline-warning" title="Edit">
-                                                                <i class="fas fa-edit"></i>
-                                                            </button>
-                                                        </form>
+                                                        <button type="button" class="btn btn-outline-warning edit-reservation" data-id="<?php echo $res['reservation_id']; ?>" title="Edit">
+                                                            <i class="fas fa-edit"></i>
+                                                        </button>
 
-                                                        <!-- Approve/Reject (server-side) -->
                                                         <?php if (in_array($res['reservation_status'], ['awaiting_approval','pending'])): ?>
-                                                            <form method="POST" action="process_reservation.php" style="display:inline-block;">
-                                                                <input type="hidden" name="csrf_token" value="<?php echo generateCSRFToken(); ?>">
-                                                                <input type="hidden" name="reservation_id" value="<?php echo $res['reservation_id']; ?>">
-                                                                <button type="submit" name="action" value="approve" class="btn btn-success" title="Approve">
-                                                                    <i class="fas fa-check"></i>
-                                                                </button>
-                                                            </form>
-                                                            <form method="POST" action="process_reservation.php" style="display:inline-block;">
-                                                                <input type="hidden" name="csrf_token" value="<?php echo generateCSRFToken(); ?>">
-                                                                <input type="hidden" name="reservation_id" value="<?php echo $res['reservation_id']; ?>">
-                                                                <button type="submit" name="action" value="reject" class="btn btn-danger" title="Reject">
-                                                                    <i class="fas fa-times"></i>
-                                                                </button>
-                                                            </form>
+                                                            <button type="button" class="btn btn-success approve-btn" data-id="<?php echo $res['reservation_id']; ?>" title="Approve">
+                                                                <i class="fas fa-check"></i>
+                                                            </button>
+                                                            <button type="button" class="btn btn-danger reject-btn" data-id="<?php echo $res['reservation_id']; ?>" title="Reject">
+                                                                <i class="fas fa-times"></i>
+                                                            </button>
                                                         <?php endif; ?>
 
-                                                        <form method="POST" action="process_reservation.php" style="display:inline-block;">
-                                                            <input type="hidden" name="csrf_token" value="<?php echo generateCSRFToken(); ?>">
-                                                            <input type="hidden" name="reservation_id" value="<?php echo $res['reservation_id']; ?>">
-                                                            <button type="submit" name="action" value="notes" class="btn btn-outline-info" title="View/Add Notes">
-                                                                <i class="fas fa-sticky-note"></i>
-                                                            </button>
-                                                        </form>
+                                                        <button type="button" class="btn btn-outline-info notes-btn" data-id="<?php echo $res['reservation_id']; ?>" title="View/Add Notes">
+                                                            <i class="fas fa-sticky-note"></i>
+                                                        </button>
 
                                                         <?php if (!empty($res['special_requests'])): ?>
-                                                            <button class="btn btn-outline-warning view-requests" title="View Special Requests" data-requests="<?php echo htmlspecialchars($res['special_requests']); ?>">
+                                                            <button type="button" class="btn btn-outline-warning view-requests" title="View Special Requests" data-requests="<?php echo htmlspecialchars($res['special_requests']); ?>">
                                                                 <i class="fas fa-comment-alt"></i>
                                                             </button>
                                                         <?php endif; ?>
 
                                                         <?php if (in_array($res['reservation_status'], ['pending', 'confirmed'])): ?>
-                                                            <form method="POST" action="process_reservation.php" style="display:inline-block;">
-                                                                <input type="hidden" name="csrf_token" value="<?php echo generateCSRFToken(); ?>">
-                                                                <input type="hidden" name="reservation_id" value="<?php echo $res['reservation_id']; ?>">
-                                                                <input type="hidden" name="new_status" value="checked-in">
-                                                                <button type="submit" name="action" value="update_status" class="btn btn-outline-success" title="Check-in">
-                                                                    <i class="fas fa-sign-in-alt"></i>
-                                                                </button>
-                                                            </form>
+                                                            <button type="button" class="btn btn-outline-success update-status" data-id="<?php echo $res['reservation_id']; ?>" data-status="checked_in" title="Check-in">
+                                                                <i class="fas fa-sign-in-alt"></i>
+                                                            </button>
                                                         <?php endif; ?>
 
-                                                        <?php if ($res['reservation_status'] === 'checked-in'): ?>
-                                                            <form method="POST" action="process_reservation.php" style="display:inline-block;">
-                                                                <input type="hidden" name="csrf_token" value="<?php echo generateCSRFToken(); ?>">
-                                                                <input type="hidden" name="reservation_id" value="<?php echo $res['reservation_id']; ?>">
-                                                                <input type="hidden" name="new_status" value="checked-out">
-                                                                <button type="submit" name="action" value="update_status" class="btn btn-outline-info" title="Check-out">
-                                                                    <i class="fas fa-sign-out-alt"></i>
-                                                                </button>
-                                                            </form>
+                                                        <?php if ($res['reservation_status'] === 'checked_in'): ?>
+                                                            <button type="button" class="btn btn-outline-info update-status" data-id="<?php echo $res['reservation_id']; ?>" data-status="checked_out" title="Check-out">
+                                                                <i class="fas fa-sign-out-alt"></i>
+                                                            </button>
                                                         <?php endif; ?>
 
-                                                        <?php if (in_array($res['reservation_status'], ['pending', 'confirmed', 'checked-in'])): ?>
-                                                            <form method="POST" action="process_reservation.php" style="display:inline-block;">
-                                                                <input type="hidden" name="csrf_token" value="<?php echo generateCSRFToken(); ?>">
-                                                                <input type="hidden" name="reservation_id" value="<?php echo $res['reservation_id']; ?>">
-                                                                <input type="hidden" name="new_status" value="cancelled">
-                                                                <button type="submit" name="action" value="update_status" class="btn btn-outline-danger" title="Cancel">
-                                                                    <i class="fas fa-times"></i>
-                                                                </button>
-                                                            </form>
+                                                        <?php if (in_array($res['reservation_status'], ['pending', 'confirmed', 'checked_in'], true)): ?>
+                                                            <button type="button" class="btn btn-outline-danger update-status" data-id="<?php echo $res['reservation_id']; ?>" data-status="cancelled" title="Cancel">
+                                                                <i class="fas fa-times"></i>
+                                                            </button>
                                                         <?php endif; ?>
                                                     </div>
                                                 </td>

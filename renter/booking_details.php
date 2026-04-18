@@ -20,7 +20,7 @@ if ($bookingId <= 0) {
 
 // Get booking details
 $booking = get_single_result(
-    "SELECT r.*, u.unit_number, u.unit_type, u.monthly_rate, u.pricing_type, u.description as unit_description,
+    "SELECT r.*, u.unit_number, u.unit_type, u.price_per_night, u.price_per_month, u.pricing_type, u.description as unit_description,
             b.branch_name, b.branch_address,
             renter.full_name, renter.email, renter.phone
      FROM reservations r 
@@ -334,7 +334,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['upload_receipt'])) {
                         </div>
                         <div class="detail-item">
                             <div class="detail-label">Base Rate</div>
-                            <div class="detail-value">₱<?php echo number_format($booking['monthly_rate'], 2); ?> / <?php echo ($booking['pricing_type'] ?? 'monthly') === 'monthly' ? 'month' : 'night'; ?></div>
+                            <div class="detail-value">₱<?php echo in_array($booking['pricing_type'] ?? 'nightly', ['nightly', 'daily']) ? number_format((float)($booking['price_per_night'] ?? 0), 2) . ' / night' : number_format((float)($booking['price_per_month'] ?? 0), 2) . ' / month'; ?></div>
                         </div>
                     </div>
                 </div>

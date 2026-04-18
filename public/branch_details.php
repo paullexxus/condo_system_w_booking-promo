@@ -195,12 +195,24 @@ if (!$branch) {
                 <div class="text-center">
                     <div class="text-5xl font-bold mb-2">
                         <?php 
-                        $units = get_multiple_results("SELECT monthly_rate FROM units WHERE branch_id = ? AND is_available = 1 AND (approval_status = 'approved' OR approval_status IS NULL)", [$branch['branch_id']]);
-                        $avgPrice = !empty($units) ? number_format(array_sum(array_column($units, 'monthly_rate')) / count($units), 0) : 0;
+                        $units = get_multiple_results("SELECT price_per_night, price_per_month, pricing_type FROM units WHERE branch_id = ? AND is_available = 1 AND (approval_status = 'approved' OR approval_status IS NULL)", [$branch['branch_id']]);
+                        if (!empty($units)) {
+                            $total_sum = 0;
+                            foreach ($units as $u) {
+                                if (($u['pricing_type'] ?? 'nightly') === 'monthly') {
+                                    $total_sum += $u['price_per_month'] / 30;
+                                } else {
+                                    $total_sum += $u['price_per_night'];
+                                }
+                            }
+                            $avgPrice = number_format($total_sum / count($units), 0);
+                        } else {
+                            $avgPrice = 0;
+                        }
                         echo '₱' . $avgPrice;
                         ?>
                     </div>
-                    <p class="text-blue-100 text-lg">Average Price/Month</p>
+                    <p class="text-blue-100 text-lg">Average Price/Night</p>
                 </div>
                 <div class="text-center">
                     <div class="text-5xl font-bold mb-2"><?php echo count($amenities ?? []); ?></div>

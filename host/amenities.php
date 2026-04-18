@@ -50,48 +50,49 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 $amenity_bookings = get_multiple_results("
     SELECT 
         ab.*,
-        a.amenity_name,
-        a.hourly_rate,
+        a.name AS amenity_name,
+        0 AS hourly_rate,
         u.unit_name,
         u.unit_number,
         us.full_name as renter_name,
         us.email as renter_email
     FROM amenity_bookings ab
-    INNER JOIN amenities a ON ab.amenity_id = a.amenity_id
+    INNER JOIN amenities a ON ab.amenity_id = a.id
     INNER JOIN units u ON ab.branch_id = u.branch_id
     INNER JOIN users us ON ab.user_id = us.user_id
-    WHERE u.host_id = $host_id
+    WHERE u.host_id = ?
     ORDER BY ab.booking_date DESC
-");
+", [$host_id]);
 
 // Get status counts
 $status_counts = [];
 $statuses = ['pending', 'approved', 'completed', 'rejected'];
 foreach ($statuses as $status) {
-    $count = $conn->query(
+    $row = get_single_result(
         "SELECT COUNT(*) as cnt FROM amenity_bookings ab 
          INNER JOIN units u ON ab.branch_id = u.branch_id 
-         WHERE u.host_id = $host_id AND ab.status = '$status'"
-    )->fetch_assoc()['cnt'];
-    $status_counts[$status] = $count;
+         WHERE u.host_id = ? AND ab.status = ?",
+        [$host_id, $status]
+    );
+    $status_counts[$status] = (int) ($row['cnt'] ?? 0);
 }
 
 // Get pending approvals
 $pending_approvals = get_multiple_results("
     SELECT 
         ab.*,
-        a.amenity_name,
-        a.hourly_rate,
+        a.name AS amenity_name,
+        0 AS hourly_rate,
         u.unit_name,
         us.full_name as renter_name
     FROM amenity_bookings ab
-    INNER JOIN amenities a ON ab.amenity_id = a.amenity_id
+    INNER JOIN amenities a ON ab.amenity_id = a.id
     INNER JOIN units u ON ab.branch_id = u.branch_id
     INNER JOIN users us ON ab.user_id = us.user_id
-    WHERE u.host_id = $host_id
+    WHERE u.host_id = ?
     AND ab.status = 'pending'
     ORDER BY ab.booking_date ASC
-");
+", [$host_id]);
 
 $page_title = 'Amenities';
 ?>

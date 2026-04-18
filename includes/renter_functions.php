@@ -65,19 +65,19 @@ function getBookingForPayment($type, $id, $userId) {
     
     if ($type == 'reservation') {
         return get_single_result(
-            "SELECT r.*, u.unit_number, u.unit_type, u.monthly_rate, u.security_deposit, 
+            "SELECT r.*, u.unit_number, u.unit_type, u.price_per_night, u.price_per_month, u.pricing_type, u.security_deposit, 
                     b.branch_name, b.address, b.city
             FROM reservations r 
             JOIN units u ON r.unit_id = u.unit_id 
             JOIN branches b ON r.branch_id = b.branch_id 
-            WHERE r.reservation_id = ? AND r.user_id = ? AND r.status IN ('pending', 'approved')",
+            WHERE r.reservation_id = ? AND r.user_id = ? AND r.status IN ('pending', 'approved', 'confirmed')",
             [$id, $userId]
         );
     } else if ($type == 'amenity') {
         return get_single_result(
-            "SELECT ab.*, a.amenity_name, a.description, a.hourly_rate, b.branch_name 
+            "SELECT ab.*, a.name AS amenity_name, '' AS description, 0 AS hourly_rate, b.branch_name 
             FROM amenity_bookings ab 
-            JOIN amenities a ON ab.amenity_id = a.amenity_id 
+            JOIN amenities a ON ab.amenity_id = a.id 
             JOIN branches b ON ab.branch_id = b.branch_id 
             WHERE ab.booking_id = ? AND ab.user_id = ? AND ab.status = 'pending'",
             [$id, $userId]
@@ -107,7 +107,7 @@ function calculateBookingTotal($booking, $type) {
             $days = $checkOut->diff($checkIn)->days;
             $days = ($days == 0) ? 1 : $days;  // Minimum 1 day
             
-            $daily_rate = $booking['monthly_rate'] / 30;  // Convert monthly to daily rate
+            $daily_rate = (($booking['pricing_type'] ?? 'nightly') === 'monthly') ? (($booking['price_per_month'] ?? 0) / 30) : ($booking['price_per_night'] ?? 0);
             $subtotal = $daily_rate * $days;
         }
         
@@ -292,7 +292,7 @@ function getBookingSummary($booking, $type) {
             'location' => $booking['address'] . ', ' . $booking['city'],
             'checkIn' => date('M d, Y', strtotime($booking['check_in_date'])),
             'checkOut' => date('M d, Y', strtotime($booking['check_out_date'])),
-            'specialty' => 'Monthly Rate: ' . formatCurrency($booking['monthly_rate']),
+            'specialty' => (($booking['pricing_type'] ?? 'nightly') === 'monthly') ? 'Monthly Rate: ' . formatCurrency($booking['price_per_month'] ?? 0) : 'Nightly Rate: ' . formatCurrency($booking['price_per_night'] ?? 0),
             'icon' => 'fas fa-building'
         ];
     } else if ($type == 'amenity') {
@@ -327,7 +327,7 @@ function canUserCheckout($userId, $bookingId, $type) {
     }
     
     // Check approval status for reservations
-    if ($type == 'reservation' && $booking['status'] != 'approved') {
+    if ($type == 'reservation' && !in_array($booking['status'], ['approved', 'confirmed'], true)) {
         return false;
     }
     

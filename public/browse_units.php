@@ -62,11 +62,11 @@ if ($selectedBranch) {
     
     // Add filters
     if ($priceMin) {
-        $sql .= " AND u.monthly_rate >= ?";
+        $sql .= " AND IF(u.pricing_type IN ('nightly', 'daily'), u.price_per_night * 30, u.price_per_month) >= ?";
         $params[] = $priceMin;
     }
     if ($priceMax) {
-        $sql .= " AND u.monthly_rate <= ?";
+        $sql .= " AND IF(u.pricing_type IN ('nightly', 'daily'), u.price_per_night * 30, u.price_per_month) <= ?";
         $params[] = $priceMax;
     }
     if ($propertyType) {
@@ -79,7 +79,7 @@ if ($selectedBranch) {
         $params[] = $bedrooms;
     }
     
-    $sql .= " ORDER BY u.monthly_rate ASC";
+    $sql .= " ORDER BY IF(u.pricing_type IN ('nightly', 'daily'), u.price_per_night * 30, u.price_per_month) ASC";
     $availableUnits = get_multiple_results($sql, $params);
     $unitCount = count($availableUnits);
     
@@ -95,9 +95,9 @@ if ($selectedBranch) {
             foreach ($unit_images as $img) {
                 $all_images[] = $img['image_path'];
             }
-            $ptype = $u['pricing_type'] ?? 'monthly';
-            $unitPricePerNight = $ptype === 'daily' ? $u['monthly_rate'] : (!empty($u['monthly_rate']) ? round($u['monthly_rate'] / 30) : null);
-            $unitPricePerMonth = $ptype === 'daily' ? $u['monthly_rate'] * 30 : $u['monthly_rate'];
+            $ptype = $u['pricing_type'] ?? 'nightly';
+            $unitPricePerNight = in_array($ptype, ['nightly', 'daily']) ? $u['price_per_night'] : (!empty($u['price_per_month']) ? round($u['price_per_month'] / 30) : null);
+            $unitPricePerMonth = in_array($ptype, ['nightly', 'daily']) ? $u['price_per_night'] * 30 : $u['price_per_month'];
             
             $unitsForMap[] = [
                 'unit_id' => $u['unit_id'],
@@ -383,8 +383,8 @@ if ($selectedBranch) {
                                     [$unit['unit_id']]
                                 );
                                 $image_path = !empty($unit_images) ? $unit_images[0]['image_path'] : null;
-                                $ptype = $unit['pricing_type'] ?? 'monthly';
-                                $unitPricePerNight = $ptype === 'daily' ? $unit['monthly_rate'] : (!empty($unit['monthly_rate']) ? round($unit['monthly_rate'] / 30) : null);
+                                $ptype = $unit['pricing_type'] ?? 'nightly';
+                                $unitPricePerNight = in_array($ptype, ['nightly', 'daily']) ? $unit['price_per_night'] : (!empty($unit['price_per_month']) ? round($unit['price_per_month'] / 30) : null);
                             ?>
                             <div class="property-card soft-shadow cursor-pointer group transition-all" data-unit-id="<?php echo $unit['unit_id']; ?>" onclick="selectUnit(<?php echo $unit['unit_id']; ?>)">
                                 <!-- Image -->
@@ -398,7 +398,10 @@ if ($selectedBranch) {
                                     <?php endif; ?>
                                     <!-- Price Badge -->
                                     <div class="absolute top-4 left-4 price-badge text-white px-4 py-2 rounded-lg font-bold text-lg">
-                                        ₱<?php echo $unitPricePerNight ? number_format($unitPricePerNight) : 'Contact'; ?>/night
+                                        ₱<?php echo in_array($ptype, ['nightly', 'daily']) ? number_format((float)($unit['price_per_night'] ?? 0)) . '/night' : number_format((float)($unit['price_per_month'] ?? 0)) . '/month'; ?>
+                                    </div>
+                                    <div class="absolute top-4 right-4 bg-white/90 text-gray-800 px-3 py-1 rounded-lg font-bold text-xs shadow-sm uppercase tracking-wide">
+                                        <?php echo in_array($ptype, ['nightly', 'daily']) ? 'Nightly Stay' : 'Monthly Rental'; ?>
                                     </div>
                                 </div>
 

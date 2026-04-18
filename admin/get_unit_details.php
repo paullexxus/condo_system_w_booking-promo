@@ -87,8 +87,13 @@ $total_nights = $total_nights['total_nights'] ?? 0;
         </div>
         <div class="col-md-4 text-end">
             <div class="price-display">
-                <div class="price-amount">₱<?= number_format(($unit['monthly_rate'] ?? 0) / 30, 2) ?></div>
-                <div class="price-period">per night</div>
+                <?php if (($unit['pricing_type'] ?? 'nightly') === 'monthly'): ?>
+                    <div class="price-amount">₱<?= number_format($unit['price_per_month'], 2) ?></div>
+                    <div class="price-period">per month</div>
+                <?php else: ?>
+                    <div class="price-amount">₱<?= number_format($unit['price_per_night'], 2) ?></div>
+                    <div class="price-period">per night</div>
+                <?php endif; ?>
             </div>
         </div>
     </div>

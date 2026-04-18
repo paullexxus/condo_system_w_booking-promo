@@ -17,7 +17,10 @@
             $unit_number = sanitize_input($_POST['unit_number']);
             $unit_type = sanitize_input($_POST['unit_type']);
             $branch_id = (int)$_POST['branch_id'];
-            $price = (float)$_POST['price'];
+            
+            $pricing_type = sanitize_input($_POST['pricing_type'] ?? 'nightly');
+            $price_per_night = (float)($_POST['price_per_night'] ?? 0);
+            $price_per_month = (float)($_POST['price_per_month'] ?? 0);
             $floor_number = !empty($_POST['floor_number']) ? (int)$_POST['floor_number'] : null;
             $max_occupancy = (int)$_POST['max_occupancy'];
             $security_deposit = (float)$_POST['security_deposit'];
@@ -33,11 +36,15 @@
             $num_beds = isset($_POST['num_beds']) && $_POST['num_beds'] !== '' ? (int)$_POST['num_beds'] : 1;
             $num_bathrooms = isset($_POST['num_bathrooms']) && $_POST['num_bathrooms'] !== '' ? (int)$_POST['num_bathrooms'] : 1;
             
+            // Fetch host_id for the selected branch
+            $branch_info = get_single_result("SELECT host_id FROM branches WHERE branch_id = ?", [$branch_id]);
+            $host_id = $branch_info ? $branch_info['host_id'] : null;
+
             // Proceed to insert unit
-            $sql = "INSERT INTO units (unit_number, unit_type, branch_id, monthly_rate, floor_number, max_occupancy, security_deposit, description, sqm, bed_type, num_beds, num_bathrooms) 
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+            $sql = "INSERT INTO units (unit_number, unit_type, branch_id, host_id, pricing_type, price_per_night, price_per_month, floor_number, max_occupancy, security_deposit, description, sqm, bed_type, num_beds, num_bathrooms) 
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
                     
-            if (execute_query($sql, [$unit_number, $unit_type, $branch_id, $price, $floor_number, $max_occupancy, $security_deposit, $description, $sqm, $bed_type, $num_beds, $num_bathrooms])) {
+            if (execute_query($sql, [$unit_number, $unit_type, $branch_id, $host_id, $pricing_type, $price_per_night, $price_per_month, $floor_number, $max_occupancy, $security_deposit, $description, $sqm, $bed_type, $num_beds, $num_bathrooms])) {
                 $message = "Unit added successfully!";
             } else {
                 $error = "Failed to add unit!";
@@ -50,23 +57,45 @@
             $unit_number = sanitize_input($_POST['unit_number']);
             $unit_type = sanitize_input($_POST['unit_type']);
             $branch_id = (int)$_POST['branch_id'];
-            $price = (float)$_POST['price'];
-            $floor_number = !empty($_POST['floor_number']) ? (int)$_POST['floor_number'] : null;
-            $max_occupancy = (int)$_POST['max_occupancy'];
             $security_deposit = (float)$_POST['security_deposit'];
             $description = sanitize_input($_POST['description']);
+            
+            $pricing_type = sanitize_input($_POST['pricing_type'] ?? 'nightly');
+            $price_per_night = (float)($_POST['price_per_night'] ?? 0);
+            $price_per_month = (float)($_POST['price_per_month'] ?? 0);
+            
+            $floor_number = !empty($_POST['floor_number']) ? (int)$_POST['floor_number'] : null;
+            $max_occupancy = (int)$_POST['max_occupancy'];
             
             $sqm = isset($_POST['sqm']) && $_POST['sqm'] !== '' ? (float)$_POST['sqm'] : null;
             $bed_type = sanitize_input($_POST['bed_type'] ?? '');
             $num_beds = isset($_POST['num_beds']) && $_POST['num_beds'] !== '' ? (int)$_POST['num_beds'] : 1;
             $num_bathrooms = isset($_POST['num_bathrooms']) && $_POST['num_bathrooms'] !== '' ? (int)$_POST['num_bathrooms'] : 1;
 
+            $owner_row = get_single_result("SELECT host_id FROM units WHERE unit_id = ?", [$unit_id]);
+            $notify_id = (int) ($owner_row['host_id'] ?? 0);
+            if ($notify_id <= 0) {
+                $branch_info = get_single_result("SELECT host_id FROM branches WHERE branch_id = ?", [$branch_id]);
+                $notify_id = $branch_info ? (int) $branch_info['host_id'] : 0;
+            }
+
+            // Do not overwrite host_id on edit — avoids 0 / wrong branch host unlinking the listing from the owner.
             $sql = "UPDATE units SET unit_number = ?, unit_type = ?, branch_id = ?, 
-                    monthly_rate = ?, floor_number = ?, max_occupancy = ?, security_deposit = ?, description = ?, sqm = ?, bed_type = ?, num_beds = ?, num_bathrooms = ?
+                    pricing_type = ?, price_per_night = ?, price_per_month = ?, floor_number = ?, max_occupancy = ?, security_deposit = ?, description = ?, sqm = ?, bed_type = ?, num_beds = ?, num_bathrooms = ?
                     WHERE unit_id = ?";
             
-            if (execute_query($sql, [$unit_number, $unit_type, $branch_id, $price, $floor_number, $max_occupancy, $security_deposit, $description, $sqm, $bed_type, $num_beds, $num_bathrooms, $unit_id])) {
+            if (execute_query($sql, [$unit_number, $unit_type, $branch_id, $pricing_type, $price_per_night, $price_per_month, $floor_number, $max_occupancy, $security_deposit, $description, $sqm, $bed_type, $num_beds, $num_bathrooms, $unit_id])) {
                 $message = "Unit updated successfully!";
+                if ($notify_id > 0) {
+                    sendNotification(
+                        $notify_id,
+                        'Unit updated by admin',
+                        'Your listing was updated from the admin Unit Management page. Check Host → Unit Management for the latest details.',
+                        'system',
+                        'system',
+                        null
+                    );
+                }
             } else {
                 $error = "Failed to update unit!";
             }
@@ -78,6 +107,12 @@
             $sql = "UPDATE units SET is_available = 0 WHERE unit_id = ?";
             if (execute_query($sql, [$unit_id])) {
                 $message = "Unit deleted successfully!";
+                
+                // Fetch unit & host info to notify the host
+                $u_info = get_single_result("SELECT u.unit_number, b.host_id FROM units u JOIN branches b ON u.branch_id = b.branch_id WHERE u.unit_id = ?", [$unit_id]);
+                if ($u_info && $u_info['host_id']) {
+                    sendNotification($u_info['host_id'], "Unit Deleted by Admin", "Admin has removed your Unit #{$u_info['unit_number']} from the system. It is now marked unavailable.", "system", "system", null);
+                }
             } else {
                 $error = "Failed to delete unit!";
             }
@@ -94,6 +129,12 @@
             $sql = "UPDATE units SET is_available = ? WHERE unit_id = ?";
             if (execute_query($sql, [$is_available, $unit_id])) {
                 $message = "Unit status updated successfully!";
+                
+                // Notify Host
+                $u_info = get_single_result("SELECT u.unit_number, b.host_id FROM units u JOIN branches b ON u.branch_id = b.branch_id WHERE u.unit_id = ?", [$unit_id]);
+                if ($u_info && $u_info['host_id']) {
+                    sendNotification($u_info['host_id'], "Unit Status Updated", "Admin has changed the status of your Unit #{$u_info['unit_number']} to " . strtoupper($status) . ".", "system", "system", null);
+                }
             } else {
                 $error = "Failed to update unit status!";
             }
@@ -199,8 +240,7 @@
         // UPDATED SQL QUERY - Only include revenue from ACTIVE branches
         $sql = "SELECT 
                     u.*, 
-                    u.monthly_rate as price,
-                    u.instant_booking as instant_booking,
+                    u.price_per_night, u.price_per_month, u.pricing_type, u.instant_booking,
                     CASE 
                         WHEN u.is_available = 1 THEN 'available'
                         WHEN u.is_available = 0 THEN 'occupied'
@@ -450,8 +490,13 @@
                             <span class="badge branch-badge"><?= htmlspecialchars($unit['branch_name']) ?></span>
                         </td>
                         <td>
-                            <strong>₱<?= number_format(($unit['monthly_rate'] ?? 0) / 30, 2) ?></strong><br>
-                            <small class="text-muted">per night</small>
+                            <?php if (($unit['pricing_type'] ?? 'nightly') === 'monthly'): ?>
+                                <strong>₱<?= number_format($unit['price_per_month'] ?? 0, 2) ?></strong><br>
+                                <span class="badge bg-info mt-1">Monthly</span>
+                            <?php else: ?>
+                                <strong>₱<?= number_format($unit['price_per_night'] ?? 0, 2) ?></strong><br>
+                                <span class="badge bg-primary mt-1">Nightly</span>
+                            <?php endif; ?>
                         </td>
                         <td>
                             <div class="performance-metrics">
@@ -574,12 +619,43 @@
                                 </div>
                             </div>
                             <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label class="form-label">Price per Night (₱) *</label>
-                                    <input type="number" class="form-control" name="price" step="0.01" min="0" required>
+                                <div class="mb-3 border p-3 rounded">
+                                    <label class="form-label fw-bold"><i class="fas fa-tag"></i> Pricing Model & Rate *</label>
+                                    <div class="d-flex gap-3 mb-2">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" name="pricing_type" id="add_pricing_nightly" value="nightly" checked autocomplete="off">
+                                            <label class="form-check-label" for="add_pricing_nightly">Nightly</label>
+                                        </div>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" name="pricing_type" id="add_pricing_monthly" value="monthly" autocomplete="off">
+                                            <label class="form-check-label" for="add_pricing_monthly">Monthly</label>
+                                        </div>
+                                    </div>
+                                    <div id="add_nightly_input">
+                                        <label class="form-label">Price per Night (₱) *</label>
+                                        <input type="number" class="form-control" name="price_per_night" step="0.01" min="0">
+                                    </div>
+                                    <div id="add_monthly_input" class="d-none">
+                                        <label class="form-label">Price per Month (₱) *</label>
+                                        <input type="number" class="form-control" name="price_per_month" step="0.01" min="0">
+                                    </div>
                                 </div>
                             </div>
                         </div>
+                        
+                        <script>
+                        document.querySelectorAll('input[name="pricing_type"]').forEach(e => {
+                            e.addEventListener('change', function() {
+                                if(this.value === 'nightly') {
+                                    document.getElementById('add_nightly_input').classList.remove('d-none');
+                                    document.getElementById('add_monthly_input').classList.add('d-none');
+                                } else {
+                                    document.getElementById('add_nightly_input').classList.add('d-none');
+                                    document.getElementById('add_monthly_input').classList.remove('d-none');
+                                }
+                            });
+                        });
+                        </script>
                         
                         <div class="row">
                             <div class="col-md-4">
@@ -648,13 +724,7 @@
                                     <small class="text-muted">Drag photos here or click to browse. Support: JPG, PNG (Max 5MB per image)</small>
                                 </div>
                             </div>
-                            <div class="col-md-3">
-                                <div class="mb-3">
-                                    <label class="form-label">Rate per Night (₱)</label>
-                                    <input type="number" class="form-control" name="price" step="0.01" min="0" placeholder="e.g., 2500" required>
-                                </div>
-                            </div>
-                            <div class="col-md-3">
+                            <div class="col-md-6">
                                 <div class="mb-3">
                                     <label class="form-label">Capacity (Guests)</label>
                                     <input type="number" class="form-control" name="max_occupancy" min="1" placeholder="e.g., 4" required>

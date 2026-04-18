@@ -30,20 +30,19 @@ if (!$in_dt || !$out_dt || $out_dt <= $in_dt) {
 }
 $nights = (int) $out_dt->diff($in_dt)->days;
 
-$unit = get_single_result("SELECT monthly_rate, pricing_type, host_id FROM units WHERE unit_id = ?", [$unit_id]);
+$unit = get_single_result("SELECT price_per_night, price_per_month, pricing_type, host_id FROM units WHERE unit_id = ?", [$unit_id]);
 if (!$unit) {
     echo json_encode(['success' => false, 'error' => 'Unit not found']);
     exit;
 }
 
 // 1. Get Base Rate
-$rate_val = (float) ($unit['monthly_rate'] ?? 0);
-$pricing_type = $unit['pricing_type'] ?? 'monthly';
+$pricing_type = $unit['pricing_type'] ?? 'nightly';
 
-if ($pricing_type === 'daily') {
-    $base_rate = $rate_val;
+if ($pricing_type === 'nightly' || $pricing_type === 'daily') {
+    $base_rate = (float) ($unit['price_per_night'] ?? 0);
 } else {
-    $base_rate = $rate_val / 30;
+    $base_rate = (float) ($unit['price_per_month'] ?? 0) / 30;
 }
 
 // Hardcoded pricing overrides eliminated. Rely solely on dynamic computation.

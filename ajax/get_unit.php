@@ -28,4 +28,7 @@ if (!$unit) {
     exit;
 }
 
+$amenity_rows = get_multiple_results("SELECT amenity_id FROM unit_amenities WHERE unit_id = ?", [$unit_id]);
+$unit['amenity_ids'] = array_map('intval', array_column($amenity_rows, 'amenity_id'));
+
 echo json_encode(['success' => true, 'unit' => $unit]);

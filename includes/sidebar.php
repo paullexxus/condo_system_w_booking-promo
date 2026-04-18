@@ -8,6 +8,19 @@ if ($user_role === 'manager') {
     $user_role = 'host';
 }
 
+// Get unread notification count for hosts
+$unread_notifs = 0;
+if (($user_role === 'host') && isset($_SESSION['user_id'])) {
+    global $conn;
+    if (isset($conn)) {
+        $host_id = (int)$_SESSION['user_id'];
+        $notif_res = $conn->query("SELECT COUNT(*) as cnt FROM notifications WHERE user_id = $host_id AND is_read = 0");
+        if ($notif_res) {
+            $unread_notifs = $notif_res->fetch_assoc()['cnt'];
+        }
+    }
+}
+
 // Define which page should be active for each menu item
 $menu_items = [
     'admin_dashboard.php' => 'Dashboard',
@@ -114,10 +127,20 @@ function isActivePattern($menu_key, $current_page) {
                     </a>
                 </li>
                 <li>
+                    <a href="<?php echo SITE_URL; ?>/host/messages.php" 
+                       class="<?php echo $current_page === 'messages.php' || $current_page === 'automation_settings.php' ? 'active' : ''; ?>">
+                        <i class="fas fa-inbox"></i> 
+                        <span>Messages</span>
+                    </a>
+                </li>
+                <li>
                     <a href="<?php echo SITE_URL; ?>/host/notifications.php" 
                        class="<?php echo isActivePattern('Notifications', $current_page) ? 'active' : ''; ?>">
                         <i class="fas fa-bell"></i> 
                         <span>Notifications</span>
+                        <?php if (isset($unread_notifs) && $unread_notifs > 0): ?>
+                            <span class="badge" style="margin-left: auto; background-color: #e74c3c; color: white; padding: 2px 6px; font-size: 11px; border-radius: 10px;"><?php echo $unread_notifs; ?></span>
+                        <?php endif; ?>
                     </a>
                 </li>
                 <li>
@@ -204,6 +227,13 @@ function isActivePattern($menu_key, $current_page) {
                        class="<?php echo isActivePattern('Reports', $current_page) ? 'active' : ''; ?>">
                         <i class="fas fa-chart-line"></i> 
                         <span>Reports</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="<?php echo SITE_URL; ?>/admin/communication_hub.php" 
+                       class="<?php echo $current_page === 'communication_hub.php' ? 'active' : ''; ?>">
+                        <i class="fas fa-satellite-dish"></i> 
+                        <span>Comms Hub</span>
                     </a>
                 </li>
                 <li>

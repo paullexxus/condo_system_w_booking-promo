@@ -33,13 +33,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     try {
         if ($action === 'save_base_rate') {
             $rate = (float)($_POST['base_nightly_rate'] ?? 0);
-            if ($rate <= 0) throw new Exception('Base nightly rate must be greater than 0.');
-            execute_query(
-                "INSERT INTO unit_pricing_settings (unit_id, base_nightly_rate) VALUES (?, ?)
-                 ON DUPLICATE KEY UPDATE base_nightly_rate = VALUES(base_nightly_rate)",
-                [$unit_id, $rate]
-            );
-            $_SESSION['success_message'] = 'Base nightly rate saved.';
+            if ($rate <= 0) throw new Exception('Base rate must be greater than 0.');
+            $is_monthly = ($unit['pricing_type'] ?? 'nightly') === 'monthly';
+            if ($is_monthly) {
+                execute_query("UPDATE units SET price_per_month = ? WHERE unit_id = ?", [$rate, $unit_id]);
+            } else {
+                execute_query("UPDATE units SET price_per_night = ? WHERE unit_id = ?", [$rate, $unit_id]);
+            }
+            $_SESSION['success_message'] = 'Base rate saved successfully.';
         } elseif ($action === 'add_blackout') {
             $start = sanitize_input($_POST['start_date'] ?? '');
             $end = sanitize_input($_POST['end_date'] ?? '');
@@ -102,9 +103,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     exit;
 }
 
-$pricing = get_single_result("SELECT base_nightly_rate FROM unit_pricing_settings WHERE unit_id = ?", [$unit_id]);
-$base_rate = $pricing && (float)$pricing['base_nightly_rate'] > 0 ? (float)$pricing['base_nightly_rate'] : (float)(($unit['monthly_rate'] ?? 0) / 30);
-
+$is_monthly = ($unit['pricing_type'] ?? 'nightly') === 'monthly';
+$base_rate = $is_monthly ? (float)$unit['price_per_month'] : (float)$unit['price_per_night'];
+$base_rate = max(0, $base_rate);
 $blackouts = get_multiple_results("SELECT * FROM unit_blackouts WHERE unit_id = ? ORDER BY start_date DESC", [$unit_id]);
 $rules = get_multiple_results("SELECT * FROM unit_pricing_rules WHERE unit_id = ? ORDER BY created_at DESC", [$unit_id]);
 $addons = get_multiple_results("SELECT * FROM unit_addons WHERE unit_id = ? ORDER BY created_at DESC", [$unit_id]);
@@ -162,7 +163,7 @@ $addons = get_multiple_results("SELECT * FROM unit_addons WHERE unit_id = ? ORDE
       <div class="row g-3">
         <div class="col-lg-6">
           <div class="card">
-            <div class="card-header fw-bold">Base nightly rate</div>
+            <div class="card-header fw-bold">Base rate (<?= $is_monthly ? 'Monthly' : 'Nightly' ?>)</div>
             <div class="card-body">
               <form method="POST">
                 <input type="hidden" name="action" value="save_base_rate">

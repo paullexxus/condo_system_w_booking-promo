@@ -149,7 +149,13 @@ try {
                             </td>
                             <td><?= htmlspecialchars($u['branch_name'] ?? 'N/A') ?><br><small class="text-muted"><?= htmlspecialchars($u['city'] ?? '') ?></small></td>
                             <td><?= htmlspecialchars($u['host_name'] ?? 'N/A') ?><br><small class="text-muted"><?= htmlspecialchars($u['host_email'] ?? '') ?></small></td>
-                            <td>₱<?= number_format($u['monthly_rate'] ?? $u['price'] ?? 0, 2) ?>/mo</td>
+                            <td>
+                                <?php if (($u['pricing_type'] ?? 'nightly') === 'monthly'): ?>
+                                    ₱<?= number_format($u['price_per_month'] ?? 0, 2) ?>/mo
+                                <?php else: ?>
+                                    ₱<?= number_format($u['price_per_night'] ?? 0, 2) ?>/night
+                                <?php endif; ?>
+                            </td>
                             <td><?= date('M d, Y', strtotime($u['created_at'] ?? 'now')) ?></td>
                             <td>
                                 <form method="POST" class="d-inline" onsubmit="return confirm('Approve this unit? It will become visible to renters.');">

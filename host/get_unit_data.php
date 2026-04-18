@@ -28,8 +28,8 @@ if (!$unit) {
     exit;
 }
 
-// Amenities not currently stored at unit level
-$amenities = [];
+$amenity_rows = get_multiple_results("SELECT amenity_id FROM unit_amenities WHERE unit_id = ?", [$unit_id]);
+$amenities = array_map('intval', array_column($amenity_rows, 'amenity_id'));
 
 // Build response
 $response = [
@@ -37,10 +37,14 @@ $response = [
     'unit_name' => $unit['unit_name'],
     'branch_id' => $unit['branch_id'],
     'description' => $unit['description'],
-    'price' => isset($unit['monthly_rate']) ? number_format($unit['monthly_rate'] / 30, 2) : 0,
+    'pricing_type' => $unit['pricing_type'] ?? 'nightly',
+    'price_per_night' => $unit['price_per_night'] ?? 0,
+    'price_per_month' => $unit['price_per_month'] ?? 0,
+    'price' => (($unit['pricing_type'] ?? 'nightly') === 'monthly') ? number_format(($unit['price_per_month'] ?? 0) / 30, 2, '.', '') : number_format($unit['price_per_night'] ?? 0, 2, '.', ''),
     'capacity' => $unit['max_occupancy'],
     'is_available' => $unit['is_available'],
-    'amenities' => $amenities
+    'amenities' => $amenities,
+    'amenity_ids' => $amenities
 ];
 
 echo json_encode($response);

@@ -20,15 +20,42 @@ CREATE TABLE IF NOT EXISTS `audit_logs` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 ");
 
+// Check/Create notifications table and fields
+mysqli_query($conn, "
+CREATE TABLE IF NOT EXISTS `notifications` (
+  `notification_id` int NOT NULL AUTO_INCREMENT,
+  `user_id` int NOT NULL,
+  `title` varchar(255) NOT NULL,
+  `message` text NOT NULL,
+  `admin_message` text,
+  `status` varchar(50) DEFAULT 'info',
+  `type` varchar(50) DEFAULT 'system',
+  `is_read` tinyint(1) DEFAULT '0',
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`notification_id`),
+  KEY `user_id` (`user_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+");
+try {
+    @mysqli_query($conn, "ALTER TABLE `notifications` ADD COLUMN `admin_message` text NULL AFTER `message`");
+} catch (Exception $e) {}
+
+try {
+    @mysqli_query($conn, "ALTER TABLE `notifications` ADD COLUMN `status` varchar(50) DEFAULT 'info' AFTER `admin_message`");
+} catch (Exception $e) {}
+
 // Handle Approval / Rejection
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     $app_id = (int)$_POST['application_id'];
     $admin_notes = mysqli_real_escape_string($conn, $_POST['admin_notes'] ?? '');
     
-    // Get application details first
-    // Note: ensure we join `users` or select `email`, `full_name` to send emails
-    $app_result = mysqli_query($conn, "SELECT h.user_id, h.status, u.email, u.full_name as user_name FROM host_applications h JOIN users u ON h.user_id = u.user_id WHERE h.application_id = $app_id");
-    if ($row = mysqli_fetch_assoc($app_result)) {
+    if (empty(trim($admin_notes))) {
+        $error_msg = "⚠️ Admin message is required.";
+    } else {
+        // Get application details first
+        // Note: ensure we join `users` or select `email`, `full_name` to send emails
+        $app_result = mysqli_query($conn, "SELECT h.user_id, h.status, u.email, u.full_name as user_name FROM host_applications h JOIN users u ON h.user_id = u.user_id WHERE h.application_id = $app_id");
+        if ($row = mysqli_fetch_assoc($app_result)) {
         $user_id = $row['user_id'];
         $old_status = $row['status'];
         $user_email = $row['email'];
@@ -57,6 +84,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                     @sendHostApplicationApprovedEmail($user_email, $user_name);
                 }
 
+                // Insert Notification
+                $notif_title = "🎉 Host Application Approved";
+                $notif_msg = "Your application has been approved. You can now start listing your property.";
+                mysqli_query($conn, "INSERT INTO notifications (user_id, title, message, admin_message, status, type) VALUES ($user_id, '$notif_title', '$notif_msg', '$admin_notes', 'approved', 'system')");
+
                 $conn->commit();
                 $success_msg = "Host application successfully approved.";
             } catch (Exception $e) {
@@ -76,6 +108,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                 @sendHostApplicationRejectedEmail($user_email, $user_name, $admin_notes);
             }
 
+            // Insert Notification
+            $notif_title = "❌ Host Application Rejected";
+            $notif_msg = "Your application was not approved. Please check the reason below.";
+            mysqli_query($conn, "INSERT INTO notifications (user_id, title, message, admin_message, status, type) VALUES ($user_id, '$notif_title', '$notif_msg', '$admin_notes', 'rejected', 'system')");
+
             $success_msg = "Host application rejected.";
         } elseif ($_POST['action'] === 'reopen') {
             mysqli_query($conn, "UPDATE host_applications SET status = 'pending', admin_notes = '$admin_notes', reviewed_by = $admin_id, reviewed_at = NOW() WHERE application_id = $app_id");
@@ -85,6 +122,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             mysqli_query($conn, "INSERT INTO audit_logs (user_id, action_type, entity_type, entity_id, details) VALUES ($admin_id, '$log_action', 'host_application', $app_id, '$log_details')");
             
             $success_msg = "Host application re-opened and set to pending.";
+        }
         }
     }
 }

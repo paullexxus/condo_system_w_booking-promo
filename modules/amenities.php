@@ -9,23 +9,20 @@ $user_id = $_SESSION['user_id'];
 $user_role = $_SESSION['role'];
 $branch_id = $_SESSION['branch_id'] ?? null;
 
-// Get amenities with branch information
-$amenities_query = "SELECT a.*, b.branch_name 
-                   FROM amenities a 
-                   LEFT JOIN branches b ON a.branch_id = b.branch_id 
-                   WHERE 1=1";
-
-// Filter by branch if user is host
-if ($user_role == 'host' && $branch_id) {
-    $amenities_query .= " AND a.branch_id = ?";
-}
-
-$amenities_query .= " ORDER BY a.created_at DESC";
+// Global amenities catalog (id + name). Legacy UI expects extra columns — aliased below.
+$amenities_query = "SELECT a.id AS amenity_id,
+       a.name AS amenity_name,
+       '' AS description,
+       1 AS is_available,
+       0 AS hourly_rate,
+       NULL AS branch_id,
+       'Global catalog' AS branch_name,
+       NULL AS created_at
+    FROM amenities a
+    WHERE 1=1
+    ORDER BY a.name ASC";
 
 $stmt = $conn->prepare($amenities_query);
-if ($user_role == 'host' && $branch_id) {
-    $stmt->bind_param("i", $branch_id);
-}
 $stmt->execute();
 $amenities_result = $stmt->get_result();
 
@@ -33,46 +30,43 @@ $amenities_result = $stmt->get_result();
 $branches_query = "SELECT branch_id, branch_name FROM branches WHERE is_active = 1";
 $branches_result = $conn->query($branches_query);
 
-// Statistics
-$stats_query = "SELECT 
-    COUNT(*) as total_amenities,
-    SUM(CASE WHEN is_available = 1 THEN 1 ELSE 0 END) as available_amenities,
-    SUM(CASE WHEN is_available = 0 THEN 1 ELSE 0 END) as unavailable_amenities,
-    (SELECT COUNT(*) FROM amenity_bookings WHERE status = 'confirmed') as total_bookings,
-    (SELECT COUNT(*) FROM amenity_bookings WHERE status = 'pending') as pending_bookings
-    FROM amenities";
+// Statistics (catalog has no branch / availability columns; booking counts optional)
+$stats_query = "SELECT
+    (SELECT COUNT(*) FROM amenities) AS total_amenities,
+    (SELECT COUNT(*) FROM amenities) AS available_amenities,
+    0 AS unavailable_amenities,
+    (SELECT COUNT(*) FROM amenity_bookings WHERE status = 'confirmed') AS total_bookings,
+    (SELECT COUNT(*) FROM amenity_bookings WHERE status = 'pending') AS pending_bookings";
 
-if ($user_role == 'host' && $branch_id) {
-    $stats_query .= " WHERE branch_id = ?";
-    $stmt = $conn->prepare($stats_query);
-    $stmt->bind_param("i", $branch_id);
-    $stmt->execute();
-    $stats_result = $stmt->get_result();
-} else {
-    $stats_result = $conn->query($stats_query);
+$stats_result = $conn->query($stats_query);
+$stats = $stats_result ? $stats_result->fetch_assoc() : [
+    'total_amenities' => 0,
+    'available_amenities' => 0,
+    'unavailable_amenities' => 0,
+    'total_bookings' => 0,
+    'pending_bookings' => 0,
+];
+if (!$stats) {
+    $stats = [
+        'total_amenities' => 0,
+        'available_amenities' => 0,
+        'unavailable_amenities' => 0,
+        'total_bookings' => 0,
+        'pending_bookings' => 0,
+    ];
 }
 
-$stats = $stats_result->fetch_assoc();
+// Most used amenity (join catalog id to amenity_bookings.amenity_id)
+$most_used_query = "SELECT a.name AS amenity_name,
+       SUM(CASE WHEN ab.status = 'confirmed' THEN 1 ELSE 0 END) AS booking_count
+    FROM amenities a
+    LEFT JOIN amenity_bookings ab ON a.id = ab.amenity_id
+    GROUP BY a.id, a.name
+    ORDER BY booking_count DESC
+    LIMIT 1";
 
-// Get most used amenity
-$most_used_query = "SELECT a.amenity_name, COUNT(ab.booking_id) as booking_count 
-                   FROM amenities a 
-                   LEFT JOIN amenity_bookings ab ON a.amenity_id = ab.amenity_id 
-                   WHERE ab.status = 'confirmed'";
-
-if ($user_role == 'host' && $branch_id) {
-    $most_used_query .= " AND a.branch_id = ?";
-}
-
-$most_used_query .= " GROUP BY a.amenity_id ORDER BY booking_count DESC LIMIT 1";
-
-$stmt = $conn->prepare($most_used_query);
-if ($user_role == 'host' && $branch_id) {
-    $stmt->bind_param("i", $branch_id);
-}
-$stmt->execute();
-$most_used_result = $stmt->get_result();
-$most_used = $most_used_result->fetch_assoc();
+$most_used_result = $conn->query($most_used_query);
+$most_used = $most_used_result ? $most_used_result->fetch_assoc() : null;
 
 // Define SITE_URL if not defined
 if (!defined('SITE_URL')) {
@@ -244,12 +238,12 @@ if (!defined('SITE_URL')) {
                             <tbody>
                                 <?php while ($amenity = $amenities_result->fetch_assoc()): ?>
                                 <tr class="amenity-row" 
-                                    data-amenity-id="<?php echo $amenity['amenity_id']; ?>"
-                                    data-branch-id="<?php echo $amenity['branch_id']; ?>"
-                                    data-status="<?php echo $amenity['is_available'] ? 'available' : 'unavailable'; ?>"
+                                    data-amenity-id="<?php echo (int) $amenity['amenity_id']; ?>"
+                                    data-branch-id="<?php echo (int) ($amenity['branch_id'] ?? 0); ?>"
+                                    data-status="<?php echo !empty($amenity['is_available']) ? 'available' : 'unavailable'; ?>"
                                     data-name="<?php echo htmlspecialchars(strtolower($amenity['amenity_name'])); ?>"
-                                    data-date="<?php echo strtotime($amenity['created_at']); ?>"
-                                    data-fee="<?php echo $amenity['hourly_rate']; ?>">
+                                    data-date="<?php echo !empty($amenity['created_at']) ? (int) strtotime($amenity['created_at']) : 0; ?>"
+                                    data-fee="<?php echo htmlspecialchars((string) ($amenity['hourly_rate'] ?? 0)); ?>">
                                     <td>
                                         <strong><?php echo htmlspecialchars($amenity['amenity_name']); ?></strong>
                                     </td>
@@ -280,7 +274,7 @@ if (!defined('SITE_URL')) {
                                     </td>
                                     <td>
                                         <span class="date-added">
-                                            <?php echo date('M j, Y', strtotime($amenity['created_at'])); ?>
+                                            <?php echo !empty($amenity['created_at']) ? date('M j, Y', strtotime($amenity['created_at'])) : '—'; ?>
                                         </span>
                                     </td>
                                     <td>
