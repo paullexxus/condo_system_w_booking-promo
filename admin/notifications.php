@@ -37,6 +37,14 @@ if ($filter_param !== 'archived') {
         $where_clauses[] = "(type = 'approval' OR title LIKE '%pending%')";
     } elseif ($filter_param === 'verification') {
         $where_clauses[] = "(title LIKE '%verification%' OR title LIKE '%rejected%')";
+    } elseif ($filter_param === 'payments') {
+        $where_clauses[] = "(type = 'payment' OR type = 'billing' OR title LIKE '%payment%')";
+    } elseif ($filter_param === 'reviews') {
+        $where_clauses[] = "(type = 'review' OR title LIKE '%review%' OR title LIKE '%rating%')";
+    } elseif ($filter_param === 'refunds') {
+        $where_clauses[] = "(type = 'refund' OR title LIKE '%refund%')";
+    } elseif ($filter_param === 'systems') {
+        $where_clauses[] = "type = 'system'";
     } elseif ($filter_param === 'unread') {
         $where_clauses[] = "is_read = 0";
     }
@@ -144,14 +152,18 @@ $notifs = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
         </div>
         
         <!-- Filter Bar -->
-        <div class="mb-4 d-flex gap-2 filter-bar">
+        <div class="mb-4 d-flex gap-2 filter-bar flex-wrap">
             <a href="?filter=all" class="btn btn-sm btn-outline-secondary filter-btn" data-filter="all">All Active</a>
             <a href="?filter=unread" class="btn btn-sm btn-outline-primary filter-btn" data-filter="unread">Unread</a>
+            <a href="?filter=payments" class="btn btn-sm btn-outline-success filter-btn" data-filter="payments">Payments</a>
+            <a href="?filter=reviews" class="btn btn-sm btn-outline-info filter-btn" data-filter="reviews">Reviews</a>
+            <a href="?filter=refunds" class="btn btn-sm btn-outline-danger filter-btn" data-filter="refunds">Refunds</a>
+            <a href="?filter=systems" class="btn btn-sm btn-outline-dark filter-btn" data-filter="systems">Systems</a>
             <a href="?filter=urgent" class="btn btn-sm btn-outline-warning filter-btn" data-filter="urgent">Urgent</a>
             <a href="?filter=overdue" class="btn btn-sm btn-outline-danger filter-btn" data-filter="overdue">Overdue</a>
-            <a href="?filter=pending" class="btn btn-sm btn-outline-info filter-btn" data-filter="pending">Pending Units</a>
-            <a href="?filter=verification" class="btn btn-sm btn-outline-dark filter-btn" data-filter="verification">Verifications</a>
-            <a href="?filter=archived" class="btn btn-sm btn-link text-muted ms-auto filter-btn" data-filter="archived"><i class="fas fa-archive"></i> Archived View</a>
+            <a href="?filter=pending" class="btn btn-sm btn-outline-primary filter-btn" data-filter="pending">Pending Units</a>
+            <a href="?filter=verification" class="btn btn-sm btn-outline-secondary filter-btn" data-filter="verification">Verifications</a>
+            <a href="?filter=archived" class="btn btn-sm btn-link text-muted ms-auto filter-btn" data-filter="archived"><i class="fas fa-archive"></i> Archived Selected</a>
         </div>
 
         <div class="notifications-list">

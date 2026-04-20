@@ -2,6 +2,7 @@
 include_once '../includes/session.php';
 include_once '../includes/functions.php';
 include_once '../includes/auth.php';
+include_once '../includes/pricing_engine.php';
 
 checkRole(['renter']);
 
@@ -34,75 +35,28 @@ if (!$unit || (int)$unit['branch_id'] !== $branchId) {
     exit;
 }
 
-// Calculate days and rates
-$totalDays = calculateDays($checkInDate, $checkOutDate);
-$pricing_type = $unit['pricing_type'] ?? 'nightly';
-if ($pricing_type === 'nightly' || $pricing_type === 'daily') {
-    $dailyRate = (float)($unit['price_per_night'] ?? 0);
-} else {
-    $dailyRate = (float)($unit['price_per_month'] ?? 0) / 30;
-}
-$dailyRate = max(0, $dailyRate);
-
-$unitAmount = $dailyRate * $totalDays;
-$securityDeposit = (float)$unit['security_deposit'];
-$cleaningFee = isset($unit['cleaning_fee']) ? (float)$unit['cleaning_fee'] : 0.0;
-$serviceFee = isset($unit['service_fee']) ? (float)$unit['service_fee'] : 0.0;
-
-// Amenities
-$amenityCosts = 0;
-$selectedAmenities = [];
-if (isset($_POST['amenities']) && is_array($_POST['amenities']) || isset($_POST['addon_ids']) && is_array($_POST['addon_ids'])) {
-    $addonArray = $_POST['amenities'] ?? $_POST['addon_ids'];
-    foreach ($addonArray as $amenityId) {
-        $amenityId = (int)$amenityId;
-        if ($amenityId > 0) {
-            // Check amenities (legacy) or unit_addons
-            $amenity = get_single_result("SELECT * FROM amenities WHERE amenity_id = ? AND branch_id = ?", [$amenityId, $branchId]);
-            if ($amenity) {
-                $amenityCosts += (float)$amenity['hourly_rate'] * $totalDays;
-                $selectedAmenities[] = ['name' => $amenity['amenity_name'], 'cost' => (float)$amenity['hourly_rate'] * $totalDays];
-            } else {
-                $addon = get_single_result("SELECT * FROM unit_addons WHERE addon_id = ? AND unit_id = ?", [$amenityId, $unitId]);
-                if ($addon) {
-                    $amenityCosts += (float)$addon['price'];
-                    $selectedAmenities[] = ['name' => $addon['name'], 'cost' => (float)$addon['price']];
-                }
-            }
-        }
-    }
-}
-
-$totalAmount = $unitAmount + $amenityCosts + $cleaningFee + $serviceFee;
-
-// Promo
+// Authoritative Pricing & Availability Check
+$addon_ids = $_POST['amenities'] ?? ($_POST['addon_ids'] ?? []);
 $promoCode = isset($_POST['promo_code']) ? sanitize_input($_POST['promo_code']) : '';
-$discountAmount = 0;
-if (!empty($promoCode)) {
-    $dateToday = date('Y-m-d');
-    $promo = get_single_result(
-        "SELECT * FROM promo_codes WHERE code = ? AND (status = 'active' OR is_active = 1) AND valid_from <= ? AND valid_until >= ?",
-        [$promoCode, $dateToday, $dateToday]
-    );
-    if ($promo) {
-        $validPromo = true;
-        if ($promo['scope'] === 'host' && (int)$promo['host_id'] !== (int)($unit['host_id'] ?? 0)) $validPromo = false;
-        elseif ($promo['scope'] === 'branch' && (int)$promo['branch_id'] !== (int)$branchId) $validPromo = false;
-        
-        if ($validPromo && $unitAmount >= (float)$promo['min_booking_amount']) {
-            $value = (float)$promo['discount_value'];
-            if ($promo['discount_type'] === 'percentage') {
-                $discountAmount = $unitAmount * ($value / 100.0);
-                if (!empty($promo['max_discount']) && $promo['max_discount'] > 0) {
-                    $discountAmount = min($discountAmount, (float)$promo['max_discount']);
-                }
-            } else {
-                $discountAmount = $value;
-            }
-        }
-    }
+
+$pricing = BookIT_PricingEngine::calculatePrice($unitId, $checkInDate, $checkOutDate, $total_guests, $addon_ids, $promoCode);
+
+if (!$pricing['success']) {
+    $_SESSION['flash_error'] = $pricing['error'];
+    header('Location: reserve_unit.php?unit_id=' . $unitId);
+    exit;
 }
-$totalAmount = max(0, $totalAmount - $discountAmount);
+
+// Map results to existing UI variables
+$totalDays = $pricing['nights'];
+$unitAmount = $pricing['subtotal'];
+$extra_guests_fee = $pricing['extra_guest_charges'];
+$extra_guests = $pricing['extra_guests'];
+$amenityCosts = $pricing['addons_total'];
+$totalAmount = $pricing['total'];
+$pendingExtras = $pricing['pending_addons_total'] ?? 0;
+$promoCode = $pricing['promo'];
+$selectedAmenities = $pricing['addons'];
 
 ?>
 <!DOCTYPE html>
@@ -152,17 +106,28 @@ $totalAmount = max(0, $totalAmount - $discountAmount);
                     <h3 class="text-lg font-bold text-gray-800 mb-4">Price Breakdown</h3>
                     <div class="space-y-3 text-gray-600">
                         <div class="flex justify-between">
-                            <span>Base Stay Rate (₱<?php echo number_format($dailyRate, 2); ?> x <?php echo $totalDays; ?>)</span>
+                            <span>Stay Rate (₱<?php echo number_format($totalDays ? $unitAmount/$totalDays : 0, 2); ?> x <?php echo $totalDays; ?> nights)</span>
                             <span class="font-medium text-gray-800">₱<?php echo number_format($unitAmount, 2); ?></span>
                         </div>
                         
                         <?php if (!empty($selectedAmenities)): ?>
-                        <?php foreach($selectedAmenities as $sa): ?>
-                            <div class="flex justify-between text-sm pl-4">
-                                <span>+ <?php echo htmlspecialchars($sa['name']); ?></span>
-                                <span>₱<?php echo number_format($sa['cost'], 2); ?></span>
-                            </div>
-                        <?php endforeach; ?>
+                        <div class="bg-gray-50 p-3 rounded-lg border border-dashed border-gray-200 mt-2">
+                            <p class="text-[10px] font-bold text-blue-600 uppercase mb-2"><i class="fas fa-user-shield mr-1"></i> Requested Extras (Awaiting Admin Approval)</p>
+                            <?php foreach($selectedAmenities as $sa): ?>
+                                <div class="flex justify-between text-sm mb-1">
+                                    <span class="text-gray-600 italic">+ <?php echo htmlspecialchars($sa['name']); ?></span>
+                                    <span class="text-gray-400">₱<?php echo number_format($sa['price'], 2); ?></span>
+                                </div>
+                            <?php endforeach; ?>
+                            <p class="text-[10px] text-gray-500 mt-2 italic">* These items will be billed separately upon approval.</p>
+                        </div>
+                        <?php endif; ?>
+                        
+                        <?php if ($extra_guests_fee > 0): ?>
+                        <div class="flex justify-between">
+                            <span>Extra Guests Fee (<?php echo $extra_guests; ?> extra x ₱<?php echo number_format($extra_fee, 2); ?> x <?php echo $totalDays; ?> nights)</span>
+                            <span>₱<?php echo number_format($extra_guests_fee, 2); ?></span>
+                        </div>
                         <?php endif; ?>
 
                         <?php if ($cleaningFee > 0): ?>

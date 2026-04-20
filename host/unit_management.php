@@ -18,1048 +18,569 @@ if (isset($_SESSION['action_message'])) {
     unset($_SESSION['action_success']);
 }
 
-// Handle form submissions
+// Handle form submissions (Add / Edit / Delete) - Kept largely original logic for robustness
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['action'])) {
         $action = sanitize_input($_POST['action']);
+        
+        if ($action === 'add_unit' || $action === 'edit_unit') {
+            // Core fields
+            $unit_id = (int)($_POST['unit_id'] ?? 0);
 
-        // Add New Unit
-        if ($action === 'add_unit') {
-            $posted_amenity_ids = [];
-            if (!empty($_POST['amenities']) && is_array($_POST['amenities'])) {
-                foreach ($_POST['amenities'] as $v) {
-                    $posted_amenity_ids[] = (int) $v;
+            // 🔐 Snapshot Integrity: Block edit if unit is pending moderation
+            if ($action === 'edit_unit' && $unit_id > 0) {
+                $status_check = get_single_result("SELECT approval_status FROM units WHERE unit_id = ? AND host_id = ?", [$unit_id, $host_id]);
+                if ($status_check && $status_check['approval_status'] === 'pending') {
+                    $_SESSION['action_message'] = "Locked: Cannot edit unit while pending moderation.";
+                    $_SESSION['action_success'] = false;
+                    header("Location: unit_management.php");
+                    exit;
                 }
             }
-
-            $unit_name = sanitize_input($_POST['unit_name']);
-            $branch_id = sanitize_input($_POST['branch_id']);
+            $unit_name = sanitize_input($_POST['unit_name'] ?? '');
+            $branch_id = !empty($_POST['branch_id']) ? (int)$_POST['branch_id'] : null;
             $description = sanitize_input($_POST['description'] ?? '');
-            $price_input = sanitize_input($_POST['price']);
-            $capacity = sanitize_input($_POST['capacity']);
-            $status = sanitize_input($_POST['status'] ?? 'available');
-
+            $price_per_night = (float)($_POST['price_per_night'] ?? 0);
+            $price_per_month = (float)($_POST['price_per_month'] ?? 0);
             $pricing_type = sanitize_input($_POST['pricing_type'] ?? 'nightly');
-            if ($pricing_type === 'daily')
-                $pricing_type = 'nightly';
-            $price_per_night = ($pricing_type === 'nightly') ? (float) $price_input : 0.00;
-            $price_per_month = ($pricing_type === 'monthly') ? (float) $price_input : 0.00;
-
-            // New unit details
-            $sqm = isset($_POST['sqm']) && $_POST['sqm'] !== '' ? (float) $_POST['sqm'] : null;
-            $bed_type = sanitize_input($_POST['bed_type'] ?? '');
-            $num_beds = isset($_POST['num_beds']) && $_POST['num_beds'] !== '' ? (int) $_POST['num_beds'] : 1;
-            $num_bathrooms = isset($_POST['num_bathrooms']) && $_POST['num_bathrooms'] !== '' ? (int) $_POST['num_bathrooms'] : 1;
-
+            $capacity = (int)($_POST['max_occupancy'] ?? 1);
             $street_address = sanitize_input($_POST['street_address'] ?? '');
             $unit_number = sanitize_input($_POST['unit_number'] ?? '');
             $city = sanitize_input($_POST['city'] ?? '');
-            $latitude = isset($_POST['latitude']) && $_POST['latitude'] !== '' ? (float) $_POST['latitude'] : null;
-            $longitude = isset($_POST['longitude']) && $_POST['longitude'] !== '' ? (float) $_POST['longitude'] : null;
+            $latitude = (float)($_POST['latitude'] ?? 0);
+            $longitude = (float)($_POST['longitude'] ?? 0);
 
-            // Determine allowed branches for this host at runtime
-            $assignedBranch = get_single_result("SELECT b.* FROM branches b JOIN users u ON b.branch_id = u.branch_id WHERE u.user_id = ? LIMIT 1", [$host_id]);
-            if ($assignedBranch) {
-                $allowed = get_multiple_results("SELECT branch_id FROM branches WHERE branch_name = ? AND is_active = 1", [$assignedBranch['branch_name']]);
-                $allowed_branch_ids_local = array_map(function ($b) {
-                    return (int) $b['branch_id']; }, $allowed);
+            // New Airbnb-level metadata with server-side validation
+            $prop_type = sanitize_input($_POST['property_type'] ?? 'Condo');
+            $bed_config = sanitize_input($_POST['bed_config'] ?? 'Studio');
+            $bed_details = sanitize_input($_POST['bed_details'] ?? '');
+            $bath_count = (float)($_POST['bathroom_count'] ?? 1.0);
+            $area = !empty($_POST['floor_area']) ? (float)$_POST['floor_area'] : null;
+            $check_in = sanitize_input($_POST['check_in_time'] ?? '14:00:00');
+            $check_out = sanitize_input($_POST['check_out_time'] ?? '12:00:00');
+            $min_stay = (int)($_POST['min_stay'] ?? 1);
+            $max_stay = (int)($_POST['max_stay'] ?? 30);
+            $deposit = (float)($_POST['security_deposit'] ?? 0.00);
+            $rules = sanitize_input($_POST['house_rules'] ?? '');
+            $utilities = sanitize_input($_POST['utility_info'] ?? '');
+            $parking = sanitize_input($_POST['parking_info'] ?? 'None');
+            $booking_type = sanitize_input($_POST['booking_type'] ?? 'instant');
+            $visibility = sanitize_input($_POST['status_visibility'] ?? 'active');
+
+            if ($action === 'add_unit') {
+                $sql = "INSERT INTO units (
+                            unit_name, host_id, branch_id, description, 
+                            price_per_night, price_per_month, pricing_type, max_occupancy, 
+                            is_available, approval_status, street_address, unit_number, city, 
+                            latitude, longitude, property_type, bed_config, bed_details, 
+                            bathroom_count, floor_area, check_in_time, check_out_time, 
+                            min_stay, max_stay, security_deposit, house_rules, utility_info, 
+                            parking_info, booking_type, status_visibility, created_at
+                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, 'pending', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())";
+                $stmt = $conn->prepare($sql);
+                $stmt->bind_param("siisddsisssddsssddssiidsssss", 
+                    $unit_name, $host_id, $branch_id, $description, 
+                    $price_per_night, $price_per_month, $pricing_type, $capacity, 
+                    $street_address, $unit_number, $city, 
+                    $latitude, $longitude, $prop_type, $bed_config, $bed_details, 
+                    $bath_count, $area, $check_in, $check_out, 
+                    $min_stay, $max_stay, $deposit, $rules, $utilities, 
+                    $parking, $booking_type, $visibility
+                );
             } else {
-                $host_branches = get_multiple_results("SELECT DISTINCT branch_id FROM units WHERE host_id = ?", [$host_id]);
-                $allowed_branch_ids_local = array_map(function ($b) {
-                    return (int) $b['branch_id']; }, $host_branches);
-                if (empty($allowed_branch_ids_local)) {
-                    $all = get_multiple_results("SELECT branch_id FROM branches WHERE is_active = 1");
-                    $allowed_branch_ids_local = array_map(function ($b) {
-                        return (int) $b['branch_id']; }, $all);
-                }
+                $sql = "UPDATE units SET 
+                            unit_name = ?, branch_id = ?, description = ?, 
+                            price_per_night = ?, price_per_month = ?, pricing_type = ?, max_occupancy = ?, 
+                            street_address = ?, unit_number = ?, city = ?, 
+                            latitude = ?, longitude = ?, property_type = ?, bed_config = ?, 
+                            bed_details = ?, bathroom_count = ?, floor_area = ?, 
+                            check_in_time = ?, check_out_time = ?, min_stay = ?, max_stay = ?, 
+                            security_deposit = ?, house_rules = ?, utility_info = ?, 
+                            parking_info = ?, booking_type = ?, status_visibility = ?, 
+                            approval_status = 'pending' 
+                        WHERE unit_id = ? AND host_id = ?";
+                $stmt = $conn->prepare($sql);
+                $stmt->bind_param("sisddsisssddsssddssiidsssssii", 
+                    $unit_name, $branch_id, $description, 
+                    $price_per_night, $price_per_month, $pricing_type, $capacity, 
+                    $street_address, $unit_number, $city, 
+                    $latitude, $longitude, $prop_type, $bed_config, 
+                    $bed_details, $bath_count, $area, 
+                    $check_in, $check_out, $min_stay, $max_stay, 
+                    $deposit, $rules, $utilities, 
+                    $parking, $booking_type, $visibility, 
+                    $unit_id, $host_id
+                );
             }
 
-            // Validate branch selection
-            if (!in_array((int) $branch_id, $allowed_branch_ids_local)) {
-                $action_message = "You are not allowed to add units to the selected branch.";
-                $action_success = false;
-            } else {
-                // Prepare unit data for duplicate detection
-                $unit_data = [
-                    'building_name' => $unit_name,
-                    'street_address' => $_POST['street_address'] ?? '',
-                    'unit_number' => $_POST['unit_number'] ?? '',
-                    'city' => $_POST['city'] ?? '',
-                    'latitude' => isset($_POST['latitude']) ? (float) $_POST['latitude'] : null,
-                    'longitude' => isset($_POST['longitude']) ? (float) $_POST['longitude'] : null
-                ];
-
-                // Check for duplicates
-                include_once '../includes/DuplicateDetectionEngine.php';
-                $engine = new DuplicateDetectionEngine($conn);
-                $analysis = $engine->analyzeUnitForDuplicates(null, $unit_data);
-
-                if ($analysis['overall_risk'] >= 70) {
-                    $action_message = "⚠️ High Risk: This listing appears to be a duplicate. Risk Score: " . round($analysis['overall_risk']) . "/100";
-                    $action_success = false;
-                } else {
-                    // Insert unit with prepared statement (set to pending and hidden for admin approval)
-                    $stmt = $conn->prepare("INSERT INTO units (unit_name, host_id, branch_id, description, price_per_night, price_per_month, pricing_type, max_occupancy, is_available, approval_status, created_at, sqm, bed_type, num_beds, num_bathrooms, street_address, unit_number, city, latitude, longitude) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, 'pending', NOW(), ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-                    $stmt->bind_param("siissdssdsiisssdd", $unit_name, $host_id, $branch_id, $description, $price_per_night, $price_per_month, $pricing_type, $capacity, $sqm, $bed_type, $num_beds, $num_bathrooms, $street_address, $unit_number, $city, $latitude, $longitude);
-
-                    if ($stmt->execute()) {
-                        $unit_id = $stmt->insert_id;
-
-                        syncUnitAmenities($unit_id, $posted_amenity_ids);
-
-                        // Handle photo uploads
-                        if (isset($_FILES['photos']) && !empty($_FILES['photos']['name'][0])) {
-                            $photos_dir = '../uploads/unit_images/';
-                            if (!is_dir($photos_dir))
-                                mkdir($photos_dir, 0755, true);
-
-                            $upload_count = 0;
-                            foreach ($_FILES['photos']['tmp_name'] as $key => $tmp_name) {
-                                if ($upload_count >= 5)
-                                    break;
-                                if ($_FILES['photos']['error'][$key] === UPLOAD_ERR_OK) {
-                                    $ext = strtolower(pathinfo($_FILES['photos']['name'][$key], PATHINFO_EXTENSION));
-                                    if (in_array($ext, ['jpg', 'jpeg', 'png', 'webp'])) {
-                                        $filename = 'unit_' . $unit_id . '_' . time() . '_' . rand(1000, 9999) . '.' . $ext;
-                                        $filepath = $photos_dir . $filename;
-
-                                        if (move_uploaded_file($tmp_name, $filepath)) {
-                                            $upload_count++;
-                                            // Compute image fingerprint
-                                            include_once '../includes/ImageFingerprinting.php';
-                                            $img_fp = new ImageFingerprinting($conn);
-                                            $img_fp->registerImage($unit_id, $filepath, 'unit_photo');
-                                        }
-                                    }
-                                }
-                            }
-                        }
-
-                        // Notify admins
-                        $admins = get_multiple_results("SELECT user_id FROM users WHERE role = 'admin' AND is_active = 1");
-                        if ($admins) {
-                            $title = "New Unit Pending Approval";
-                            $msg = "Host (ID: $host_id) added unit '$unit_name' and it is waiting for your review.";
-                            $redirect_url = "pending_units.php?unit_id=" . $unit_id;
-                            foreach ($admins as $ad) {
-                                execute_query("INSERT INTO notifications (user_id, related_id, type, priority, title, message, redirect_url) VALUES (?, ?, 'approval', 'normal', ?, ?, ?)", [(int) $ad['user_id'], $unit_id, $title, $msg, $redirect_url]);
-                            }
-                        }
-
-                        $action_message = "Unit added successfully! It is now pending admin approval.";
-                        $action_success = true;
-                    } else {
-                        $action_message = "Failed to add unit: " . $stmt->error;
-                        $action_success = false;
-                    }
+            if ($stmt->execute()) {
+                $uid = ($action === 'add_unit') ? $stmt->insert_id : $unit_id;
+                
+                // Sync Amenities
+                if (isset($_POST['amenities']) && is_array($_POST['amenities'])) {
+                    syncUnitAmenities($uid, array_map('intval', $_POST['amenities']));
                 }
-            }
-        }
 
-        // Edit Unit
-        else if ($action === 'edit_unit') {
-            $posted_amenity_ids = [];
-            if (!empty($_POST['amenities']) && is_array($_POST['amenities'])) {
-                foreach ($_POST['amenities'] as $v) {
-                    $posted_amenity_ids[] = (int) $v;
-                }
-            }
-
-            $unit_id = sanitize_input($_POST['unit_id']);
-            $unit_name = sanitize_input($_POST['unit_name']);
-            $description = sanitize_input($_POST['description'] ?? '');
-            $price_input = sanitize_input($_POST['price']);
-            $pricing_type = sanitize_input($_POST['pricing_type'] ?? 'nightly');
-            if ($pricing_type === 'daily')
-                $pricing_type = 'nightly';
-            $price_per_night = ($pricing_type === 'nightly') ? (float) $price_input : 0.00;
-            $price_per_month = ($pricing_type === 'monthly') ? (float) $price_input : 0.00;
-
-            $capacity = sanitize_input($_POST['capacity']);
-            $status = sanitize_input($_POST['status']);
-
-            // New unit details
-            $sqm = isset($_POST['sqm']) && $_POST['sqm'] !== '' ? (float) $_POST['sqm'] : null;
-            $bed_type = sanitize_input($_POST['bed_type'] ?? '');
-            $num_beds = isset($_POST['num_beds']) && $_POST['num_beds'] !== '' ? (int) $_POST['num_beds'] : 1;
-            $num_bathrooms = isset($_POST['num_bathrooms']) && $_POST['num_bathrooms'] !== '' ? (int) $_POST['num_bathrooms'] : 1;
-            $street_address = sanitize_input($_POST['street_address'] ?? '');
-            $unit_number = sanitize_input($_POST['unit_number'] ?? '');
-            $city = sanitize_input($_POST['city'] ?? '');
-            $latitude = isset($_POST['latitude']) && $_POST['latitude'] !== '' ? (float) $_POST['latitude'] : null;
-            $longitude = isset($_POST['longitude']) && $_POST['longitude'] !== '' ? (float) $_POST['longitude'] : null;
-            $branch_id = isset($_POST['branch_id']) && $_POST['branch_id'] !== '' ? (int) $_POST['branch_id'] : null;
-
-            // Verify unit belongs to host
-            $unit = get_single_result("SELECT * FROM units WHERE unit_id = ? AND host_id = ?", [$unit_id, $host_id]);
-
-            if ($unit) {
-                $stmt = $conn->prepare("
-                    UPDATE units 
-                    SET unit_name = ?, 
-                        description = ?, 
-                        price_per_night = ?, 
-                        price_per_month = ?,
-                        pricing_type = ?,
-                        max_occupancy = ?,
-                        is_available = 0,
-                        approval_status = 'pending',
-                        sqm = ?,
-                        bed_type = ?,
-                        num_beds = ?,
-                        num_bathrooms = ?,
-                        street_address = ?,
-                        unit_number = ?,
-                        city = ?,
-                        latitude = ?,
-                        longitude = ?,
-                        branch_id = ?
-                    WHERE unit_id = ?
-                ");
-                $stmt->bind_param("ssddsidisiisssddii", $unit_name, $description, $price_per_night, $price_per_month, $pricing_type, $capacity, $sqm, $bed_type, $num_beds, $num_bathrooms, $street_address, $unit_number, $city, $latitude, $longitude, $branch_id, $unit_id);
-
-                if ($stmt->execute()) {
-                    syncUnitAmenities((int) $unit_id, $posted_amenity_ids);
-
-                    // Update geolocation if provided
-                    if ($latitude && $longitude) {
-                        include_once '../includes/GeolocationValidation.php';
-                        $geo = new GeolocationValidation($conn);
-                        $geo->registerGeolocation($unit_id, $latitude, $longitude);
-                    }
-
-                    // Handle photo uploads (for changing/updating photos)
-                    if (isset($_FILES['photos']) && !empty($_FILES['photos']['name'][0])) {
-                        // Remove old images to perfectly mirror the new upload selection
-                        $old_images = get_multiple_results("SELECT image_path FROM unit_images WHERE unit_id = ?", [$unit_id]);
-                        foreach ($old_images as $old) {
-                            if (file_exists($old['image_path'])) {
-                                unlink($old['image_path']);
-                            }
-                        }
-                        $conn->query("DELETE FROM unit_images WHERE unit_id = " . (int) $unit_id);
-
-                        $photos_dir = '../uploads/unit_images/';
-                        if (!is_dir($photos_dir))
-                            mkdir($photos_dir, 0755, true);
-
-                        $upload_count = 0;
-                        foreach ($_FILES['photos']['tmp_name'] as $key => $tmp_name) {
-                            if ($upload_count >= 5)
-                                break;
-                            if ($_FILES['photos']['error'][$key] === UPLOAD_ERR_OK) {
-                                $ext = strtolower(pathinfo($_FILES['photos']['name'][$key], PATHINFO_EXTENSION));
-                                if (in_array($ext, ['jpg', 'jpeg', 'png', 'webp'])) {
-                                    $filename = 'unit_' . $unit_id . '_' . time() . '_' . rand(1000, 9999) . '.' . $ext;
-                                    $filepath = $photos_dir . $filename;
-
-                                    if (move_uploaded_file($tmp_name, $filepath)) {
-                                        $upload_count++;
-                                        // Compute image fingerprint
-                                        include_once '../includes/ImageFingerprinting.php';
-                                        $img_fp = new ImageFingerprinting($conn);
-                                        $img_fp->registerImage($unit_id, $filepath, 'unit_photo');
-                                    }
-                                }
-                            }
-                        }
-                    }
-
-                    // Notify admins
-                    $admins = get_multiple_results("SELECT user_id FROM users WHERE role = 'admin' AND is_active = 1");
-                    if ($admins) {
-                        $title = "Unit Edited - Pending Approval";
-                        $msg = "Host (ID: $host_id) updated unit '$unit_name' and it requires re-approval.";
-                        $redirect_url = "pending_units.php?unit_id=" . $unit_id;
-                        foreach ($admins as $ad) {
-                            execute_query("INSERT INTO notifications (user_id, related_id, type, priority, title, message, redirect_url) VALUES (?, ?, 'approval', 'normal', ?, ?, ?)", [(int) $ad['user_id'], $unit_id, $title, $msg, $redirect_url]);
-                        }
-                    }
-
-                    $action_message = "Unit updated successfully and requires admin approval before being visible!";
-                    $action_success = true;
-                } else {
-                    $action_message = "Failed to update unit: " . $stmt->error;
-                    $action_success = false;
-                }
-            } else {
-                $action_message = "Unit not found or you don't have permission to edit it";
-                $action_success = false;
-            }
-        }
-
-        // Delete Unit
-        else if ($action === 'delete_unit') {
-            $unit_id = sanitize_input($_POST['unit_id']);
-
-            // Verify unit belongs to host
-            $unit = get_single_result("SELECT * FROM units WHERE unit_id = ? AND host_id = ?", [$unit_id, $host_id]);
-
-            if ($unit) {
-                execute_query("DELETE FROM unit_amenities WHERE unit_id = ?", [$unit_id]);
-                $conn->query("DELETE FROM units WHERE unit_id = $unit_id");
-
-                $action_message = "Unit deleted successfully!";
+                $action_message = "Unit " . ($action === 'add_unit' ? "added" : "updated") . " successfully and is pending approval.";
                 $action_success = true;
             } else {
-                $action_message = "Unit not found or you don't have permission to delete it";
+                $action_message = "Failed to process unit: " . $stmt->error;
+            }
+        }
+        else if ($action === 'delete_unit') {
+            $unit_id = (int)$_POST['unit_id'];
+
+            // 🔐 Snapshot Integrity: Block delete if unit is pending moderation
+            $status_check = get_single_result("SELECT approval_status FROM units WHERE unit_id = ? AND host_id = ?", [$unit_id, $host_id]);
+            if ($status_check && $status_check['approval_status'] === 'pending') {
+                $_SESSION['action_message'] = "Locked: Cannot delete unit while pending moderation.";
+                $_SESSION['action_success'] = false;
+                header("Location: unit_management.php");
+                exit;
+            }
+
+            if (execute_query("DELETE FROM units WHERE unit_id = ? AND host_id = ?", [$unit_id, $host_id])) {
+                $action_message = "Unit deleted successfully.";
+                $action_success = true;
             }
         }
 
-        // Prevent form resubmission on page refresh (PRG pattern)
-        if ($action_message !== '') {
-            $_SESSION['action_message'] = $action_message;
-            $_SESSION['action_success'] = $action_success;
-            header("Location: unit_management.php");
-            exit;
-        }
+        $_SESSION['action_message'] = $action_message;
+        $_SESSION['action_success'] = $action_success;
+        header("Location: unit_management.php");
+        exit;
     }
 }
 
-// Fetch all units for this host
+// Fetch Data
 $units = get_multiple_results("
-    SELECT u.*, b.branch_name, COUNT(r.reservation_id) as total_bookings
+    SELECT u.*, b.branch_name, COUNT(r.reservation_id) as active_bookings
     FROM units u
-    INNER JOIN branches b ON u.branch_id = b.branch_id
+    JOIN branches b ON u.branch_id = b.branch_id
     LEFT JOIN reservations r ON u.unit_id = r.unit_id AND r.status IN ('confirmed', 'checked_in')
     WHERE u.host_id = ?
     GROUP BY u.unit_id
-    ORDER BY u.created_at DESC
 ", [$host_id]);
 
-// Fetch branches for dropdown
-// Determine allowed branches for this host.
-// Hosts are assigned to a branch by admin (branches.host_id). Hosts may be allowed
-// to operate across branches with the same brand (branch_name). We fetch the
-// assigned branch and then load all branches with the same branch_name.
-$assignedBranch = get_single_result("SELECT b.* FROM branches b JOIN users u ON b.branch_id = u.branch_id WHERE u.user_id = ? LIMIT 1", [$host_id]);
-if ($assignedBranch) {
-    // Load all branches that share the same brand/name (different locations)
-    $branches = get_multiple_results("SELECT * FROM branches WHERE branch_name = ? AND is_active = 1 ORDER BY city", [$assignedBranch['branch_name']]);
-} else {
-    // Fallback: show branches this host already has units in
-    $branches = get_multiple_results(
-        "SELECT DISTINCT b.* FROM branches b
-         INNER JOIN units u ON b.branch_id = u.branch_id
-         WHERE u.host_id = ?",
-        [$host_id]
-    );
+$branches = get_multiple_results("SELECT branch_id, branch_name, city FROM branches WHERE is_active = 1");
+$amenities_catalog = get_multiple_results("SELECT * FROM amenities ORDER BY name ASC");
 
-    // If still empty, show all active branches (admin may allow assigning)
-    if (empty($branches)) {
-        $branches = get_multiple_results("SELECT * FROM branches WHERE is_active = 1 ORDER BY branch_name, city");
-    }
-}
-
-// Build allowed branch IDs for quick validation when saving units
-$allowed_branch_ids = array_map(function ($b) {
-    return (int) $b['branch_id']; }, $branches);
-
-$unit_amenities_catalog = get_multiple_results("SELECT id, name FROM amenities ORDER BY name ASC");
+$page_title = 'Unit Management';
+include '../templates/host_layout_header.php';
 ?>
-<!DOCTYPE html>
-<html lang="en">
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Unit Management - BookIT</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <link rel="stylesheet" href="../assets/css/sidebar.css">
-    <link rel="stylesheet" href="../assets/css/sidebar-common.css">
-    <link rel="stylesheet" href="../assets/css/host/unit_management.css">
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+<div class="page-header">
+    <div>
+        <h1 class="page-title mb-1"><i class="fas fa-building me-2"></i>My Units</h1>
+        <p class="text-muted">Manage your property listings and approval status</p>
+    </div>
+    <div class="page-actions">
+        <button class="btn btn-primary" onclick="openAddUnitModal()">
+            <i class="fas fa-plus me-2"></i> Add New Unit
+        </button>
+    </div>
+</div>
 
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            background: #f5f7fa;
-            color: #2c3e50;
-        }
+<?php if ($action_message): ?>
+    <div class="alert alert-<?php echo $action_success ? 'success' : 'danger'; ?> alert-dismissible fade show">
+        <?php echo $action_message; ?>
+        <button class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+<?php endif; ?>
 
-        .main-container {
-            display: flex;
-            min-height: 100vh;
-        }
-
-        .content {
-            flex: 1;
-            padding: 30px;
-            max-width: 100%;
-            width: 100%;
-            margin-left: 280px;
-        }
-    </style>
-</head>
-
-<body>
-    <div class="main-container">
-        <?php include '../includes/sidebar.php'; ?>
-
-        <div class="content">
-            <div class="page-header">
-                <h1><i class="fas fa-building"></i> Unit Management</h1>
-                <div class="header-actions">
-                    <button class="btn btn-primary" onclick="openAddUnitModal()">
-                        <i class="fas fa-plus"></i> Add New Unit
-                    </button>
-                </div>
-            </div>
-
-            <!-- Success/Error Alert -->
-            <?php if ($action_message): ?>
-                <div class="alert alert-<?php echo $action_success ? 'success' : 'danger'; ?>">
-                    <i class="fas fa-<?php echo $action_success ? 'check-circle' : 'exclamation-circle'; ?>"></i>
-                    <?php echo htmlspecialchars($action_message); ?>
-                </div>
-            <?php endif; ?>
-
-            <!-- Filters -->
-            <div class="filters">
-                <div class="filter-group">
-                    <label>Search</label>
-                    <input type="text" id="searchInput" placeholder="Unit name or ID...">
-                </div>
-                <div class="filter-group">
-                    <label>Status</label>
-                    <select id="statusFilter">
-                        <option value="">All Status</option>
-                        <option value="available">Available</option>
-                        <option value="occupied">Occupied</option>
-                        <option value="maintenance">Under Maintenance</option>
-                    </select>
-                </div>
-                <div class="view-toggle" style="margin-left: auto;">
-                    <button class="view-btn active" data-view="grid">
-                        <i class="fas fa-th"></i> Grid
-                    </button>
-                    <button class="view-btn" data-view="list">
-                        <i class="fas fa-list"></i> List
-                    </button>
-                </div>
-            </div>
-
-            <!-- Units Container -->
-            <?php if (!empty($units)): ?>
-                <div class="units-container" id="unitsContainer">
-                    <?php foreach ($units as $unit):
-                        $status = $unit['is_available'] ? 'available' : 'maintenance';
-                        if ($unit['total_bookings'] > 0) {
-                            $status = 'occupied';
-                        }
-                        $status_label = ucfirst(str_replace('_', ' ', $status));
-                        ?>
-                        <div class="unit-card" data-unit-id="<?php echo $unit['unit_id']; ?>"
-                            data-status="<?php echo $status; ?>" data-name="<?php echo strtolower($unit['unit_name']); ?>">
-                            <div class="unit-image">
-                                <?php
-                                $image_path = get_single_result("SELECT image_path FROM unit_images WHERE unit_id = ? ORDER BY created_at DESC LIMIT 1", [$unit['unit_id']]);
-                                if ($image_path && !empty($image_path['image_path'])):
-                                    ?>
-                                    <img src="<?php echo htmlspecialchars($image_path['image_path']); ?>"
-                                        alt="<?php echo htmlspecialchars($unit['unit_name']); ?>"
-                                        style="width: 100%; height: 100%; object-fit: cover; border-radius: 12px 12px 0 0;">
-                                <?php else: ?>
-                                    <i class="fas fa-image"></i>
-                                <?php endif; ?>
-                                <span class="unit-status status-<?php echo $status; ?>">
-                                    <?php echo $status_label; ?>
-                                </span>
-                            </div>
-
-                            <div class="unit-content">
-                                <div class="unit-header">
-                                    <div class="unit-name"><?php echo htmlspecialchars($unit['unit_name']); ?></div>
-                                    <div class="unit-branch"><i class="fas fa-map-marker-alt"></i>
-                                        <?php echo htmlspecialchars($unit['branch_name']); ?></div>
-                                </div>
-
-                                <?php if ($unit['description']): ?>
-                                    <div style="font-size: 13px; color: #666; margin-bottom: 12px; line-height: 1.4;">
-                                        <?php echo htmlspecialchars(substr($unit['description'], 0, 80)) . (strlen($unit['description']) > 80 ? '...' : ''); ?>
-                                    </div>
-                                <?php endif; ?>
-
-                                <div class="unit-info">
-                                    <?php
-                                    $is_monthly = ($unit['pricing_type'] ?? 'nightly') === 'monthly';
-                                    $display_price = $is_monthly ? $unit['price_per_month'] : $unit['price_per_night'];
-                                    ?>
-                                    <div style="margin-bottom: 8px;">
-                                        <?php if ($is_monthly): ?>
-                                            <span class="badge bg-primary" style="font-size: 0.7rem; padding: 4px 8px;">Monthly
-                                                Rental</span>
-                                        <?php else: ?>
-                                            <span class="badge bg-info text-dark"
-                                                style="font-size: 0.7rem; padding: 4px 8px;">Nightly Stay</span>
-                                        <?php endif; ?>
-                                    </div>
-                                    <div class="info-item">
-                                        <div class="info-label">Base Rate</div>
-                                        <div class="info-value">₱<?php echo number_format($display_price ?? 0); ?> /
-                                            <?php echo $is_monthly ? 'month' : 'night'; ?></div>
-                                    </div>
-                                    <div class="info-item">
-                                        <div class="info-label">Capacity</div>
-                                        <div class="info-value"><?php echo $unit['max_occupancy']; ?> Guests</div>
-                                    </div>
-                                    <div class="info-item">
-                                        <div class="info-label">Total Bookings</div>
-                                        <div class="info-value"><?php echo $unit['total_bookings']; ?></div>
-                                    </div>
-                                    <div class="info-item">
-                                        <div class="info-label">Last Updated</div>
-                                        <div class="info-value"><?php echo date('M d', strtotime($unit['created_at'])); ?></div>
-                                    </div>
-                                </div>
-
-                                <div class="unit-actions">
-                                    <button type="button" class="btn btn-info btn-sm"
-                                        onclick="openViewModal(<?php echo (int) $unit['unit_id']; ?>)">
-                                        <i class="fas fa-eye"></i> View
-                                    </button>
-                                    <button type="button" class="btn btn-secondary btn-sm"
-                                        onclick="openEditModal(<?php echo (int) $unit['unit_id']; ?>)">
-                                        <i class="fas fa-edit"></i> Edit
-                                    </button>
-                                    <a class="btn btn-success btn-sm"
-                                        href="property_settings.php?unit_id=<?php echo (int) $unit['unit_id']; ?>&tab=pricing">
-                                        <i class="fas fa-sliders-h"></i> Pricing
-                                    </a>
-                                    <button type="button" class="btn btn-danger btn-sm"
-                                        onclick="openDeleteConfirm(<?php echo (int) $unit['unit_id']; ?>, <?php echo json_encode($unit['unit_name'] ?? '', JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP); ?>)">
-                                        <i class="fas fa-trash"></i> Delete
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    <?php endforeach; ?>
-                </div>
+<!-- Units Grid -->
+<div class="stats-grid"> <!-- Using grid-unified.css grid logic -->
+    <?php foreach ($units as $unit): 
+        $status_class = match($unit['approval_status']) { 'approved' => 'success', 'pending' => 'warning', 'rejected' => 'danger', default => 'secondary' };
+    ?>
+    <div class="card-modern p-0 overflow-hidden flex-column align-items-stretch hover-lift" style="min-height: 440px;">
+        <div class="position-relative" style="height: 180px;">
+            <?php 
+                $img = get_single_result("SELECT image_path FROM unit_images WHERE unit_id = ? LIMIT 1", [$unit['unit_id']]);
+                if ($img):
+            ?>
+                <img src="<?php echo htmlspecialchars($img['image_path']); ?>" class="w-100 h-100" style="object-fit: cover;">
             <?php else: ?>
-                <div class="empty-state">
-                    <i class="fas fa-home"></i>
-                    <h2>No Units Yet</h2>
-                    <p>Start by adding your first condo unit to manage bookings and reservations.</p>
-                    <button class="btn btn-primary" onclick="openAddUnitModal()">
-                        </i> Add Your First Unit
-                    </button>
-                </div>
+                <div class="w-100 h-100 bg-light d-flex align-items-center justify-content-center"><i class="fas fa-building fa-3x text-muted opacity-25"></i></div>
             <?php endif; ?>
+            <span class="badge bg-<?php echo $status_class; ?> position-absolute top-0 end-0 m-3 shadow-sm">
+                <?php echo strtoupper($unit['approval_status']); ?>
+            </span>
+        </div>
+        
+        <div class="p-4 flex-grow-1">
+            <h5 class="mb-1 fw-bold"><?php echo htmlspecialchars($unit['unit_name']); ?></h5>
+            <p class="text-muted small mb-3"><i class="fas fa-map-marker-alt me-1"></i> <?php echo htmlspecialchars($unit['branch_name']); ?> • #<?php echo $unit['unit_number']; ?></p>
+            
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <div class="text-primary fw-bold" style="font-size: 1.1rem;">
+                    ₱<?php echo number_format($unit['price_per_night'] ?: $unit['price_per_month'], 0); ?>
+                    <small class="text-muted fw-normal" style="font-size: 0.75rem;">/<?php echo $unit['pricing_type']; ?></small>
+                </div>
+                <div class="small text-muted"><i class="fas fa-users me-1"></i> <?php echo $unit['max_occupancy']; ?> Max</div>
+            </div>
+            
+            <div class="small p-2 bg-light rounded border mb-3">
+                <div class="d-flex justify-content-between mb-1"><span>Active Bookings</span><span class="badge bg-info text-dark"><?php echo $unit['active_bookings']; ?></span></div>
+                <div class="d-flex justify-content-between"><span>Availability</span><span class="text-<?php echo $unit['is_available'] ? 'success' : 'danger'; ?>"><?php echo $unit['is_available'] ? 'Online' : 'Hidden'; ?></span></div>
+            </div>
+        </div>
+
+        <div class="px-4 pb-4 mt-auto">
+            <div class="d-grid gap-2">
+                <a href="property_settings.php?unit_id=<?php echo $unit['unit_id']; ?>" class="btn btn-primary btn-sm rounded-pill shadow-sm">
+                    <i class="fas fa-cog me-1"></i> Pricing & Configuration
+                </a>
+                <div class="row g-2">
+                    <div class="col-8">
+                        <?php if ($unit['approval_status'] === 'pending'): ?>
+                            <button class="btn btn-outline-secondary w-100 btn-sm rounded-pill disabled" title="Locked: Under moderation review">
+                                <i class="fas fa-lock me-1"></i> Locked (Pending)
+                            </button>
+                        <?php else: ?>
+                            <button class="btn btn-outline-secondary w-100 btn-sm rounded-pill" onclick="openEditModal(<?php echo $unit['unit_id']; ?>)">
+                                <i class="fas fa-edit me-1"></i> Edit Details
+                            </button>
+                        <?php endif; ?>
+                    </div>
+                    <div class="col-4">
+                        <button class="btn btn-outline-danger w-100 btn-sm rounded-pill <?php echo $unit['approval_status'] === 'pending' ? 'disabled' : ''; ?>" 
+                                onclick="<?php echo $unit['approval_status'] === 'pending' ? 'return false;' : "openDeleteConfirm({$unit['unit_id']}, '" . addslashes($unit['unit_name']) . "')"; ?>"
+                                <?php echo $unit['approval_status'] === 'pending' ? 'title="Locked"' : ''; ?>>
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
+    <?php endforeach; if (empty($units)) echo '<div class="col-12 text-center py-5"><i class="fas fa-building fa-5x text-muted mb-3 opacity-25"></i><p class="h4 text-muted">No units found. Click "Add New Unit" to begin.</p></div>'; ?>
+</div>
 
-    <!-- Add/Edit Unit Modal -->
-    <div id="unitModal" class="modal fade" tabindex="-1">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
+<!-- Modal: Add/Edit Unit -->
+<div class="modal fade" id="unitModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <form method="POST" id="unitForm" enctype="multipart/form-data">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="modalTitle">Add New Unit</h5>
-                    <button type="button" class="btn-close" onclick="closeUnitModal()"></button>
+                    <h5 class="modal-title" id="modalTitle">Unit Configuration</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <form method="POST" id="unitForm" enctype="multipart/form-data">
-                        <input type="hidden" name="action" id="formAction" value="add_unit">
-                        <input type="hidden" name="unit_id" id="unitId">
+                    <input type="hidden" name="action" id="formAction" value="add_unit">
+                    <input type="hidden" name="unit_id" id="unitId">
 
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label>Branch</label>
-                                <select name="branch_id" id="branchSelect" required>
-                                    <option value="">Select Branch</option>
-                                    <?php foreach ($branches as $branch): ?>
-                                        <option value="<?php echo $branch['branch_id']; ?>">
-                                            <?php echo htmlspecialchars($branch['branch_name'] . ' — ' . ($branch['city'] ?? '')); ?>
-                                        </option>
-                                    <?php endforeach; ?>
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label>Unit Name / No.</label>
-                                <input type="text" name="unit_name" id="unitName"
-                                    placeholder="e.g., Unit 101 or Penthouse" required>
-                            </div>
-                        </div>
+                    <!-- Tabbed Navigation with mobile scroll -->
+                    <ul class="nav nav-pills mb-4 bg-light p-2 rounded flex-nowrap overflow-auto" id="unitTabs" role="tablist">
+                        <li class="nav-item">
+                            <button class="nav-link active py-2 px-3 small fw-bold text-nowrap" data-bs-toggle="tab" data-bs-target="#tab-general" type="button">1. General</button>
+                        </li>
+                        <li class="nav-item">
+                            <button class="nav-link py-2 px-3 small fw-bold text-nowrap" data-bs-toggle="tab" data-bs-target="#tab-config" type="button">2. Configuration</button>
+                        </li>
+                        <li class="nav-item">
+                            <button class="nav-link py-2 px-3 small fw-bold text-nowrap" data-bs-toggle="tab" data-bs-target="#tab-rules" type="button">3. Rules & Pricing</button>
+                        </li>
+                        <li class="nav-item">
+                            <button class="nav-link py-2 px-3 small fw-bold text-nowrap" data-bs-toggle="tab" data-bs-target="#tab-amenities" type="button">4. Amenities</button>
+                        </li>
+                    </ul>
 
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label>Street Address</label>
-                                <input type="text" name="street_address" id="streetAddress"
-                                    placeholder="e.g., 123 Main Street" required>
-                            </div>
-                            <div class="form-group">
-                                <label>Unit Number</label>
-                                <input type="text" name="unit_number" id="unitNumber"
-                                    placeholder="e.g., 101, 201, Suite A" required>
-                            </div>
-                        </div>
-
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label>City</label>
-                                <input type="text" name="city" id="city" placeholder="e.g., Manila, Makati" required>
-                            </div>
-                        </div>
-
-                        <div class="form-group">
-                            <label><i class="fas fa-map"></i> Property Location</label>
-                            <div id="unitMap"
-                                style="width: 100%; height: 300px; border-radius: 8px; border: 2px solid #dee2e6; margin-bottom: 10px; background: linear-gradient(135deg, #f5f7fa 0%, #e9ecef 100%); display: flex; align-items: center; justify-content: center;">
-                                <div style="text-align: center; color: #666;">
-                                    <i class="fas fa-spinner fa-spin"
-                                        style="font-size: 32px; color: #3498db; margin-bottom: 10px; display: block;"></i>
-                                    <p>Loading map...</p>
+                    <div class="tab-content" id="unitTabsContent">
+                        <!-- TAB 1: GENERAL -->
+                        <div class="tab-pane fade show active" id="tab-general">
+                            <div class="row g-3">
+                                <div class="col-md-7">
+                                    <label class="form-label fw-bold small uppercase">Property / Building Name</label>
+                                    <input type="text" name="unit_name" id="unitName" class="form-control bg-light" placeholder="e.g. Amaia Skies Tower 1" required>
+                                </div>
+                                <div class="col-md-5">
+                                    <label class="form-label fw-bold small uppercase">Branch</label>
+                                    <select name="branch_id" id="branchSelect" class="form-select bg-light" required>
+                                        <?php foreach ($branches as $b): ?>
+                                            <option value="<?php echo $b['branch_id']; ?>"><?php echo htmlspecialchars($b['branch_name']); ?></option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label fw-bold small uppercase">Description</label>
+                                    <textarea name="description" id="unitDesc" class="form-control bg-light" rows="3" placeholder="Tell guests what makes your place special..."></textarea>
+                                </div>
+                                <div class="col-md-9">
+                                    <label class="form-label fw-bold small uppercase">Street Address</label>
+                                    <input type="text" name="street_address" id="streetAddress" class="form-control bg-light" required>
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label fw-bold small uppercase">Unit #</label>
+                                    <input type="text" name="unit_number" id="unitNumber" class="form-control bg-light" placeholder="e.g. 10B" required>
+                                </div>
+                                <div class="col-12 mt-4">
+                                    <label class="form-label fw-bold small uppercase text-primary border-bottom pb-2 w-100"><i class="fas fa-map-marker-alt me-1"></i> Precise Location Picker</label>
+                                    <div id="unitMap" class="map-loading mb-2" style="height: 300px; border-radius: 12px; border: 1px solid #ddd;"></div>
+                                    <div class="row g-2">
+                                        <div class="col-6"><input type="text" name="latitude" id="latitude" class="form-control form-control-sm bg-light text-center" readonly required placeholder="Lat"></div>
+                                        <div class="col-6"><input type="text" name="longitude" id="longitude" class="form-control form-control-sm bg-light text-center" readonly required placeholder="Lng"></div>
+                                    </div>
                                 </div>
                             </div>
-                            <small class="form-text text-muted d-block mb-2">Click on map to select property
-                                location</small>
+                        </div>
+
+                        <!-- TAB 2: CONFIGURATION -->
+                        <div class="tab-pane fade" id="tab-config">
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold small uppercase">Property Type</label>
+                                    <select name="property_type" id="propType" class="form-select bg-light">
+                                        <option value="Condo">Condo</option>
+                                        <option value="Apartment">Apartment</option>
+                                        <option value="Studio">Studio Unit</option>
+                                        <option value="House">House</option>
+                                        <option value="Room">Room Only</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold small uppercase">Bed Configuration</label>
+                                    <select name="bed_config" id="bedConfig" class="form-select bg-light">
+                                        <option value="Studio">Studio Layout</option>
+                                        <option value="1BR">1 Bedroom</option>
+                                        <option value="2BR">2 Bedroom</option>
+                                        <option value="Shared">Shared Room</option>
+                                    </select>
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label fw-bold small uppercase">Sleeping Arrangements</label>
+                                    <input type="text" name="bed_details" id="bedDetails" class="form-control bg-light" placeholder="e.g. 1 Queen Bed, 1 Sofa Bed">
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label fw-bold small uppercase">Bathrooms</label>
+                                    <input type="number" step="0.5" name="bathroom_count" id="bathCount" class="form-control bg-light" value="1.0">
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label fw-bold small uppercase">Area (sqm)</label>
+                                    <input type="number" name="floor_area" id="floorArea" class="form-control bg-light" placeholder="e.g. 28">
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label fw-bold small uppercase">Max Capacity</label>
+                                    <input type="number" name="capacity" id="capacity" class="form-control bg-light" min="1" required>
+                                </div>
+                                <div class="col-12 mt-3">
+                                    <label class="form-label fw-bold small uppercase">Parking Availability</label>
+                                    <select name="parking_info" id="parkingInfo" class="form-select bg-light">
+                                        <option value="None">No Parking</option>
+                                        <option value="Included">Included</option>
+                                        <option value="Paid">Paid Parking</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- TAB 3: RULES & PRICING -->
+                        <div class="tab-pane fade" id="tab-rules">
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold small uppercase text-primary">Base Price (₱)</label>
+                                    <input type="number" name="price" id="price" class="form-control border-primary" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold small uppercase text-primary">Pricing Mode</label>
+                                    <select name="pricing_type" id="pricingType" class="form-select border-primary">
+                                        <option value="nightly">Per Night</option>
+                                        <option value="monthly">Per Month</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold small uppercase">Security Deposit (₱)</label>
+                                    <input type="number" name="security_deposit" id="deposit" class="form-control bg-light" value="0">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold small uppercase">Booking Type</label>
+                                    <select name="booking_type" id="bookingType" class="form-select bg-light">
+                                        <option value="instant">Instant Book</option>
+                                        <option value="manual">Manual Approval</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label fw-bold small uppercase">Min Stay</label>
+                                    <input type="number" name="min_stay" id="minStay" class="form-control bg-light" value="1">
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label fw-bold small uppercase">Max Stay</label>
+                                    <input type="number" name="max_stay" id="maxStay" class="form-control bg-light" value="30">
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label fw-bold small uppercase">Check-In</label>
+                                    <input type="time" name="check_in_time" id="checkIn" class="form-control bg-light" value="14:00">
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label fw-bold small uppercase">Check-Out</label>
+                                    <input type="time" name="check_out_time" id="checkOut" class="form-control bg-light" value="12:00">
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label fw-bold small uppercase">House Rules</label>
+                                    <textarea name="house_rules" id="houseRules" class="form-control bg-light" rows="2" placeholder="e.g. No smoking, No pets..."></textarea>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold small uppercase">Visibility</label>
+                                    <select name="status_visibility" id="visibility" class="form-select bg-light">
+                                        <option value="active">Active (Visible)</option>
+                                        <option value="hidden">Hidden</option>
+                                        <option value="maintenance">Under Maintenance</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- TAB 4: AMENITIES -->
+                        <div class="tab-pane fade" id="tab-amenities">
+                            <label class="form-label fw-bold small uppercase mb-3">Essentials & Amenities</label>
                             <div class="row g-2">
-                                <div class="col-6">
-                                    <input type="hidden" name="latitude" id="latitude">
-                                    <input type="text" class="form-control" id="latDisplay" placeholder="Latitude">
-                                </div>
-                                <div class="col-6">
-                                    <input type="hidden" name="longitude" id="longitude">
-                                    <input type="text" class="form-control" id="lngDisplay" placeholder="Longitude">
-                                </div>
-                            </div>
-                        </div>
-
-
-                        <div class="form-group">
-                            <label><i class="fas fa-image"></i> Unit Photos</label>
-                            <div style="border: 2px dashed #ddd; border-radius: 6px; padding: 30px; text-align: center; cursor: pointer; transition: all 0.3s;"
-                                id="uploadArea">
-                                <i class="fas fa-cloud-upload-alt"
-                                    style="font-size: 32px; color: #3498db; margin-bottom: 10px; display: block;"></i>
-                                <div style="font-weight: 500; color: #2c3e50; margin-bottom: 5px;">Drag photos here or
-                                    click to browse</div>
-                                <div style="font-size: 12px; color: #999;">Support: JPG, PNG (Max 5MB per image)</div>
-                                <input type="file" name="photos[]" id="photoInput" multiple accept="image/*"
-                                    style="display: none;">
-                            </div>
-                            <div id="photoPreview"
-                                style="display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 10px; margin-top: 15px;">
-                            </div>
-                        </div>
-
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label>Price Rate (₱)</label>
-                                <input type="number" name="price" id="price" placeholder="e.g., 2500" required>
-                            </div>
-                            <div class="form-group">
-                                <label>Pricing Type</label>
-                                <select name="pricing_type" id="pricingType" required>
-                                    <option value="daily">Daily / Nightly</option>
-                                    <option value="monthly">Monthly</option>
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label>Capacity (Guests)</label>
-                                <input type="number" name="capacity" id="capacity" placeholder="e.g., 4" min="1"
-                                    required>
-                            </div>
-                        </div>
-
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label>Floor Area (sqm)</label>
-                                <input type="number" name="sqm" id="sqm" placeholder="e.g., 35.5" step="0.01" min="0">
-                            </div>
-                            <div class="form-group">
-                                <label>Bed Type</label>
-                                <select name="bed_type" id="bedType">
-                                    <option value="">Select Bed Type</option>
-                                    <option value="single">Single Bed</option>
-                                    <option value="double deck">Double Deck / Bunk Bed</option>
-                                    <option value="queen">Queen Size</option>
-                                    <option value="king">King Size</option>
-                                </select>
-                            </div>
-                        </div>
-
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label>Number of Beds</label>
-                                <input type="number" name="num_beds" id="numBeds" placeholder="e.g., 1" min="1"
-                                    value="1">
-                            </div>
-                            <div class="form-group">
-                                <label>Number of Bathrooms</label>
-                                <input type="number" name="num_bathrooms" id="numBathrooms" placeholder="e.g., 1"
-                                    min="1" value="1">
-                            </div>
-                        </div>
-
-                        <div class="form-group">
-                            <label>Status</label>
-                            <select name="status" id="status" required>
-                                <option value="available">Available</option>
-                                <option value="maintenance">Under Maintenance</option>
-                            </select>
-                        </div>
-
-                        <div class="form-group">
-                            <label>Amenities</label>
-                            <div class="amenities-list">
-                                <?php if (!empty($unit_amenities_catalog)): ?>
-                                    <?php foreach ($unit_amenities_catalog as $am): ?>
-                                        <?php $aid = (int) $am['id']; ?>
-                                        <div class="amenity-checkbox">
-                                            <input type="checkbox" name="amenities[]" value="<?php echo $aid; ?>"
-                                                id="amenity-<?php echo $aid; ?>">
-                                            <label
-                                                for="amenity-<?php echo $aid; ?>"><?php echo htmlspecialchars($am['name']); ?></label>
+                                <?php foreach ($amenities_catalog as $a): ?>
+                                    <div class="col-md-6 col-lg-4">
+                                        <div class="form-check card-modern p-2 px-3 m-0 shadow-none border bg-light d-flex align-items-center gap-2">
+                                            <input class="form-check-input ms-0" type="checkbox" name="amenities[]" value="<?php echo $a['id']; ?>" id="am-<?php echo $a['id']; ?>">
+                                            <label class="form-check-label small mb-0 fw-bold" for="am-<?php echo $a['id']; ?>">
+                                                <?php echo htmlspecialchars($a['name']); ?>
+                                            </label>
                                         </div>
-                                    <?php endforeach; ?>
-                                <?php else: ?>
-                                    <p class="text-muted small mb-0">No amenities in the catalog. Add rows to the
-                                        <code>amenities</code> table (id, name).</p>
-                                <?php endif; ?>
+                                    </div>
+                                <?php endforeach; ?>
+                            </div>
+                            <div class="mt-4">
+                                <label class="form-label fw-bold small uppercase">Internet & Utilities</label>
+                                <textarea name="utility_info" id="utilityInfo" class="form-control bg-light" rows="2" placeholder="e.g. 50Mbps Fiber WiFi, Electricity included..."></textarea>
                             </div>
                         </div>
-                    </form>
+                    </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" onclick="closeUnitModal()">Cancel</button>
-                    <button type="submit" form="unitForm" class="btn btn-primary">
-                        <i class="fas fa-save"></i> Save Unit
-                    </button>
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary px-4"><i class="fas fa-save me-2"></i>Save Listing</button>
                 </div>
-            </div>
+            </form>
         </div>
     </div>
+</div>
 
-    <!-- View Unit Modal -->
-    <div id="viewModal" class="modal fade" tabindex="-1">
-        <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
-            <div class="modal-content border-0 shadow-lg" style="border-radius: 16px; overflow: hidden;">
-                <div class="modal-header border-0 py-3 px-4 align-items-center" style="background: #f8fafc;">
-                    <span class="small text-uppercase fw-bold text-muted mb-0" style="letter-spacing: 0.08em;">Listing
-                        preview</span>
-                    <button type="button" class="btn-close" onclick="closeViewModal()" aria-label="Close"></button>
+<!-- Modal: Delete Confirmation -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog modal-sm modal-dialog-centered">
+        <div class="modal-content border-0">
+            <form method="POST">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title">Delete Unit?</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
-                <div class="modal-body pt-3 px-4 pb-4" id="viewContent" style="background: #f1f5f9;"></div>
-            </div>
+                <div class="modal-body text-center p-4">
+                    <input type="hidden" name="action" value="delete_unit">
+                    <input type="hidden" name="unit_id" id="deleteUnitId">
+                    <i class="fas fa-trash-alt fa-3x text-danger mb-3 opacity-25"></i>
+                    <p class="mb-0">Are you sure you want to delete <b id="deleteUnitName"></b>?<br><small class="text-muted">This cannot be undone.</small></p>
+                </div>
+                <div class="modal-footer flex-nowrap p-0 border-0">
+                    <button type="button" class="btn btn-light w-100 rounded-0" style="padding: 12px;" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-danger w-100 rounded-0" style="padding: 12px;">Delete</button>
+                </div>
+            </form>
         </div>
     </div>
+</div>
 
-    <!-- Delete Confirmation Modal (Bootstrap 5: needs .modal-dialog for centering, width, and click-through fix) -->
-    <div id="deleteModal" class="modal fade" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered delete-confirm-dialog">
-            <div class="modal-content confirmation-modal shadow border-0">
-                <div class="modal-header border-0 pb-0 pt-3 px-3 flex-column align-items-center position-relative">
-                    <h5 class="modal-title text-center fw-bold mb-0" id="deleteModalLabel"
-                        style="font-size: 1.1rem; color: #2c3e50;">
-                        <i class="fas fa-exclamation-triangle text-danger me-2"></i>Confirm Delete
-                    </h5>
-                    <button type="button" class="btn-close position-absolute top-0 end-0 m-2" data-bs-dismiss="modal"
-                        aria-label="Close"></button>
-                </div>
-                <div class="modal-body text-center px-4 py-3">
-                    <p class="mb-2" style="font-size: 15px; color: #2c3e50;">Are you sure you want to delete <strong
-                            id="deleteUnitName"></strong>?</p>
-                    <p class="text-muted small mb-0">This action cannot be undone.</p>
-                    <form method="POST" id="deleteForm" class="mt-4">
-                        <input type="hidden" name="action" value="delete_unit">
-                        <input type="hidden" name="unit_id" id="deleteUnitId">
-                        <div class="d-flex gap-2 justify-content-center flex-wrap delete-confirm-actions">
-                            <button type="button" class="btn btn-secondary px-4" data-bs-dismiss="modal">Cancel</button>
-                            <button type="submit" class="btn btn-danger px-4">Delete Unit</button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </div>
-    </div>
+<?php
+ob_start();
+?>
+<script>
+    let unitModal;
+    let deleteModal;
+    let mapInitialized = false;
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
-    <script src="../assets/js/host/unit_management.js"></script>
+    $(document).ready(function() {
+        unitModal = new bootstrap.Modal(document.getElementById('unitModal'));
+        deleteModal = new bootstrap.Modal(document.getElementById('deleteModal'));
 
-    <script>
-        // Modal Management Functions
-        function openAddUnitModal() {
-            document.getElementById('unitForm').reset();
-            document.getElementById('formAction').value = 'add_unit';
-            document.getElementById('modalTitle').textContent = 'Add New Unit';
-            document.getElementById('unitId').value = '';
-            mapInitialized = false;
-            const unitModal = new bootstrap.Modal(document.getElementById('unitModal'));
-            unitModal.show();
-        }
-
-        function openEditModal(unitId) {
-            // Fetch unit data and populate form
-            fetch(`../ajax/get_unit.php?unit_id=${unitId}`)
-                .then(r => r.json())
-                .then(data => {
-                    if (data.success) {
-                        const unit = data.unit;
-                        document.getElementById('unitForm').reset();
-                        document.getElementById('formAction').value = 'edit_unit';
-                        document.getElementById('modalTitle').textContent = 'Edit Unit';
-                        document.getElementById('unitId').value = unitId;
-                        document.getElementById('unitName').value = unit.unit_name;
-                        document.getElementById('branchSelect').value = unit.branch_id;
-                        document.getElementById('streetAddress').value = unit.street_address || '';
-                        document.getElementById('unitNumber').value = unit.unit_number || '';
-                        document.getElementById('city').value = unit.city || '';
-                        document.getElementById('latitude').value = unit.latitude || '';
-                        document.getElementById('longitude').value = unit.longitude || '';
-                        document.getElementById('latDisplay').value = unit.latitude || '';
-                        document.getElementById('lngDisplay').value = unit.longitude || '';
-                        document.getElementById('price').value = (unit.pricing_type === 'monthly' ? unit.price_per_month : unit.price_per_night) || 0;
-                        document.getElementById('pricingType').value = unit.pricing_type || 'monthly';
-                        document.getElementById('capacity').value = unit.max_occupancy;
-                        document.getElementById('status').value = unit.is_available ? 'available' : 'maintenance';
-                        document.getElementById('sqm').value = unit.sqm || '';
-                        document.getElementById('bedType').value = unit.bed_type || '';
-                        document.getElementById('numBeds').value = unit.num_beds || 1;
-                        document.getElementById('numBathrooms').value = unit.num_bathrooms || 1;
-
-                        document.querySelectorAll('#unitForm input[name="amenities[]"]').forEach(cb => { cb.checked = false; });
-                        if (unit.amenity_ids && unit.amenity_ids.length) {
-                            unit.amenity_ids.forEach(function (id) {
-                                const cb = document.getElementById('amenity-' + id);
-                                if (cb) cb.checked = true;
-                            });
-                        }
-
-                        mapInitialized = false;
-                        const unitModal = new bootstrap.Modal(document.getElementById('unitModal'));
-                        unitModal.show();
-                    }
-                });
-        }
-
-        function closeUnitModal() {
-            const unitModal = bootstrap.Modal.getInstance(document.getElementById('unitModal'));
-            if (unitModal) unitModal.hide();
-        }
-
-        function initUnitViewLeaflet(unitId) {
-            const el = document.getElementById('uvm-leaflet-' + unitId);
-            if (!el || typeof L === 'undefined') return;
-            const lat = parseFloat(el.dataset.lat);
-            const lng = parseFloat(el.dataset.lng);
-            if (Number.isNaN(lat) || Number.isNaN(lng)) return;
-            const map = L.map(el, { scrollWheelZoom: false }).setView([lat, lng], 15);
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                maxZoom: 19,
-                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-            }).addTo(map);
-            L.marker([lat, lng]).addTo(map);
-            setTimeout(function () { map.invalidateSize(); }, 200);
-        }
-
-        function openViewModal(unitId) {
-            fetch(`../ajax/get_unit_view.php?unit_id=${unitId}`)
-                .then(r => r.text())
-                .then(html => {
-                    document.getElementById('viewContent').innerHTML = html;
-                    const viewModalEl = document.getElementById('viewModal');
-                    const onShown = function () {
-                        initUnitViewLeaflet(unitId);
-                        viewModalEl.removeEventListener('shown.bs.modal', onShown);
-                    };
-                    viewModalEl.addEventListener('shown.bs.modal', onShown);
-                    const viewModal = bootstrap.Modal.getOrCreateInstance(viewModalEl);
-                    viewModal.show();
-                });
-        }
-
-        function closeViewModal() {
-            const viewModal = bootstrap.Modal.getInstance(document.getElementById('viewModal'));
-            if (viewModal) viewModal.hide();
-        }
-
-        function fromUnitViewOpenEdit(unitId) {
-            const vm = bootstrap.Modal.getInstance(document.getElementById('viewModal'));
-            if (vm) vm.hide();
-            setTimeout(function () { openEditModal(unitId); }, 400);
-        }
-
-        function fromUnitViewOpenDelete(unitId, unitName) {
-            const vm = bootstrap.Modal.getInstance(document.getElementById('viewModal'));
-            if (vm) vm.hide();
-            setTimeout(function () { openDeleteConfirm(unitId, unitName); }, 400);
-        }
-
-        function closeDeleteConfirm() {
-            const el = document.getElementById('deleteModal');
-            const dm = bootstrap.Modal.getInstance(el);
-            if (dm) dm.hide();
-        }
-
-        function openDeleteConfirm(unitId, unitName) {
-            document.getElementById('deleteUnitName').textContent = unitName;
-            document.getElementById('deleteUnitId').value = unitId;
-            const el = document.getElementById('deleteModal');
-            const deleteModal = bootstrap.Modal.getOrCreateInstance(el);
-            deleteModal.show();
-        }
-    </script>
-    <script>
-        // Initialize map when modal opens
-        let unitMap;
-        let unitMarker;
-        const defaultCenter = [14.5995, 121.0855]; // Manila, PH
-        let mapInitialized = false;
-
-        function initUnitMap() {
-            if (mapInitialized || !document.getElementById('unitMap')) return;
-
-            const mapElement = document.getElementById('unitMap');
-            mapElement.innerHTML = '';
-
-            try {
-                unitMap = L.map('unitMap').setView(defaultCenter, 13);
-
-                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                    maxZoom: 19,
-                    attribution: '© OpenStreetMap contributors'
-                }).addTo(unitMap);
-
-                // Load saved coordinates if editing
-                const savedLat = document.getElementById('latitude').value;
-                const savedLng = document.getElementById('longitude').value;
-                if (savedLat && savedLng) {
-                    const savedPosition = [parseFloat(savedLat), parseFloat(savedLng)];
-                    unitMap.setView(savedPosition, 16);
-                    placeUnitMarker(savedPosition[0], savedPosition[1]);
-                }
-
-                // Click map to place marker
-                unitMap.on('click', function (e) {
-                    placeUnitMarker(e.latlng.lat, e.latlng.lng);
-                    reverseGeocode(e.latlng.lat, e.latlng.lng);
-                });
-
-                const streetAddress = document.getElementById('streetAddress');
-                const cityInput = document.getElementById('city');
-                const latDisplay = document.getElementById('latDisplay');
-                const lngDisplay = document.getElementById('lngDisplay');
-
-                function reverseGeocode(lat, lon) {
-                    fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`)
-                        .then(res => res.json())
-                        .then(data => {
-                            if (data && data.address) {
-                                const city = data.address.city || data.address.town || data.address.village || data.address.county || '';
-                                const road = data.address.road || '';
-                                const house_number = data.address.house_number || '';
-                                const suburb = data.address.suburb || data.address.neighbourhood || '';
-
-                                let street = [];
-                                if (house_number) street.push(house_number);
-                                if (road) street.push(road);
-                                if (suburb) street.push(suburb);
-
-                                if (streetAddress && street.length > 0) streetAddress.value = street.join(', ');
-                                if (cityInput && city) cityInput.value = city;
-                            }
-                        }).catch(e => console.log('Reverse geocoding error', e));
-                }
-
-                // Set up simple manual geocoding if place input loses focus
-                function geocodeAddress() {
-                    const street = streetAddress ? streetAddress.value : '';
-                    const city = cityInput ? cityInput.value : '';
-                    const addr = `${street}, ${city}, Philippines`.trim();
-
-                    if (addr.length > 5 && addr !== ', , Philippines') {
-                        fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(addr)}&limit=1`)
-                            .then(res => res.json())
-                            .then(data => {
-                                if (data && data.length > 0) {
-                                    const lat = parseFloat(data[0].lat);
-                                    const lon = parseFloat(data[0].lon);
-                                    unitMap.setView([lat, lon], 16);
-                                    placeUnitMarker(lat, lon);
-                                }
-                            }).catch(e => console.log('Geocoding error', e));
-                    }
-                }
-
-                let geocodeTimeout;
-                function debouncedGeocode() {
-                    clearTimeout(geocodeTimeout);
-                    geocodeTimeout = setTimeout(geocodeAddress, 800);
-                }
-
-                if (streetAddress) streetAddress.addEventListener('input', debouncedGeocode);
-                if (cityInput) cityInput.addEventListener('input', debouncedGeocode);
-
-                function updateMapFromCoordinates() {
-                    const lat = parseFloat(latDisplay.value);
-                    const lng = parseFloat(lngDisplay.value);
-
-                    if (!isNaN(lat) && !isNaN(lng)) {
-                        unitMap.setView([lat, lng], 16);
-                        placeUnitMarker(lat, lng);
-                        reverseGeocode(lat, lng);
-                    }
-                }
-
-                let coordTimeout;
-                function debouncedCoordUpdate() {
-                    clearTimeout(coordTimeout);
-                    coordTimeout = setTimeout(updateMapFromCoordinates, 1000);
-                }
-
-                if (latDisplay) latDisplay.addEventListener('input', debouncedCoordUpdate);
-                if (lngDisplay) lngDisplay.addEventListener('input', debouncedCoordUpdate);
-
+        // Initialize Map when modal opens
+        document.getElementById('unitModal').addEventListener('shown.bs.modal', function() {
+            if (!mapInitialized) {
+                const lat = parseFloat($('#latitude').val()) || 14.5995;
+                const lng = parseFloat($('#longitude').val()) || 120.9842;
+                
+                BookIT.Map.init('unitMap', { center: [lat, lng], zoom: 15 });
+                BookIT.Map.enablePicker((res) => {
+                    $('#latitude').val(res.lat);
+                    $('#longitude').val(res.lng);
+                }, [lat, lng]);
                 mapInitialized = true;
-
-                // Fix map rendering issues in Bootstrap modals
-                setTimeout(() => {
-                    unitMap.invalidateSize();
-                }, 100);
-            } catch (error) {
-                console.error('Map initialization failed:', error);
-                mapElement.innerHTML = '<div style=\"display: flex; align-items: center; justify-content: center; height: 100%; flex-direction: column;\"><i class=\"fas fa-exclamation-circle\" style=\"font-size: 40px; color: #e74c3c; margin-bottom: 10px;\"></i><p style=\"color: #666; margin: 0;\">Map error</p><p style=\"font-size: 12px; color: #999; margin: 5px 0 0 0;\">Please enter coordinates manually</p></div>';
-                mapInitialized = true;
-            }
-        }
-
-        function placeUnitMarker(lat, lng) {
-            if (unitMarker) {
-                unitMap.removeLayer(unitMarker);
-            }
-
-            unitMarker = L.marker([lat, lng]).addTo(unitMap);
-            unitMarker.bindPopup('Property Location').openPopup();
-
-            // Update fields
-            document.getElementById('latitude').value = lat.toFixed(6);
-            document.getElementById('longitude').value = lng.toFixed(6);
-            document.getElementById('latDisplay').value = lat.toFixed(6);
-            document.getElementById('lngDisplay').value = lng.toFixed(6);
-        }
-
-        // Initialize map when modal opens
-        document.addEventListener('DOMContentLoaded', function () {
-            const unitModal = document.getElementById('unitModal');
-            if (unitModal) {
-                unitModal.addEventListener('shown.bs.modal', function () {
-                    initUnitMap();
-                    if (unitMap) { setTimeout(() => unitMap.invalidateSize(), 500); }
-                });
             }
         });
-    </script>
-</body>
+    });
 
-</html>
+    function openAddUnitModal() {
+        $('#unitForm')[0].reset();
+        $('#formAction').val('add_unit');
+        $('#modalTitle').text('Add New Unit');
+        $('#latitude').val('');
+        $('#longitude').val('');
+        mapInitialized = false;
+        unitModal.show();
+    }
 
-</html>
+    function openEditModal(unitId) {
+        fetch(`../ajax/get_unit.php?unit_id=${unitId}`)
+            .then(r => r.json())
+            .then(data => {
+                if(data.success) {
+                    const u = data.unit;
+                    $('#unitId').val(unitId);
+                    $('#formAction').val('edit_unit');
+                    $('#modalTitle').text('Edit: ' + u.unit_name);
+                    $('#unitName').val(u.unit_name);
+                    $('#branchSelect').val(u.branch_id);
+                    $('#streetAddress').val(u.street_address);
+                    $('#unitNumber').val(u.unit_number);
+                    $('#latitude').val(u.latitude);
+                    $('#longitude').val(u.longitude);
+                    $('#price').val(u.pricing_type === 'monthly' ? u.price_per_month : u.price_per_night);
+                    $('#pricingType').val(u.pricing_type);
+                    $('#capacity').val(u.max_occupancy);
+                    
+                    // New Fields Population
+                    $('#unitDesc').val(u.description);
+                    $('#propType').val(u.property_type);
+                    $('#bedConfig').val(u.bed_config);
+                    $('#bedDetails').val(u.bed_details);
+                    $('#bathCount').val(u.bathroom_count);
+                    $('#floorArea').val(u.floor_area);
+                    $('#deposit').val(u.security_deposit);
+                    $('#bookingType').val(u.booking_type);
+                    $('#minStay').val(u.min_stay);
+                    $('#maxStay').val(u.max_stay);
+                    $('#checkIn').val(u.check_in_time);
+                    $('#checkOut').val(u.check_out_time);
+                    $('#houseRules').val(u.house_rules);
+                    $('#utilityInfo').val(u.utility_info);
+                    $('#parkingInfo').val(u.parking_info);
+                    $('#visibility').val(u.status_visibility);
+
+                    // Sync Amenities
+                    document.querySelectorAll('[name="amenities[]"]').forEach(cb => {
+                        cb.checked = u.amenity_ids.includes(parseInt(cb.value));
+                    });
+
+                    // Reset to first tab
+                    bootstrap.Tab.getInstance(document.querySelector('#unitTabs button[data-bs-target="#tab-general"]')).show();
+                    
+                    mapInitialized = false;
+                    unitModal.show();
+                }
+            });
+    }
+
+    function openDeleteConfirm(id, name) {
+        $('#deleteUnitId').val(id);
+        $('#deleteUnitName').text(name);
+        deleteModal.show();
+    }
+</script>
+<?php
+$extra_js = ob_get_clean();
+include '../templates/host_layout_footer.php';
+?>

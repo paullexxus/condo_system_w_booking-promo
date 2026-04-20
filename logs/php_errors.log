@@ -3166,3 +3166,776 @@ Stack trace:
 [18-Apr-2026 16:53:29 Asia/Manila] WARNING: Using test PayMongo keys. Set PAYMONGO_* in .env for proper configuration.
 [18-Apr-2026 16:59:05 Asia/Manila] WARNING: Using test PayMongo keys. Set PAYMONGO_* in .env for proper configuration.
 [18-Apr-2026 16:59:19 Asia/Manila] SESSION EXPIRED: Inactivity timeout reached for User ID: 1
+[18-Apr-2026 23:41:54 Asia/Manila] SESSION EXPIRED: Inactivity timeout reached for User ID: 1
+[18-Apr-2026 23:43:58 Asia/Manila] SESSION EXPIRED: Inactivity timeout reached for User ID: 10
+[18-Apr-2026 23:44:59 Asia/Manila] SESSION EXPIRED: Inactivity timeout reached for User ID: 23
+[19-Apr-2026 10:06:46 Asia/Manila] PHP Fatal error:  Uncaught Error: Class "mysqli" not found in C:\wamp64\www\BookIT\config\db.php:8
+Stack trace:
+#0 C:\wamp64\www\BookIT\scripts\setup_security_tables.php(7): require_once()
+#1 {main}
+  thrown in C:\wamp64\www\BookIT\config\db.php on line 8
+[19-Apr-2026 10:10:19 Asia/Manila] PHP Fatal error:  Uncaught ArgumentCountError: mysqli_get_server_info() expects exactly 1 argument, 0 given in Command line code:1
+Stack trace:
+#0 Command line code(1): mysqli_get_server_info()
+#1 {main}
+  thrown in Command line code on line 1
+[19-Apr-2026 10:18:55 Asia/Manila] PHP Warning:  Undefined array key "REMOTE_ADDR" in C:\wamp64\www\BookIT\includes\functions.php on line 130
+[19-Apr-2026 10:18:55 Asia/Manila] PHP Stack trace:
+[19-Apr-2026 10:18:55 Asia/Manila] PHP   1. {main}() C:\wamp64\www\BookIT\scratch\test_abuse.php:0
+[19-Apr-2026 10:18:55 Asia/Manila] PHP   2. checkAbuse($type = 'search', 'test_unit') C:\wamp64\www\BookIT\scratch\test_abuse.php:14
+[19-Apr-2026 10:18:55 Asia/Manila] PHP Warning:  Undefined array key "REMOTE_ADDR" in C:\wamp64\www\BookIT\includes\functions.php on line 130
+[19-Apr-2026 10:18:55 Asia/Manila] PHP Stack trace:
+[19-Apr-2026 10:18:55 Asia/Manila] PHP   1. {main}() C:\wamp64\www\BookIT\scratch\test_abuse.php:0
+[19-Apr-2026 10:18:55 Asia/Manila] PHP   2. checkAbuse($type = 'search', 'test_unit') C:\wamp64\www\BookIT\scratch\test_abuse.php:19
+[19-Apr-2026 10:18:55 Asia/Manila] PHP Warning:  Undefined array key "REMOTE_ADDR" in C:\wamp64\www\BookIT\includes\functions.php on line 130
+[19-Apr-2026 10:18:55 Asia/Manila] PHP Stack trace:
+[19-Apr-2026 10:18:55 Asia/Manila] PHP   1. {main}() C:\wamp64\www\BookIT\scratch\test_abuse.php:0
+[19-Apr-2026 10:18:55 Asia/Manila] PHP   2. checkAbuse($type = 'search', 'test_unit') C:\wamp64\www\BookIT\scratch\test_abuse.php:19
+[19-Apr-2026 10:18:55 Asia/Manila] PHP Warning:  Undefined array key "REMOTE_ADDR" in C:\wamp64\www\BookIT\includes\functions.php on line 130
+[19-Apr-2026 10:18:55 Asia/Manila] PHP Stack trace:
+[19-Apr-2026 10:18:55 Asia/Manila] PHP   1. {main}() C:\wamp64\www\BookIT\scratch\test_abuse.php:0
+[19-Apr-2026 10:18:55 Asia/Manila] PHP   2. checkAbuse($type = 'search', 'test_unit') C:\wamp64\www\BookIT\scratch\test_abuse.php:19
+[19-Apr-2026 10:18:55 Asia/Manila] PHP Warning:  Undefined array key "REMOTE_ADDR" in C:\wamp64\www\BookIT\includes\functions.php on line 130
+[19-Apr-2026 10:18:55 Asia/Manila] PHP Stack trace:
+[19-Apr-2026 10:18:55 Asia/Manila] PHP   1. {main}() C:\wamp64\www\BookIT\scratch\test_abuse.php:0
+[19-Apr-2026 10:18:55 Asia/Manila] PHP   2. checkAbuse($type = 'search', 'test_unit') C:\wamp64\www\BookIT\scratch\test_abuse.php:19
+[19-Apr-2026 10:18:55 Asia/Manila] PHP Warning:  Undefined array key "REMOTE_ADDR" in C:\wamp64\www\BookIT\includes\functions.php on line 130
+[19-Apr-2026 10:18:55 Asia/Manila] PHP Stack trace:
+[19-Apr-2026 10:18:55 Asia/Manila] PHP   1. {main}() C:\wamp64\www\BookIT\scratch\test_abuse.php:0
+[19-Apr-2026 10:18:55 Asia/Manila] PHP   2. checkAbuse($type = 'search', 'test_unit') C:\wamp64\www\BookIT\scratch\test_abuse.php:19
+[19-Apr-2026 10:18:55 Asia/Manila] PHP Warning:  Undefined array key "REMOTE_ADDR" in C:\wamp64\www\BookIT\includes\functions.php on line 130
+[19-Apr-2026 10:18:55 Asia/Manila] PHP Stack trace:
+[19-Apr-2026 10:18:55 Asia/Manila] PHP   1. {main}() C:\wamp64\www\BookIT\scratch\test_abuse.php:0
+[19-Apr-2026 10:18:55 Asia/Manila] PHP   2. checkAbuse($type = 'search', 'test_unit') C:\wamp64\www\BookIT\scratch\test_abuse.php:19
+[19-Apr-2026 10:18:55 Asia/Manila] PHP Warning:  Undefined array key "REMOTE_ADDR" in C:\wamp64\www\BookIT\includes\functions.php on line 130
+[19-Apr-2026 10:18:55 Asia/Manila] PHP Stack trace:
+[19-Apr-2026 10:18:55 Asia/Manila] PHP   1. {main}() C:\wamp64\www\BookIT\scratch\test_abuse.php:0
+[19-Apr-2026 10:18:55 Asia/Manila] PHP   2. checkAbuse($type = 'search', 'test_unit') C:\wamp64\www\BookIT\scratch\test_abuse.php:19
+[19-Apr-2026 10:18:55 Asia/Manila] PHP Warning:  Undefined array key "REMOTE_ADDR" in C:\wamp64\www\BookIT\includes\functions.php on line 130
+[19-Apr-2026 10:18:55 Asia/Manila] PHP Stack trace:
+[19-Apr-2026 10:18:55 Asia/Manila] PHP   1. {main}() C:\wamp64\www\BookIT\scratch\test_abuse.php:0
+[19-Apr-2026 10:18:55 Asia/Manila] PHP   2. checkAbuse($type = 'search', 'test_unit') C:\wamp64\www\BookIT\scratch\test_abuse.php:19
+[19-Apr-2026 10:18:55 Asia/Manila] PHP Warning:  Undefined array key "REMOTE_ADDR" in C:\wamp64\www\BookIT\includes\functions.php on line 130
+[19-Apr-2026 10:18:55 Asia/Manila] PHP Stack trace:
+[19-Apr-2026 10:18:55 Asia/Manila] PHP   1. {main}() C:\wamp64\www\BookIT\scratch\test_abuse.php:0
+[19-Apr-2026 10:18:55 Asia/Manila] PHP   2. checkAbuse($type = 'search', 'test_unit') C:\wamp64\www\BookIT\scratch\test_abuse.php:19
+[19-Apr-2026 10:18:55 Asia/Manila] PHP Warning:  Undefined array key "REMOTE_ADDR" in C:\wamp64\www\BookIT\includes\functions.php on line 130
+[19-Apr-2026 10:18:55 Asia/Manila] PHP Stack trace:
+[19-Apr-2026 10:18:55 Asia/Manila] PHP   1. {main}() C:\wamp64\www\BookIT\scratch\test_abuse.php:0
+[19-Apr-2026 10:18:55 Asia/Manila] PHP   2. checkAbuse($type = 'search', 'test_unit') C:\wamp64\www\BookIT\scratch\test_abuse.php:24
+[19-Apr-2026 10:18:55 Asia/Manila] PHP Warning:  Trying to access array offset on null in C:\wamp64\www\BookIT\scratch\test_abuse.php on line 29
+[19-Apr-2026 10:18:55 Asia/Manila] PHP Stack trace:
+[19-Apr-2026 10:18:55 Asia/Manila] PHP   1. {main}() C:\wamp64\www\BookIT\scratch\test_abuse.php:0
+[19-Apr-2026 10:18:55 Asia/Manila] PHP Warning:  Trying to access array offset on null in C:\wamp64\www\BookIT\scratch\test_abuse.php on line 29
+[19-Apr-2026 10:18:55 Asia/Manila] PHP Stack trace:
+[19-Apr-2026 10:18:55 Asia/Manila] PHP   1. {main}() C:\wamp64\www\BookIT\scratch\test_abuse.php:0
+[19-Apr-2026 10:19:21 Asia/Manila] SESSION EXPIRED: Inactivity timeout reached for User ID: 10
+[19-Apr-2026 10:19:39 Asia/Manila] PHP Fatal error:  Uncaught Error: Call to undefined function isLoggedIn() in C:\wamp64\www\BookIT\public\access_file.php:13
+Stack trace:
+#0 {main}
+  thrown in C:\wamp64\www\BookIT\public\access_file.php on line 13
+[19-Apr-2026 11:37:08 Asia/Manila] WARNING: Using test PayMongo keys. Set PAYMONGO_* in .env for proper configuration.
+[19-Apr-2026 11:40:13 Asia/Manila] process_reservation: validation failed. branchID: 6, unitID: 32, dates: -
+[19-Apr-2026 11:40:30 Asia/Manila] Exception in execute_query: Unknown column 'num_adults' in 'field list'
+[19-Apr-2026 11:40:30 Asia/Manila] process_reservation: createReservation failed.
+[19-Apr-2026 11:40:50 Asia/Manila] Exception in execute_query: Unknown column 'num_adults' in 'field list'
+[19-Apr-2026 11:40:50 Asia/Manila] process_reservation: createReservation failed.
+[19-Apr-2026 11:41:08 Asia/Manila] Exception in execute_query: Unknown column 'num_adults' in 'field list'
+[19-Apr-2026 11:41:08 Asia/Manila] process_reservation: createReservation failed.
+[19-Apr-2026 11:41:30 Asia/Manila] Exception in execute_query: Unknown column 'num_adults' in 'field list'
+[19-Apr-2026 11:41:30 Asia/Manila] process_reservation: createReservation failed.
+[19-Apr-2026 11:43:03 Asia/Manila] Exception in execute_query: Unknown column 'num_adults' in 'field list'
+[19-Apr-2026 11:43:03 Asia/Manila] process_reservation: createReservation failed.
+[19-Apr-2026 11:46:19 Asia/Manila] Exception in execute_query: Unknown column 'num_adults' in 'field list'
+[19-Apr-2026 11:46:19 Asia/Manila] process_reservation: createReservation failed.
+[19-Apr-2026 11:46:34 Asia/Manila] Exception in execute_query: Unknown column 'num_adults' in 'field list'
+[19-Apr-2026 11:46:34 Asia/Manila] process_reservation: createReservation failed.
+[19-Apr-2026 12:09:43 Asia/Manila] SESSION EXPIRED: Inactivity timeout reached for User ID: 10
+[19-Apr-2026 13:20:23 Asia/Manila] PHP Fatal error:  Uncaught Error: Call to undefined function isLoggedIn() in C:\wamp64\www\BookIT\public\access_file.php:13
+Stack trace:
+#0 {main}
+  thrown in C:\wamp64\www\BookIT\public\access_file.php on line 13
+[19-Apr-2026 13:20:36 Asia/Manila] SESSION EXPIRED: Inactivity timeout reached for User ID: 1
+[19-Apr-2026 17:48:04 Asia/Manila] PHP Fatal error:  Uncaught Error: Class "mysqli" not found in C:\wamp64\www\BookIT\config\db.php:8
+Stack trace:
+#0 C:\wamp64\www\BookIT\schema_dump.php(2): require_once()
+#1 {main}
+  thrown in C:\wamp64\www\BookIT\config\db.php on line 8
+[19-Apr-2026 17:48:25 Asia/Manila] PHP Fatal error:  Uncaught Error: Class "mysqli" not found in C:\wamp64\www\BookIT\config\db.php:8
+Stack trace:
+#0 C:\wamp64\www\BookIT\scratch\full_schema_dump.php(2): require_once()
+#1 {main}
+  thrown in C:\wamp64\www\BookIT\config\db.php on line 8
+[19-Apr-2026 17:59:06 Asia/Manila] PHP Fatal error:  Uncaught Error: Class "mysqli" not found in C:\wamp64\www\BookIT\config\db.php:8
+Stack trace:
+#0 C:\wamp64\www\BookIT\migrations\enhanced_schema_upgrade.php(12): require_once()
+#1 {main}
+  thrown in C:\wamp64\www\BookIT\config\db.php on line 8
+[19-Apr-2026 19:42:51 Asia/Manila] SESSION EXPIRED: Inactivity timeout reached for User ID: 10
+[19-Apr-2026 19:42:57 Asia/Manila] PHP Warning:  include(../includes/host_sidebar.php): Failed to open stream: No such file or directory in C:\wamp64\www\BookIT\host\earnings.php on line 179
+[19-Apr-2026 19:42:57 Asia/Manila] PHP Stack trace:
+[19-Apr-2026 19:42:57 Asia/Manila] PHP   1. {main}() C:\wamp64\www\BookIT\host\earnings.php:0
+[19-Apr-2026 19:42:57 Asia/Manila] PHP Warning:  include(): Failed opening '../includes/host_sidebar.php' for inclusion (include_path='.;C:\php\pear') in C:\wamp64\www\BookIT\host\earnings.php on line 179
+[19-Apr-2026 19:42:57 Asia/Manila] PHP Stack trace:
+[19-Apr-2026 19:42:57 Asia/Manila] PHP   1. {main}() C:\wamp64\www\BookIT\host\earnings.php:0
+[19-Apr-2026 19:44:37 Asia/Manila] PHP Fatal error:  Uncaught Error: Call to undefined function isLoggedIn() in C:\wamp64\www\BookIT\public\access_file.php:13
+Stack trace:
+#0 {main}
+  thrown in C:\wamp64\www\BookIT\public\access_file.php on line 13
+[19-Apr-2026 19:49:46 Asia/Manila] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown column 'user_id' in 'where clause' in C:\wamp64\www\BookIT\config\db.php:25
+Stack trace:
+#0 C:\wamp64\www\BookIT\config\db.php(25): mysqli->prepare('\n    SELECT SUM...')
+#1 C:\wamp64\www\BookIT\admin\revenue.php(113): get_single_result('\n    SELECT SUM...', Array)
+#2 {main}
+  thrown in C:\wamp64\www\BookIT\config\db.php on line 25
+[19-Apr-2026 19:59:40 Asia/Manila] PHP Fatal error:  Uncaught ArgumentCountError: The number of elements in the type definition string must match the number of bind variables in C:\wamp64\www\BookIT\host\unit_management.php:220
+Stack trace:
+#0 C:\wamp64\www\BookIT\host\unit_management.php(220): mysqli_stmt->bind_param('ssddsidisiisssd...', 'Unit 101', '', 0.0, 4000.0, 'monthly', '11', 40.0, 'double deck', 4, 2, '555 sanciangco ...', 'suite10', 'malabon city', 14.668193, 120.959153, 6, '30')
+#1 {main}
+  thrown in C:\wamp64\www\BookIT\host\unit_management.php on line 220
+[19-Apr-2026 20:00:47 Asia/Manila] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown column 'user_id' in 'where clause' in C:\wamp64\www\BookIT\config\db.php:25
+Stack trace:
+#0 C:\wamp64\www\BookIT\config\db.php(25): mysqli->prepare('\n    SELECT SUM...')
+#1 C:\wamp64\www\BookIT\admin\revenue.php(113): get_single_result('\n    SELECT SUM...', Array)
+#2 {main}
+  thrown in C:\wamp64\www\BookIT\config\db.php on line 25
+[19-Apr-2026 20:01:05 Asia/Manila] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown column 'pa.account_details' in 'field list' in C:\wamp64\www\BookIT\config\db.php:85
+Stack trace:
+#0 C:\wamp64\www\BookIT\config\db.php(85): mysqli->prepare('SELECT pr.*, u....')
+#1 C:\wamp64\www\BookIT\admin\payouts.php(76): get_multiple_results('SELECT pr.*, u....')
+#2 {main}
+  thrown in C:\wamp64\www\BookIT\config\db.php on line 85
+[19-Apr-2026 20:01:23 Asia/Manila] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown column 'user_id' in 'where clause' in C:\wamp64\www\BookIT\config\db.php:25
+Stack trace:
+#0 C:\wamp64\www\BookIT\config\db.php(25): mysqli->prepare('\n    SELECT SUM...')
+#1 C:\wamp64\www\BookIT\admin\revenue.php(113): get_single_result('\n    SELECT SUM...', Array)
+#2 {main}
+  thrown in C:\wamp64\www\BookIT\config\db.php on line 25
+[19-Apr-2026 20:05:55 Asia/Manila] PHP Fatal error:  Uncaught Error: Call to undefined function isLoggedIn() in C:\wamp64\www\BookIT\public\access_file.php:13
+Stack trace:
+#0 {main}
+  thrown in C:\wamp64\www\BookIT\public\access_file.php on line 13
+[19-Apr-2026 20:18:03 Asia/Manila] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown column 'user_id' in 'where clause' in C:\wamp64\www\BookIT\config\db.php:25
+Stack trace:
+#0 C:\wamp64\www\BookIT\config\db.php(25): mysqli->prepare('\n    SELECT SUM...')
+#1 C:\wamp64\www\BookIT\admin\revenue.php(113): get_single_result('\n    SELECT SUM...', Array)
+#2 {main}
+  thrown in C:\wamp64\www\BookIT\config\db.php on line 25
+[19-Apr-2026 20:18:05 Asia/Manila] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown column 'user_id' in 'where clause' in C:\wamp64\www\BookIT\config\db.php:25
+Stack trace:
+#0 C:\wamp64\www\BookIT\config\db.php(25): mysqli->prepare('\n    SELECT SUM...')
+#1 C:\wamp64\www\BookIT\admin\revenue.php(113): get_single_result('\n    SELECT SUM...', Array)
+#2 {main}
+  thrown in C:\wamp64\www\BookIT\config\db.php on line 25
+[19-Apr-2026 20:20:16 Asia/Manila] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown column 'user_id' in 'where clause' in C:\wamp64\www\BookIT\config\db.php:25
+Stack trace:
+#0 C:\wamp64\www\BookIT\config\db.php(25): mysqli->prepare('\n    SELECT SUM...')
+#1 C:\wamp64\www\BookIT\admin\revenue.php(113): get_single_result('\n    SELECT SUM...', Array)
+#2 {main}
+  thrown in C:\wamp64\www\BookIT\config\db.php on line 25
+[19-Apr-2026 20:21:29 Asia/Manila] SESSION EXPIRED: Inactivity timeout reached for User ID: 23
+[19-Apr-2026 20:21:33 Asia/Manila] PHP Warning:  Trying to access array offset on int in C:\wamp64\www\BookIT\modules\notifications.php on line 191
+[19-Apr-2026 20:21:33 Asia/Manila] PHP Stack trace:
+[19-Apr-2026 20:21:33 Asia/Manila] PHP   1. {main}() C:\wamp64\www\BookIT\modules\notifications.php:0
+[19-Apr-2026 20:21:53 Asia/Manila] PHP Warning:  Trying to access array offset on int in C:\wamp64\www\BookIT\modules\notifications.php on line 191
+[19-Apr-2026 20:21:53 Asia/Manila] PHP Stack trace:
+[19-Apr-2026 20:21:53 Asia/Manila] PHP   1. {main}() C:\wamp64\www\BookIT\modules\notifications.php:0
+[19-Apr-2026 20:21:56 Asia/Manila] PHP Warning:  Trying to access array offset on int in C:\wamp64\www\BookIT\modules\notifications.php on line 191
+[19-Apr-2026 20:22:02 Asia/Manila] PHP Stack trace:
+[19-Apr-2026 20:22:02 Asia/Manila] PHP   1. {main}() C:\wamp64\www\BookIT\modules\notifications.php:0
+[19-Apr-2026 20:22:03 Asia/Manila] PHP Warning:  Trying to access array offset on int in C:\wamp64\www\BookIT\modules\notifications.php on line 191
+[19-Apr-2026 20:22:03 Asia/Manila] PHP Stack trace:
+[19-Apr-2026 20:22:07 Asia/Manila] Exception in execute_query: You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near 'IF NOT EXISTS otp_code VARCHAR(10) NULL, ADD COLUMN IF NOT EXISTS otp_expiry DAT' at line 1
+[19-Apr-2026 20:22:10 Asia/Manila] PHP   1. {main}() C:\wamp64\www\BookIT\modules\notifications.php:0
+[19-Apr-2026 20:22:10 Asia/Manila] Exception in execute_query: Unknown column 'otp_code' in 'field list'
+[19-Apr-2026 20:22:10 Asia/Manila] PHP Warning:  Trying to access array offset on int in C:\wamp64\www\BookIT\modules\notifications.php on line 191
+[19-Apr-2026 20:22:10 Asia/Manila] PHP Stack trace:
+[19-Apr-2026 20:22:10 Asia/Manila] PHP   1. {main}() C:\wamp64\www\BookIT\modules\notifications.php:0
+[19-Apr-2026 20:22:11 Asia/Manila] PHP Warning:  Trying to access array offset on int in C:\wamp64\www\BookIT\modules\notifications.php on line 191
+[19-Apr-2026 20:22:11 Asia/Manila] PHP Stack trace:
+[19-Apr-2026 20:22:11 Asia/Manila] PHP   1. {main}() C:\wamp64\www\BookIT\modules\notifications.php:0
+[19-Apr-2026 20:23:11 Asia/Manila] PHP Warning:  Trying to access array offset on int in C:\wamp64\www\BookIT\modules\notifications.php on line 191
+[19-Apr-2026 20:23:11 Asia/Manila] PHP Stack trace:
+[19-Apr-2026 20:23:11 Asia/Manila] PHP   1. {main}() C:\wamp64\www\BookIT\modules\notifications.php:0
+[19-Apr-2026 20:24:26 Asia/Manila] PHP Fatal error:  Uncaught Error: Call to undefined function isLoggedIn() in C:\wamp64\www\BookIT\public\access_file.php:13
+Stack trace:
+#0 {main}
+  thrown in C:\wamp64\www\BookIT\public\access_file.php on line 13
+[19-Apr-2026 20:24:59 Asia/Manila] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown column 'user_id' in 'where clause' in C:\wamp64\www\BookIT\config\db.php:25
+Stack trace:
+#0 C:\wamp64\www\BookIT\config\db.php(25): mysqli->prepare('\n    SELECT SUM...')
+#1 C:\wamp64\www\BookIT\host\payment_management.php(121): get_single_result('\n    SELECT SUM...', Array)
+#2 {main}
+  thrown in C:\wamp64\www\BookIT\config\db.php on line 25
+[19-Apr-2026 21:42:21 Asia/Manila] PHP Fatal error:  Uncaught Error: Class "mysqli" not found in C:\wamp64\www\BookIT\config\db.php:8
+Stack trace:
+#0 C:\wamp64\www\BookIT\check_payout_schema.php(2): include()
+#1 {main}
+  thrown in C:\wamp64\www\BookIT\config\db.php on line 8
+[19-Apr-2026 21:42:55 Asia/Manila] SESSION EXPIRED: Inactivity timeout reached for User ID: 1
+[19-Apr-2026 21:43:43 Asia/Manila] SYSTEM ERROR: RATE LIMIT LOCKOUT: User/IP throttled on login | Context: {"ip":"::1","user_id":null,"limit":5}
+[19-Apr-2026 21:44:02 Asia/Manila] PHP Warning:  Trying to access array offset on int in C:\wamp64\www\BookIT\modules\notifications.php on line 191
+[19-Apr-2026 21:44:03 Asia/Manila] PHP Stack trace:
+[19-Apr-2026 21:44:03 Asia/Manila] PHP   1. {main}() C:\wamp64\www\BookIT\modules\notifications.php:0
+[19-Apr-2026 21:44:05 Asia/Manila] PHP Warning:  Trying to access array offset on int in C:\wamp64\www\BookIT\modules\notifications.php on line 191
+[19-Apr-2026 21:44:05 Asia/Manila] PHP Stack trace:
+[19-Apr-2026 21:44:05 Asia/Manila] PHP   1. {main}() C:\wamp64\www\BookIT\modules\notifications.php:0
+[19-Apr-2026 21:44:07 Asia/Manila] PHP Warning:  Trying to access array offset on int in C:\wamp64\www\BookIT\modules\notifications.php on line 191
+[19-Apr-2026 21:44:07 Asia/Manila] PHP Stack trace:
+[19-Apr-2026 21:44:07 Asia/Manila] PHP   1. {main}() C:\wamp64\www\BookIT\modules\notifications.php:0
+[19-Apr-2026 21:45:38 Asia/Manila] PHP Fatal error:  Uncaught ArgumentCountError: The number of elements in the type definition string must match the number of bind variables in C:\wamp64\www\BookIT\host\unit_management.php:220
+Stack trace:
+#0 C:\wamp64\www\BookIT\host\unit_management.php(220): mysqli_stmt->bind_param('ssddsidisiisssd...', 'unit506', '', 0.0, 5600.0, 'monthly', '8', 56.0, 'single', 8, 1, 'Hechanova Stree...', '506', 'Quezon City', 14.598003, 121.062756, 6, '35')
+#1 {main}
+  thrown in C:\wamp64\www\BookIT\host\unit_management.php on line 220
+[19-Apr-2026 21:46:31 Asia/Manila] PHP Fatal error:  Uncaught Error: Class "mysqli" not found in C:\wamp64\www\BookIT\config\db.php:8
+Stack trace:
+#0 C:\wamp64\www\BookIT\migrations\fix_payout_schema.php(7): require_once()
+#1 {main}
+  thrown in C:\wamp64\www\BookIT\config\db.php on line 8
+[19-Apr-2026 21:48:32 Asia/Manila] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown column 'user_id' in 'where clause' in C:\wamp64\www\BookIT\config\db.php:25
+Stack trace:
+#0 C:\wamp64\www\BookIT\config\db.php(25): mysqli->prepare('\n    SELECT SUM...')
+#1 C:\wamp64\www\BookIT\admin\revenue.php(113): get_single_result('\n    SELECT SUM...', Array)
+#2 {main}
+  thrown in C:\wamp64\www\BookIT\config\db.php on line 25
+[19-Apr-2026 21:53:38 Asia/Manila] PHP Warning:  Undefined array key "custom_message" in C:\wamp64\www\BookIT\admin\settings.php on line 133
+[19-Apr-2026 21:53:38 Asia/Manila] PHP Stack trace:
+[19-Apr-2026 21:53:38 Asia/Manila] PHP   1. {main}() C:\wamp64\www\BookIT\admin\settings.php:0
+[19-Apr-2026 21:53:54 Asia/Manila] PHP Warning:  Undefined array key "custom_message" in C:\wamp64\www\BookIT\admin\settings.php on line 133
+[19-Apr-2026 21:53:54 Asia/Manila] PHP Stack trace:
+[19-Apr-2026 21:53:54 Asia/Manila] PHP   1. {main}() C:\wamp64\www\BookIT\admin\settings.php:0
+[19-Apr-2026 21:57:28 Asia/Manila] PHP Warning:  Undefined array key "custom_message" in C:\wamp64\www\BookIT\admin\settings.php on line 129
+[19-Apr-2026 21:57:28 Asia/Manila] PHP Stack trace:
+[19-Apr-2026 21:57:28 Asia/Manila] PHP   1. {main}() C:\wamp64\www\BookIT\admin\settings.php:0
+[19-Apr-2026 22:02:03 Asia/Manila] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown column 'user_id' in 'where clause' in C:\wamp64\www\BookIT\config\db.php:25
+Stack trace:
+#0 C:\wamp64\www\BookIT\config\db.php(25): mysqli->prepare('\n    SELECT SUM...')
+#1 C:\wamp64\www\BookIT\host\payment_management.php(121): get_single_result('\n    SELECT SUM...', Array)
+#2 {main}
+  thrown in C:\wamp64\www\BookIT\config\db.php on line 25
+[19-Apr-2026 22:03:25 Asia/Manila] PHP Fatal error:  Uncaught Error: Class "mysqli" not found in C:\wamp64\www\BookIT\config\db.php:8
+Stack trace:
+#0 C:\wamp64\www\BookIT\migrations\fix_payout_schema.php(7): require_once()
+#1 {main}
+  thrown in C:\wamp64\www\BookIT\config\db.php on line 8
+[19-Apr-2026 22:06:22 Asia/Manila] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown column 'user_id' in 'where clause' in C:\wamp64\www\BookIT\config\db.php:25
+Stack trace:
+#0 C:\wamp64\www\BookIT\config\db.php(25): mysqli->prepare('\n    SELECT SUM...')
+#1 C:\wamp64\www\BookIT\host\payment_management.php(121): get_single_result('\n    SELECT SUM...', Array)
+#2 {main}
+  thrown in C:\wamp64\www\BookIT\config\db.php on line 25
+[19-Apr-2026 22:10:44 Asia/Manila] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown column 'user_id' in 'where clause' in C:\wamp64\www\BookIT\config\db.php:25
+Stack trace:
+#0 C:\wamp64\www\BookIT\config\db.php(25): mysqli->prepare('\n    SELECT SUM...')
+#1 C:\wamp64\www\BookIT\host\payment_management.php(121): get_single_result('\n    SELECT SUM...', Array)
+#2 {main}
+  thrown in C:\wamp64\www\BookIT\config\db.php on line 25
+[19-Apr-2026 22:10:45 Asia/Manila] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown column 'user_id' in 'where clause' in C:\wamp64\www\BookIT\config\db.php:25
+Stack trace:
+#0 C:\wamp64\www\BookIT\config\db.php(25): mysqli->prepare('\n    SELECT SUM...')
+#1 C:\wamp64\www\BookIT\host\payment_management.php(121): get_single_result('\n    SELECT SUM...', Array)
+#2 {main}
+  thrown in C:\wamp64\www\BookIT\config\db.php on line 25
+[19-Apr-2026 22:10:46 Asia/Manila] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown column 'user_id' in 'where clause' in C:\wamp64\www\BookIT\config\db.php:25
+Stack trace:
+#0 C:\wamp64\www\BookIT\config\db.php(25): mysqli->prepare('\n    SELECT SUM...')
+#1 C:\wamp64\www\BookIT\host\payment_management.php(121): get_single_result('\n    SELECT SUM...', Array)
+#2 {main}
+  thrown in C:\wamp64\www\BookIT\config\db.php on line 25
+[19-Apr-2026 22:10:46 Asia/Manila] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown column 'user_id' in 'where clause' in C:\wamp64\www\BookIT\config\db.php:25
+Stack trace:
+#0 C:\wamp64\www\BookIT\config\db.php(25): mysqli->prepare('\n    SELECT SUM...')
+#1 C:\wamp64\www\BookIT\host\payment_management.php(121): get_single_result('\n    SELECT SUM...', Array)
+#2 {main}
+  thrown in C:\wamp64\www\BookIT\config\db.php on line 25
+[19-Apr-2026 22:10:46 Asia/Manila] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown column 'user_id' in 'where clause' in C:\wamp64\www\BookIT\config\db.php:25
+Stack trace:
+#0 C:\wamp64\www\BookIT\config\db.php(25): mysqli->prepare('\n    SELECT SUM...')
+#1 C:\wamp64\www\BookIT\host\payment_management.php(121): get_single_result('\n    SELECT SUM...', Array)
+#2 {main}
+  thrown in C:\wamp64\www\BookIT\config\db.php on line 25
+[19-Apr-2026 22:10:47 Asia/Manila] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown column 'user_id' in 'where clause' in C:\wamp64\www\BookIT\config\db.php:25
+Stack trace:
+#0 C:\wamp64\www\BookIT\config\db.php(25): mysqli->prepare('\n    SELECT SUM...')
+#1 C:\wamp64\www\BookIT\host\payment_management.php(121): get_single_result('\n    SELECT SUM...', Array)
+#2 {main}
+  thrown in C:\wamp64\www\BookIT\config\db.php on line 25
+[19-Apr-2026 22:15:48 Asia/Manila] PHP Fatal error:  Uncaught Error: Class "mysqli" not found in C:\wamp64\www\BookIT\config\db.php:8
+Stack trace:
+#0 C:\wamp64\www\BookIT\migrations\fix_payout_schema.php(7): require_once()
+#1 {main}
+  thrown in C:\wamp64\www\BookIT\config\db.php on line 8
+[19-Apr-2026 22:17:49 Asia/Manila] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown column 'user_id' in 'where clause' in C:\wamp64\www\BookIT\config\db.php:25
+Stack trace:
+#0 C:\wamp64\www\BookIT\config\db.php(25): mysqli->prepare('\n    SELECT SUM...')
+#1 C:\wamp64\www\BookIT\host\payment_management.php(121): get_single_result('\n    SELECT SUM...', Array)
+#2 {main}
+  thrown in C:\wamp64\www\BookIT\config\db.php on line 25
+[19-Apr-2026 22:17:50 Asia/Manila] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown column 'user_id' in 'where clause' in C:\wamp64\www\BookIT\config\db.php:25
+Stack trace:
+#0 C:\wamp64\www\BookIT\config\db.php(25): mysqli->prepare('\n    SELECT SUM...')
+#1 C:\wamp64\www\BookIT\host\payment_management.php(121): get_single_result('\n    SELECT SUM...', Array)
+#2 {main}
+  thrown in C:\wamp64\www\BookIT\config\db.php on line 25
+[19-Apr-2026 22:17:50 Asia/Manila] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown column 'user_id' in 'where clause' in C:\wamp64\www\BookIT\config\db.php:25
+Stack trace:
+#0 C:\wamp64\www\BookIT\config\db.php(25): mysqli->prepare('\n    SELECT SUM...')
+#1 C:\wamp64\www\BookIT\host\payment_management.php(121): get_single_result('\n    SELECT SUM...', Array)
+#2 {main}
+  thrown in C:\wamp64\www\BookIT\config\db.php on line 25
+[19-Apr-2026 22:17:52 Asia/Manila] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown column 'user_id' in 'where clause' in C:\wamp64\www\BookIT\config\db.php:25
+Stack trace:
+#0 C:\wamp64\www\BookIT\config\db.php(25): mysqli->prepare('\n    SELECT SUM...')
+#1 C:\wamp64\www\BookIT\host\payment_management.php(121): get_single_result('\n    SELECT SUM...', Array)
+#2 {main}
+  thrown in C:\wamp64\www\BookIT\config\db.php on line 25
+[19-Apr-2026 22:17:53 Asia/Manila] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown column 'user_id' in 'where clause' in C:\wamp64\www\BookIT\config\db.php:25
+Stack trace:
+#0 C:\wamp64\www\BookIT\config\db.php(25): mysqli->prepare('\n    SELECT SUM...')
+#1 C:\wamp64\www\BookIT\host\payment_management.php(121): get_single_result('\n    SELECT SUM...', Array)
+#2 {main}
+  thrown in C:\wamp64\www\BookIT\config\db.php on line 25
+[19-Apr-2026 22:23:56 Asia/Manila] process_reservation: validation failed. branchID: 4, unitID: 34, dates: -
+[19-Apr-2026 22:26:15 Asia/Manila] PHP Fatal error:  Uncaught mysqli_sql_exception: Illegal mix of collations for operation 'UNION' in C:\wamp64\www\BookIT\config\db.php:85
+Stack trace:
+#0 C:\wamp64\www\BookIT\config\db.php(85): mysqli->prepare('\n    SELECT \n  ...')
+#1 C:\wamp64\www\BookIT\host\payment_management.php(143): get_multiple_results('\n    SELECT \n  ...', Array)
+#2 {main}
+  thrown in C:\wamp64\www\BookIT\config\db.php on line 85
+[19-Apr-2026 22:26:16 Asia/Manila] PHP Fatal error:  Uncaught mysqli_sql_exception: Illegal mix of collations for operation 'UNION' in C:\wamp64\www\BookIT\config\db.php:85
+Stack trace:
+#0 C:\wamp64\www\BookIT\config\db.php(85): mysqli->prepare('\n    SELECT \n  ...')
+#1 C:\wamp64\www\BookIT\host\payment_management.php(143): get_multiple_results('\n    SELECT \n  ...', Array)
+#2 {main}
+  thrown in C:\wamp64\www\BookIT\config\db.php on line 85
+[19-Apr-2026 22:26:17 Asia/Manila] PHP Fatal error:  Uncaught mysqli_sql_exception: Illegal mix of collations for operation 'UNION' in C:\wamp64\www\BookIT\config\db.php:85
+Stack trace:
+#0 C:\wamp64\www\BookIT\config\db.php(85): mysqli->prepare('\n    SELECT \n  ...')
+#1 C:\wamp64\www\BookIT\host\payment_management.php(143): get_multiple_results('\n    SELECT \n  ...', Array)
+#2 {main}
+  thrown in C:\wamp64\www\BookIT\config\db.php on line 85
+[19-Apr-2026 22:26:19 Asia/Manila] PHP Fatal error:  Uncaught mysqli_sql_exception: Illegal mix of collations for operation 'UNION' in C:\wamp64\www\BookIT\config\db.php:85
+Stack trace:
+#0 C:\wamp64\www\BookIT\config\db.php(85): mysqli->prepare('\n    SELECT \n  ...')
+#1 C:\wamp64\www\BookIT\host\payment_management.php(143): get_multiple_results('\n    SELECT \n  ...', Array)
+#2 {main}
+  thrown in C:\wamp64\www\BookIT\config\db.php on line 85
+[19-Apr-2026 22:26:21 Asia/Manila] PHP Fatal error:  Uncaught mysqli_sql_exception: Illegal mix of collations for operation 'UNION' in C:\wamp64\www\BookIT\config\db.php:85
+Stack trace:
+#0 C:\wamp64\www\BookIT\config\db.php(85): mysqli->prepare('\n    SELECT \n  ...')
+#1 C:\wamp64\www\BookIT\host\payment_management.php(143): get_multiple_results('\n    SELECT \n  ...', Array)
+#2 {main}
+  thrown in C:\wamp64\www\BookIT\config\db.php on line 85
+[19-Apr-2026 22:26:42 Asia/Manila] PHP Fatal error:  Uncaught mysqli_sql_exception: Illegal mix of collations for operation 'UNION' in C:\wamp64\www\BookIT\config\db.php:85
+Stack trace:
+#0 C:\wamp64\www\BookIT\config\db.php(85): mysqli->prepare('\n    SELECT \n  ...')
+#1 C:\wamp64\www\BookIT\host\payment_management.php(143): get_multiple_results('\n    SELECT \n  ...', Array)
+#2 {main}
+  thrown in C:\wamp64\www\BookIT\config\db.php on line 85
+[19-Apr-2026 22:26:42 Asia/Manila] PHP Fatal error:  Uncaught mysqli_sql_exception: Illegal mix of collations for operation 'UNION' in C:\wamp64\www\BookIT\config\db.php:85
+Stack trace:
+#0 C:\wamp64\www\BookIT\config\db.php(85): mysqli->prepare('\n    SELECT \n  ...')
+#1 C:\wamp64\www\BookIT\host\payment_management.php(143): get_multiple_results('\n    SELECT \n  ...', Array)
+#2 {main}
+  thrown in C:\wamp64\www\BookIT\config\db.php on line 85
+[19-Apr-2026 22:26:43 Asia/Manila] PHP Fatal error:  Uncaught mysqli_sql_exception: Illegal mix of collations for operation 'UNION' in C:\wamp64\www\BookIT\config\db.php:85
+Stack trace:
+#0 C:\wamp64\www\BookIT\config\db.php(85): mysqli->prepare('\n    SELECT \n  ...')
+#1 C:\wamp64\www\BookIT\host\payment_management.php(143): get_multiple_results('\n    SELECT \n  ...', Array)
+#2 {main}
+  thrown in C:\wamp64\www\BookIT\config\db.php on line 85
+[19-Apr-2026 22:26:43 Asia/Manila] PHP Fatal error:  Uncaught mysqli_sql_exception: Illegal mix of collations for operation 'UNION' in C:\wamp64\www\BookIT\config\db.php:85
+Stack trace:
+#0 C:\wamp64\www\BookIT\config\db.php(85): mysqli->prepare('\n    SELECT \n  ...')
+#1 C:\wamp64\www\BookIT\host\payment_management.php(143): get_multiple_results('\n    SELECT \n  ...', Array)
+#2 {main}
+  thrown in C:\wamp64\www\BookIT\config\db.php on line 85
+[19-Apr-2026 22:27:38 Asia/Manila] Exception in execute_query: Unknown column 'num_adults' in 'field list'
+[19-Apr-2026 22:27:38 Asia/Manila] process_reservation: createReservation failed.
+[19-Apr-2026 22:30:10 Asia/Manila] PHP Fatal error:  Uncaught Error: Call to undefined function isLoggedIn() in C:\wamp64\www\BookIT\public\access_file.php:13
+Stack trace:
+#0 {main}
+  thrown in C:\wamp64\www\BookIT\public\access_file.php on line 13
+[19-Apr-2026 22:43:06 Asia/Manila] PHP Fatal error:  Uncaught Error: Call to undefined function isLoggedIn() in C:\wamp64\www\BookIT\public\access_file.php:13
+Stack trace:
+#0 {main}
+  thrown in C:\wamp64\www\BookIT\public\access_file.php on line 13
+[19-Apr-2026 22:43:12 Asia/Manila] PHP Fatal error:  Uncaught Error: Call to undefined function isLoggedIn() in C:\wamp64\www\BookIT\public\access_file.php:13
+Stack trace:
+#0 {main}
+  thrown in C:\wamp64\www\BookIT\public\access_file.php on line 13
+[19-Apr-2026 22:43:13 Asia/Manila] PHP Fatal error:  Uncaught Error: Call to undefined function isLoggedIn() in C:\wamp64\www\BookIT\public\access_file.php:13
+Stack trace:
+#0 {main}
+  thrown in C:\wamp64\www\BookIT\public\access_file.php on line 13
+[19-Apr-2026 22:44:09 Asia/Manila] PHP Fatal error:  Uncaught Error: Class "mysqli" not found in C:\wamp64\www\BookIT\config\db.php:8
+Stack trace:
+#0 C:\wamp64\www\BookIT\scratch\cleanup_coords.php(2): require()
+#1 {main}
+  thrown in C:\wamp64\www\BookIT\config\db.php on line 8
+[19-Apr-2026 23:42:14 Asia/Manila] SESSION EXPIRED: Inactivity timeout reached for User ID: 17
+[20-Apr-2026 00:09:27 Asia/Manila] SESSION EXPIRED: Inactivity timeout reached for User ID: 10
+[20-Apr-2026 00:17:39 Asia/Manila] PHP Fatal error:  Uncaught Error: Class "mysqli" not found in C:\wamp64\www\BookIT\config\db.php:8
+Stack trace:
+#0 C:\wamp64\www\BookIT\scratch\list_tables.php(2): require_once()
+#1 {main}
+  thrown in C:\wamp64\www\BookIT\config\db.php on line 8
+[20-Apr-2026 00:17:46 Asia/Manila] PHP Fatal error:  Uncaught Error: Call to undefined function isLoggedIn() in C:\wamp64\www\BookIT\public\access_file.php:13
+Stack trace:
+#0 {main}
+  thrown in C:\wamp64\www\BookIT\public\access_file.php on line 13
+[20-Apr-2026 00:17:57 Asia/Manila] PHP Fatal error:  Uncaught Error: Call to undefined function isLoggedIn() in C:\wamp64\www\BookIT\public\access_file.php:13
+Stack trace:
+#0 {main}
+  thrown in C:\wamp64\www\BookIT\public\access_file.php on line 13
+[20-Apr-2026 00:18:19 Asia/Manila] PHP Fatal error:  Uncaught Error: Call to undefined function isLoggedIn() in C:\wamp64\www\BookIT\public\access_file.php:13
+Stack trace:
+#0 {main}
+  thrown in C:\wamp64\www\BookIT\public\access_file.php on line 13
+[20-Apr-2026 00:18:23 Asia/Manila] PHP Fatal error:  Uncaught Error: Call to undefined function isLoggedIn() in C:\wamp64\www\BookIT\public\access_file.php:13
+Stack trace:
+#0 {main}
+  thrown in C:\wamp64\www\BookIT\public\access_file.php on line 13
+[20-Apr-2026 00:18:44 Asia/Manila] SESSION EXPIRED: Inactivity timeout reached for User ID: 1
+[20-Apr-2026 00:19:07 Asia/Manila] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown column 'pa.account_details' in 'field list' in C:\wamp64\www\BookIT\config\db.php:88
+Stack trace:
+#0 C:\wamp64\www\BookIT\config\db.php(88): mysqli->prepare('SELECT pr.*, u....')
+#1 C:\wamp64\www\BookIT\admin\payouts.php(76): get_multiple_results('SELECT pr.*, u....')
+#2 {main}
+  thrown in C:\wamp64\www\BookIT\config\db.php on line 88
+[20-Apr-2026 00:21:47 Asia/Manila] PHP Fatal error:  Uncaught Error: Call to undefined function isLoggedIn() in C:\wamp64\www\BookIT\public\access_file.php:13
+Stack trace:
+#0 {main}
+  thrown in C:\wamp64\www\BookIT\public\access_file.php on line 13
+[20-Apr-2026 00:36:30 Asia/Manila] PHP Fatal error:  Uncaught Error: Call to undefined function time_ago() in C:\wamp64\www\BookIT\host\notifications.php:72
+Stack trace:
+#0 {main}
+  thrown in C:\wamp64\www\BookIT\host\notifications.php on line 72
+[20-Apr-2026 00:36:42 Asia/Manila] PHP Fatal error:  Uncaught Error: Call to undefined function time_ago() in C:\wamp64\www\BookIT\host\notifications.php:72
+Stack trace:
+#0 {main}
+  thrown in C:\wamp64\www\BookIT\host\notifications.php on line 72
+[20-Apr-2026 00:36:56 Asia/Manila] PHP Fatal error:  Uncaught mysqli_sql_exception: You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near 'BY DATE_FORMAT(r.check_in_date, '%Y-%m')' at line 5 in C:\wamp64\www\BookIT\config\db.php:88
+Stack trace:
+#0 C:\wamp64\www\BookIT\config\db.php(88): mysqli->prepare('\n    SELECT DAT...')
+#1 C:\wamp64\www\BookIT\host\host_dashboard.php(80): get_multiple_results('\n    SELECT DAT...')
+#2 {main}
+  thrown in C:\wamp64\www\BookIT\config\db.php on line 88
+[20-Apr-2026 00:37:38 Asia/Manila] PHP Fatal error:  Uncaught mysqli_sql_exception: You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near 'BY DATE_FORMAT(r.check_in_date, '%Y-%m')' at line 5 in C:\wamp64\www\BookIT\config\db.php:88
+Stack trace:
+#0 C:\wamp64\www\BookIT\config\db.php(88): mysqli->prepare('\n    SELECT DAT...')
+#1 C:\wamp64\www\BookIT\host\host_dashboard.php(80): get_multiple_results('\n    SELECT DAT...')
+#2 {main}
+  thrown in C:\wamp64\www\BookIT\config\db.php on line 88
+[20-Apr-2026 00:41:31 Asia/Manila] PHP Fatal error:  Uncaught mysqli_sql_exception: You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near 'BY DATE_FORMAT(r.check_in_date, '%Y-%m')' at line 5 in C:\wamp64\www\BookIT\config\db.php:88
+Stack trace:
+#0 C:\wamp64\www\BookIT\config\db.php(88): mysqli->prepare('\n    SELECT DAT...')
+#1 C:\wamp64\www\BookIT\host\host_dashboard.php(80): get_multiple_results('\n    SELECT DAT...')
+#2 {main}
+  thrown in C:\wamp64\www\BookIT\config\db.php on line 88
+[20-Apr-2026 00:42:30 Asia/Manila] PHP Fatal error:  Uncaught mysqli_sql_exception: You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near 'BY DATE_FORMAT(r.check_in_date, '%Y-%m')' at line 5 in C:\wamp64\www\BookIT\config\db.php:88
+Stack trace:
+#0 C:\wamp64\www\BookIT\config\db.php(88): mysqli->prepare('\n    SELECT DAT...')
+#1 C:\wamp64\www\BookIT\host\host_dashboard.php(80): get_multiple_results('\n    SELECT DAT...')
+#2 {main}
+  thrown in C:\wamp64\www\BookIT\config\db.php on line 88
+[20-Apr-2026 00:50:55 Asia/Manila] PHP Warning:  Undefined array key "branch_id" in C:\wamp64\www\BookIT\renter\booking_summary.php on line 24
+[20-Apr-2026 00:50:55 Asia/Manila] PHP Stack trace:
+[20-Apr-2026 00:50:55 Asia/Manila] PHP   1. {main}() C:\wamp64\www\BookIT\renter\booking_summary.php:0
+[20-Apr-2026 00:51:15 Asia/Manila] PHP Warning:  Undefined array key "branch_id" in C:\wamp64\www\BookIT\renter\booking_summary.php on line 24
+[20-Apr-2026 00:51:15 Asia/Manila] PHP Stack trace:
+[20-Apr-2026 00:51:15 Asia/Manila] PHP   1. {main}() C:\wamp64\www\BookIT\renter\booking_summary.php:0
+[20-Apr-2026 00:51:27 Asia/Manila] PHP Warning:  Undefined array key "branch_id" in C:\wamp64\www\BookIT\renter\booking_summary.php on line 24
+[20-Apr-2026 00:51:27 Asia/Manila] PHP Stack trace:
+[20-Apr-2026 00:51:27 Asia/Manila] PHP   1. {main}() C:\wamp64\www\BookIT\renter\booking_summary.php:0
+[20-Apr-2026 00:51:57 Asia/Manila] PHP Warning:  Undefined array key "branch_id" in C:\wamp64\www\BookIT\renter\booking_summary.php on line 24
+[20-Apr-2026 00:51:57 Asia/Manila] PHP Stack trace:
+[20-Apr-2026 00:51:57 Asia/Manila] PHP   1. {main}() C:\wamp64\www\BookIT\renter\booking_summary.php:0
+[20-Apr-2026 00:52:31 Asia/Manila] PHP Fatal error:  Uncaught mysqli_sql_exception: You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near 'BY DATE_FORMAT(r.check_in_date, '%Y-%m')' at line 5 in C:\wamp64\www\BookIT\config\db.php:88
+Stack trace:
+#0 C:\wamp64\www\BookIT\config\db.php(88): mysqli->prepare('\n    SELECT DAT...')
+#1 C:\wamp64\www\BookIT\host\host_dashboard.php(80): get_multiple_results('\n    SELECT DAT...')
+#2 {main}
+  thrown in C:\wamp64\www\BookIT\config\db.php on line 88
+[20-Apr-2026 00:52:31 Asia/Manila] PHP Fatal error:  Uncaught mysqli_sql_exception: You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near 'BY DATE_FORMAT(r.check_in_date, '%Y-%m')' at line 5 in C:\wamp64\www\BookIT\config\db.php:88
+Stack trace:
+#0 C:\wamp64\www\BookIT\config\db.php(88): mysqli->prepare('\n    SELECT DAT...')
+#1 C:\wamp64\www\BookIT\host\host_dashboard.php(80): get_multiple_results('\n    SELECT DAT...')
+#2 {main}
+  thrown in C:\wamp64\www\BookIT\config\db.php on line 88
+[20-Apr-2026 00:52:32 Asia/Manila] PHP Fatal error:  Uncaught mysqli_sql_exception: You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near 'BY DATE_FORMAT(r.check_in_date, '%Y-%m')' at line 5 in C:\wamp64\www\BookIT\config\db.php:88
+Stack trace:
+#0 C:\wamp64\www\BookIT\config\db.php(88): mysqli->prepare('\n    SELECT DAT...')
+#1 C:\wamp64\www\BookIT\host\host_dashboard.php(80): get_multiple_results('\n    SELECT DAT...')
+#2 {main}
+  thrown in C:\wamp64\www\BookIT\config\db.php on line 88
+[20-Apr-2026 00:52:32 Asia/Manila] PHP Fatal error:  Uncaught mysqli_sql_exception: You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near 'BY DATE_FORMAT(r.check_in_date, '%Y-%m')' at line 5 in C:\wamp64\www\BookIT\config\db.php:88
+Stack trace:
+#0 C:\wamp64\www\BookIT\config\db.php(88): mysqli->prepare('\n    SELECT DAT...')
+#1 C:\wamp64\www\BookIT\host\host_dashboard.php(80): get_multiple_results('\n    SELECT DAT...')
+#2 {main}
+  thrown in C:\wamp64\www\BookIT\config\db.php on line 88
+[20-Apr-2026 00:52:32 Asia/Manila] PHP Fatal error:  Uncaught mysqli_sql_exception: You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near 'BY DATE_FORMAT(r.check_in_date, '%Y-%m')' at line 5 in C:\wamp64\www\BookIT\config\db.php:88
+Stack trace:
+#0 C:\wamp64\www\BookIT\config\db.php(88): mysqli->prepare('\n    SELECT DAT...')
+#1 C:\wamp64\www\BookIT\host\host_dashboard.php(80): get_multiple_results('\n    SELECT DAT...')
+#2 {main}
+  thrown in C:\wamp64\www\BookIT\config\db.php on line 88
+[20-Apr-2026 00:52:32 Asia/Manila] PHP Fatal error:  Uncaught mysqli_sql_exception: You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near 'BY DATE_FORMAT(r.check_in_date, '%Y-%m')' at line 5 in C:\wamp64\www\BookIT\config\db.php:88
+Stack trace:
+#0 C:\wamp64\www\BookIT\config\db.php(88): mysqli->prepare('\n    SELECT DAT...')
+#1 C:\wamp64\www\BookIT\host\host_dashboard.php(80): get_multiple_results('\n    SELECT DAT...')
+#2 {main}
+  thrown in C:\wamp64\www\BookIT\config\db.php on line 88
+[20-Apr-2026 00:52:32 Asia/Manila] PHP Fatal error:  Uncaught mysqli_sql_exception: You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near 'BY DATE_FORMAT(r.check_in_date, '%Y-%m')' at line 5 in C:\wamp64\www\BookIT\config\db.php:88
+Stack trace:
+#0 C:\wamp64\www\BookIT\config\db.php(88): mysqli->prepare('\n    SELECT DAT...')
+#1 C:\wamp64\www\BookIT\host\host_dashboard.php(80): get_multiple_results('\n    SELECT DAT...')
+#2 {main}
+  thrown in C:\wamp64\www\BookIT\config\db.php on line 88
+[20-Apr-2026 00:52:32 Asia/Manila] PHP Fatal error:  Uncaught mysqli_sql_exception: You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near 'BY DATE_FORMAT(r.check_in_date, '%Y-%m')' at line 5 in C:\wamp64\www\BookIT\config\db.php:88
+Stack trace:
+#0 C:\wamp64\www\BookIT\config\db.php(88): mysqli->prepare('\n    SELECT DAT...')
+#1 C:\wamp64\www\BookIT\host\host_dashboard.php(80): get_multiple_results('\n    SELECT DAT...')
+#2 {main}
+  thrown in C:\wamp64\www\BookIT\config\db.php on line 88
+[20-Apr-2026 00:52:33 Asia/Manila] PHP Fatal error:  Uncaught mysqli_sql_exception: You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near 'BY DATE_FORMAT(r.check_in_date, '%Y-%m')' at line 5 in C:\wamp64\www\BookIT\config\db.php:88
+Stack trace:
+#0 C:\wamp64\www\BookIT\config\db.php(88): mysqli->prepare('\n    SELECT DAT...')
+#1 C:\wamp64\www\BookIT\host\host_dashboard.php(80): get_multiple_results('\n    SELECT DAT...')
+#2 {main}
+  thrown in C:\wamp64\www\BookIT\config\db.php on line 88
+[20-Apr-2026 00:52:35 Asia/Manila] PHP Fatal error:  Uncaught mysqli_sql_exception: You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near 'BY DATE_FORMAT(r.check_in_date, '%Y-%m')' at line 5 in C:\wamp64\www\BookIT\config\db.php:88
+Stack trace:
+#0 C:\wamp64\www\BookIT\config\db.php(88): mysqli->prepare('\n    SELECT DAT...')
+#1 C:\wamp64\www\BookIT\host\host_dashboard.php(80): get_multiple_results('\n    SELECT DAT...')
+#2 {main}
+  thrown in C:\wamp64\www\BookIT\config\db.php on line 88
+[20-Apr-2026 00:52:38 Asia/Manila] PHP Fatal error:  Uncaught mysqli_sql_exception: You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near 'BY DATE_FORMAT(r.check_in_date, '%Y-%m')' at line 5 in C:\wamp64\www\BookIT\config\db.php:88
+Stack trace:
+#0 C:\wamp64\www\BookIT\config\db.php(88): mysqli->prepare('\n    SELECT DAT...')
+#1 C:\wamp64\www\BookIT\host\host_dashboard.php(80): get_multiple_results('\n    SELECT DAT...')
+#2 {main}
+  thrown in C:\wamp64\www\BookIT\config\db.php on line 88
+[20-Apr-2026 00:52:50 Asia/Manila] SESSION EXPIRED: Inactivity timeout reached for User ID: 1
+[20-Apr-2026 00:53:40 Asia/Manila] === addBranch() called ===
+[20-Apr-2026 00:53:40 Asia/Manila]   branch_name: bulacan
+[20-Apr-2026 00:53:40 Asia/Manila]   address: Yakal Street
+303
+[20-Apr-2026 00:53:40 Asia/Manila]   city: Quezon City
+[20-Apr-2026 00:53:40 Asia/Manila]   contact_number: 
+[20-Apr-2026 00:53:40 Asia/Manila]   email: monkeydluffy@gmail.com
+[20-Apr-2026 00:53:40 Asia/Manila]   host_id: 24
+[20-Apr-2026 00:53:40 Asia/Manila]   SQL: INSERT INTO branches (branch_name, address, city, contact_number, email, host_id, is_active) 
+                VALUES (?, ?, ?, ?, ?, ?, 1)
+[20-Apr-2026 00:53:40 Asia/Manila]   Params count: 6
+[20-Apr-2026 00:53:40 Asia/Manila]   Params: ["bulacan","Yakal Street\r\n303","Quezon City","","monkeydluffy@gmail.com","24"]
+[20-Apr-2026 00:53:40 Asia/Manila]   execute_query() returned: TRUE
+[20-Apr-2026 00:53:40 Asia/Manila]   SUCCESS: Branch added!
+[20-Apr-2026 00:53:56 Asia/Manila] PHP Fatal error:  Uncaught mysqli_sql_exception: You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near 'BY DATE_FORMAT(r.check_in_date, '%Y-%m')' at line 5 in C:\wamp64\www\BookIT\config\db.php:88
+Stack trace:
+#0 C:\wamp64\www\BookIT\config\db.php(88): mysqli->prepare('\n    SELECT DAT...')
+#1 C:\wamp64\www\BookIT\host\host_dashboard.php(80): get_multiple_results('\n    SELECT DAT...')
+#2 {main}
+  thrown in C:\wamp64\www\BookIT\config\db.php on line 88
+[20-Apr-2026 00:54:01 Asia/Manila] PHP Fatal error:  Uncaught mysqli_sql_exception: You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near 'BY DATE_FORMAT(r.check_in_date, '%Y-%m')' at line 5 in C:\wamp64\www\BookIT\config\db.php:88
+Stack trace:
+#0 C:\wamp64\www\BookIT\config\db.php(88): mysqli->prepare('\n    SELECT DAT...')
+#1 C:\wamp64\www\BookIT\host\host_dashboard.php(80): get_multiple_results('\n    SELECT DAT...')
+#2 {main}
+  thrown in C:\wamp64\www\BookIT\config\db.php on line 88
+[20-Apr-2026 00:54:02 Asia/Manila] UNAUTHORIZED ACCESS ATTEMPT: User ID: 24 attempted to access page requiring roles: admin (Current role: host) at /BookIT/admin/manage_branch.php
+[20-Apr-2026 00:54:02 Asia/Manila] PHP Fatal error:  Uncaught mysqli_sql_exception: You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near 'BY DATE_FORMAT(r.check_in_date, '%Y-%m')' at line 5 in C:\wamp64\www\BookIT\config\db.php:88
+Stack trace:
+#0 C:\wamp64\www\BookIT\config\db.php(88): mysqli->prepare('\n    SELECT DAT...')
+#1 C:\wamp64\www\BookIT\host\host_dashboard.php(80): get_multiple_results('\n    SELECT DAT...')
+#2 {main}
+  thrown in C:\wamp64\www\BookIT\config\db.php on line 88
+[20-Apr-2026 00:56:08 Asia/Manila] PHP Fatal error:  Uncaught ArgumentCountError: The number of elements in the type definition string must match the number of bind variables in C:\wamp64\www\BookIT\host\unit_management.php:46
+Stack trace:
+#0 C:\wamp64\www\BookIT\host\unit_management.php(46): mysqli_stmt->bind_param('siisddsiisssdd', 'sample unit', 10, 1, '', 4.0, 0.0, 'nightly', 13, 'sample street', 'k26', '', 14.60036201, 120.98052892)
+#1 {main}
+  thrown in C:\wamp64\www\BookIT\host\unit_management.php on line 46
+[20-Apr-2026 01:00:04 Asia/Manila] PHP Fatal error:  Cannot redeclare time_ago() (previously declared in C:\wamp64\www\BookIT\includes\functions.php:12) in C:\wamp64\www\BookIT\includes\functions.php on line 1616
+[20-Apr-2026 01:00:04 Asia/Manila] PHP Stack trace:
+[20-Apr-2026 01:00:04 Asia/Manila] PHP   1. {main}() C:\wamp64\www\BookIT\host\host_dashboard.php:0
+[20-Apr-2026 01:00:05 Asia/Manila] PHP Fatal error:  Cannot redeclare time_ago() (previously declared in C:\wamp64\www\BookIT\includes\functions.php:12) in C:\wamp64\www\BookIT\includes\functions.php on line 1616
+[20-Apr-2026 01:00:05 Asia/Manila] PHP Stack trace:
+[20-Apr-2026 01:00:05 Asia/Manila] PHP   1. {main}() C:\wamp64\www\BookIT\host\host_dashboard.php:0
+[20-Apr-2026 01:00:56 Asia/Manila] PHP Fatal error:  Uncaught mysqli_sql_exception: You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near 'BY DATE_FORMAT(r.check_in_date, '%Y-%m')' at line 5 in C:\wamp64\www\BookIT\config\db.php:88
+Stack trace:
+#0 C:\wamp64\www\BookIT\config\db.php(88): mysqli->prepare('\n    SELECT DAT...')
+#1 C:\wamp64\www\BookIT\host\host_dashboard.php(80): get_multiple_results('\n    SELECT DAT...')
+#2 {main}
+  thrown in C:\wamp64\www\BookIT\config\db.php on line 88
+[20-Apr-2026 01:00:57 Asia/Manila] PHP Fatal error:  Uncaught mysqli_sql_exception: You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near 'BY DATE_FORMAT(r.check_in_date, '%Y-%m')' at line 5 in C:\wamp64\www\BookIT\config\db.php:88
+Stack trace:
+#0 C:\wamp64\www\BookIT\config\db.php(88): mysqli->prepare('\n    SELECT DAT...')
+#1 C:\wamp64\www\BookIT\host\host_dashboard.php(80): get_multiple_results('\n    SELECT DAT...')
+#2 {main}
+  thrown in C:\wamp64\www\BookIT\config\db.php on line 88
+[20-Apr-2026 01:01:07 Asia/Manila] PHP Fatal error:  Uncaught mysqli_sql_exception: You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near 'BY DATE_FORMAT(r.check_in_date, '%Y-%m')' at line 5 in C:\wamp64\www\BookIT\config\db.php:88
+Stack trace:
+#0 C:\wamp64\www\BookIT\config\db.php(88): mysqli->prepare('\n    SELECT DAT...')
+#1 C:\wamp64\www\BookIT\host\host_dashboard.php(80): get_multiple_results('\n    SELECT DAT...')
+#2 {main}
+  thrown in C:\wamp64\www\BookIT\config\db.php on line 88
+[20-Apr-2026 01:01:10 Asia/Manila] PHP Fatal error:  Uncaught mysqli_sql_exception: You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near 'BY DATE_FORMAT(r.check_in_date, '%Y-%m')' at line 5 in C:\wamp64\www\BookIT\config\db.php:88
+Stack trace:
+#0 C:\wamp64\www\BookIT\config\db.php(88): mysqli->prepare('\n    SELECT DAT...')
+#1 C:\wamp64\www\BookIT\host\host_dashboard.php(80): get_multiple_results('\n    SELECT DAT...')
+#2 {main}
+  thrown in C:\wamp64\www\BookIT\config\db.php on line 88
+[20-Apr-2026 01:05:53 Asia/Manila] PHP Warning:  Undefined array key "branch_id" in C:\wamp64\www\BookIT\renter\booking_summary.php on line 24
+[20-Apr-2026 01:05:53 Asia/Manila] PHP Stack trace:
+[20-Apr-2026 01:05:53 Asia/Manila] PHP   1. {main}() C:\wamp64\www\BookIT\renter\booking_summary.php:0
+[20-Apr-2026 01:06:02 Asia/Manila] PHP Warning:  Undefined array key "branch_id" in C:\wamp64\www\BookIT\renter\booking_summary.php on line 24
+[20-Apr-2026 01:06:02 Asia/Manila] PHP Stack trace:
+[20-Apr-2026 01:06:02 Asia/Manila] PHP   1. {main}() C:\wamp64\www\BookIT\renter\booking_summary.php:0
+[20-Apr-2026 01:09:11 Asia/Manila] Exception in execute_query: Unknown column 'num_adults' in 'field list'
+[20-Apr-2026 01:09:11 Asia/Manila] process_reservation: createReservation failed.
+[20-Apr-2026 01:09:44 Asia/Manila] Exception in execute_query: Unknown column 'num_adults' in 'field list'
+[20-Apr-2026 01:09:44 Asia/Manila] process_reservation: createReservation failed.
+[20-Apr-2026 01:13:20 Asia/Manila] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown column 'pa.account_details' in 'field list' in C:\wamp64\www\BookIT\config\db.php:88
+Stack trace:
+#0 C:\wamp64\www\BookIT\config\db.php(88): mysqli->prepare('SELECT pr.*, u....')
+#1 C:\wamp64\www\BookIT\admin\payouts.php(76): get_multiple_results('SELECT pr.*, u....')
+#2 {main}
+  thrown in C:\wamp64\www\BookIT\config\db.php on line 88
+[20-Apr-2026 01:27:58 Asia/Manila] PHP Fatal error:  Uncaught Error: Class "mysqli" not found in C:\wamp64\www\BookIT\config\db.php:8
+Stack trace:
+#0 C:\wamp64\www\BookIT\scripts\fix_corrupted_units.php(9): include_once()
+#1 {main}
+  thrown in C:\wamp64\www\BookIT\config\db.php on line 8
+[20-Apr-2026 01:31:29 Asia/Manila] PHP Fatal error:  Uncaught Error: Class "mysqli" not found in C:\wamp64\www\BookIT\config\db.php:8
+Stack trace:
+#0 C:\wamp64\www\BookIT\scripts\migrate_promos.php(2): include_once()
+#1 {main}
+  thrown in C:\wamp64\www\BookIT\config\db.php on line 8
+[20-Apr-2026 01:36:28 Asia/Manila] PHP Fatal error:  Cannot redeclare isActive() (previously declared in C:\wamp64\www\BookIT\includes\sidebar.php:48) in C:\wamp64\www\BookIT\includes\sidebar.php on line 48
+[20-Apr-2026 01:36:28 Asia/Manila] PHP Stack trace:
+[20-Apr-2026 01:36:28 Asia/Manila] PHP   1. {main}() C:\wamp64\www\BookIT\host\property_settings.php:0
+[20-Apr-2026 01:36:28 Asia/Manila] PHP   2. include() C:\wamp64\www\BookIT\host\property_settings.php:191
+[20-Apr-2026 01:54:02 Asia/Manila] PHP Fatal error:  Uncaught Error: Class "mysqli" not found in C:\wamp64\www\BookIT\config\db.php:8
+Stack trace:
+#0 C:\wamp64\www\BookIT\scripts\add_profile_column.php(2): include_once()
+#1 {main}
+  thrown in C:\wamp64\www\BookIT\config\db.php on line 8
+[20-Apr-2026 02:07:39 Asia/Manila] PHP Fatal error:  Uncaught Error: Class "mysqli" not found in C:\wamp64\www\BookIT\config\db.php:8
+Stack trace:
+#0 C:\wamp64\www\BookIT\scripts\expand_unit_metadata.php(2): include_once()
+#1 {main}
+  thrown in C:\wamp64\www\BookIT\config\db.php on line 8
+[20-Apr-2026 02:08:28 Asia/Manila] SESSION EXPIRED: Inactivity timeout reached for User ID: 9
+[20-Apr-2026 02:08:33 Asia/Manila] PHP Fatal error:  Uncaught Error: Call to undefined function isLoggedIn() in C:\wamp64\www\BookIT\public\access_file.php:13
+Stack trace:
+#0 {main}
+  thrown in C:\wamp64\www\BookIT\public\access_file.php on line 13
+[20-Apr-2026 02:08:46 Asia/Manila] PHP Fatal error:  Uncaught Error: Call to undefined function isLoggedIn() in C:\wamp64\www\BookIT\public\access_file.php:13
+Stack trace:
+#0 {main}
+  thrown in C:\wamp64\www\BookIT\public\access_file.php on line 13
+[20-Apr-2026 02:08:53 Asia/Manila] PHP Fatal error:  Uncaught Error: Call to undefined function isLoggedIn() in C:\wamp64\www\BookIT\public\access_file.php:13
+Stack trace:
+#0 {main}
+  thrown in C:\wamp64\www\BookIT\public\access_file.php on line 13
+[20-Apr-2026 02:08:54 Asia/Manila] PHP Fatal error:  Uncaught Error: Call to undefined function isLoggedIn() in C:\wamp64\www\BookIT\public\access_file.php:13
+Stack trace:
+#0 {main}
+  thrown in C:\wamp64\www\BookIT\public\access_file.php on line 13
+[20-Apr-2026 02:08:55 Asia/Manila] PHP Fatal error:  Uncaught Error: Call to undefined function isLoggedIn() in C:\wamp64\www\BookIT\public\access_file.php:13
+Stack trace:
+#0 {main}
+  thrown in C:\wamp64\www\BookIT\public\access_file.php on line 13
+[20-Apr-2026 02:19:40 Asia/Manila] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown column 'property_type' in 'field list' in C:\wamp64\www\BookIT\host\unit_management.php:54
+Stack trace:
+#0 C:\wamp64\www\BookIT\host\unit_management.php(54): mysqli->prepare('INSERT INTO uni...')
+#1 {main}
+  thrown in C:\wamp64\www\BookIT\host\unit_management.php on line 54
+[20-Apr-2026 02:19:52 Asia/Manila] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown column 'property_type' in 'field list' in C:\wamp64\www\BookIT\host\unit_management.php:76
+Stack trace:
+#0 C:\wamp64\www\BookIT\host\unit_management.php(76): mysqli->prepare('UPDATE units SE...')
+#1 {main}
+  thrown in C:\wamp64\www\BookIT\host\unit_management.php on line 76
+[20-Apr-2026 02:27:52 Asia/Manila] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown column 'property_type' in 'field list' in C:\wamp64\www\BookIT\host\unit_management.php:76
+Stack trace:
+#0 C:\wamp64\www\BookIT\host\unit_management.php(76): mysqli->prepare('UPDATE units SE...')
+#1 {main}
+  thrown in C:\wamp64\www\BookIT\host\unit_management.php on line 76
+[20-Apr-2026 02:28:49 Asia/Manila] PHP Fatal error:  Uncaught Error: Class "mysqli" not found in C:\wamp64\www\BookIT\config\db.php:8
+Stack trace:
+#0 C:\wamp64\www\BookIT\migrations\harden_amenity_requests.php(2): include_once()
+#1 {main}
+  thrown in C:\wamp64\www\BookIT\config\db.php on line 8
+[20-Apr-2026 02:30:13 Asia/Manila] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown column 'property_type' in 'field list' in C:\wamp64\www\BookIT\host\unit_management.php:54
+Stack trace:
+#0 C:\wamp64\www\BookIT\host\unit_management.php(54): mysqli->prepare('INSERT INTO uni...')
+#1 {main}
+  thrown in C:\wamp64\www\BookIT\host\unit_management.php on line 54
+[20-Apr-2026 02:33:11 Asia/Manila] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown column 'property_type' in 'field list' in C:\wamp64\www\BookIT\host\unit_management.php:76
+Stack trace:
+#0 C:\wamp64\www\BookIT\host\unit_management.php(76): mysqli->prepare('UPDATE units SE...')
+#1 {main}
+  thrown in C:\wamp64\www\BookIT\host\unit_management.php on line 76
+[20-Apr-2026 02:42:11 Asia/Manila] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown column 'property_type' in 'field list' in C:\wamp64\www\BookIT\host\unit_management.php:76
+Stack trace:
+#0 C:\wamp64\www\BookIT\host\unit_management.php(76): mysqli->prepare('UPDATE units SE...')
+#1 {main}
+  thrown in C:\wamp64\www\BookIT\host\unit_management.php on line 76
+[20-Apr-2026 08:32:59 Asia/Manila] SESSION EXPIRED: Inactivity timeout reached for User ID: 10
+[20-Apr-2026 08:33:20 Asia/Manila] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown column 'property_type' in 'field list' in C:\wamp64\www\BookIT\host\unit_management.php:76
+Stack trace:
+#0 C:\wamp64\www\BookIT\host\unit_management.php(76): mysqli->prepare('UPDATE units SE...')
+#1 {main}
+  thrown in C:\wamp64\www\BookIT\host\unit_management.php on line 76
+[20-Apr-2026 08:35:36 Asia/Manila] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown column 'property_type' in 'field list' in C:\wamp64\www\BookIT\host\unit_management.php:76
+Stack trace:
+#0 C:\wamp64\www\BookIT\host\unit_management.php(76): mysqli->prepare('UPDATE units SE...')
+#1 {main}
+  thrown in C:\wamp64\www\BookIT\host\unit_management.php on line 76
+[20-Apr-2026 08:35:41 Asia/Manila] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown column 'property_type' in 'field list' in C:\wamp64\www\BookIT\host\unit_management.php:76
+Stack trace:
+#0 C:\wamp64\www\BookIT\host\unit_management.php(76): mysqli->prepare('UPDATE units SE...')
+#1 {main}
+  thrown in C:\wamp64\www\BookIT\host\unit_management.php on line 76
+[20-Apr-2026 08:35:43 Asia/Manila] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown column 'property_type' in 'field list' in C:\wamp64\www\BookIT\host\unit_management.php:76
+Stack trace:
+#0 C:\wamp64\www\BookIT\host\unit_management.php(76): mysqli->prepare('UPDATE units SE...')
+#1 {main}
+  thrown in C:\wamp64\www\BookIT\host\unit_management.php on line 76
+[20-Apr-2026 08:37:19 Asia/Manila] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown column 'property_type' in 'field list' in C:\wamp64\www\BookIT\host\unit_management.php:76
+Stack trace:
+#0 C:\wamp64\www\BookIT\host\unit_management.php(76): mysqli->prepare('UPDATE units SE...')
+#1 {main}
+  thrown in C:\wamp64\www\BookIT\host\unit_management.php on line 76
+[20-Apr-2026 08:37:22 Asia/Manila] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown column 'property_type' in 'field list' in C:\wamp64\www\BookIT\host\unit_management.php:76
+Stack trace:
+#0 C:\wamp64\www\BookIT\host\unit_management.php(76): mysqli->prepare('UPDATE units SE...')
+#1 {main}
+  thrown in C:\wamp64\www\BookIT\host\unit_management.php on line 76
+[20-Apr-2026 08:37:46 Asia/Manila] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown column 'property_type' in 'field list' in C:\wamp64\www\BookIT\host\unit_management.php:76
+Stack trace:
+#0 C:\wamp64\www\BookIT\host\unit_management.php(76): mysqli->prepare('UPDATE units SE...')
+#1 {main}
+  thrown in C:\wamp64\www\BookIT\host\unit_management.php on line 76
+[20-Apr-2026 08:42:31 Asia/Manila] PHP Fatal error:  Uncaught ArgumentCountError: The number of elements in the type definition string must match the number of bind variables in C:\wamp64\www\BookIT\host\unit_management.php:55
+Stack trace:
+#0 C:\wamp64\www\BookIT\host\unit_management.php(55): mysqli_stmt->bind_param('siisddsisssddss...', NULL, 10, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'Room', 'Shared', '1', 1.0, NULL, '14:00', '12:00', 1, 30, 0.0, '', '', 'None', 'manual', 'active')
+#1 {main}
+  thrown in C:\wamp64\www\BookIT\host\unit_management.php on line 55
+[20-Apr-2026 08:43:39 Asia/Manila] SESSION EXPIRED: Inactivity timeout reached for User ID: 1
+[20-Apr-2026 08:44:43 Asia/Manila] PHP Fatal error:  Uncaught mysqli_sql_exception: Column 'branch_id' cannot be null in C:\wamp64\www\BookIT\host\unit_management.php:90
+Stack trace:
+#0 C:\wamp64\www\BookIT\host\unit_management.php(90): mysqli_stmt->execute()
+#1 {main}
+  thrown in C:\wamp64\www\BookIT\host\unit_management.php on line 90
+[20-Apr-2026 08:46:56 Asia/Manila] UNAUTHORIZED ACCESS ATTEMPT: User ID: 10 attempted to access page requiring roles: admin, manager (Current role: host) at /BookIT/admin/amenity_requests.php
+[20-Apr-2026 08:47:22 Asia/Manila] UNAUTHORIZED ACCESS ATTEMPT: User ID: 10 attempted to access page requiring roles: admin, manager (Current role: host) at /BookIT/admin/amenity_requests.php
+[20-Apr-2026 08:47:25 Asia/Manila] UNAUTHORIZED ACCESS ATTEMPT: User ID: 10 attempted to access page requiring roles: admin, manager (Current role: host) at /BookIT/admin/amenity_requests.php
+[20-Apr-2026 20:05:41 Asia/Manila] PHP Fatal error:  Uncaught Error: Class "mysqli" not found in C:\wamp64\www\BookIT\config\db.php:8
+Stack trace:
+#0 C:\wamp64\www\BookIT\scratch\check_schema.php(2): include()
+#1 {main}
+  thrown in C:\wamp64\www\BookIT\config\db.php on line 8
+[20-Apr-2026 20:27:46 Asia/Manila] SESSION EXPIRED: Inactivity timeout reached for User ID: 10

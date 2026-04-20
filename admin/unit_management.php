@@ -945,12 +945,9 @@
     });
     </script>
 
-    <?php if (defined('MAP_PROVIDER') && MAP_PROVIDER === 'google' && defined('GOOGLE_MAPS_API_KEY') && GOOGLE_MAPS_API_KEY !== ''): ?>
-    <script src="https://maps.googleapis.com/maps/api/js?key=<?php echo GOOGLE_MAPS_API_KEY; ?>&libraries=places"></script>
-    <?php else: ?>
+    <!-- Unified Leaflet Implementation (Remove Google Maps for Defense-Grade Stability) -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <?php endif; ?>
 
     <script>
     // PHP to JavaScript data passing for View Modal

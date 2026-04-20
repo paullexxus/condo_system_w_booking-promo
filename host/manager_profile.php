@@ -213,36 +213,27 @@ if ($hasProfilePictureColumn && !empty($managerData['profile_picture'])) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Profile - BookIT Manager</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="../assets/css/sidebar-common.css" rel="stylesheet">
     <link rel="stylesheet" href="../assets/css/manager/manager_profile.css">
+    <style>
+        body { font-family: 'Inter', system-ui, -apple-system, sans-serif; background: #f5f7fa; }
+        .main-content { margin-left: 230px; padding: 30px; transition: margin 0.3s; }
+        @media (max-width: 1200px) { .main-content { margin-left: 210px; } }
+        @media (max-width: 768px) { .main-content { margin-left: 0; } }
+        
+        .profile-container { margin-top: 0 !important; }
+    </style>
 </head>
 <body>
-    <!-- Navigation -->
-    <nav class="navbar navbar-expand-lg navbar-dark fixed-top" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
-        <div class="container">
-            <a class="navbar-brand" href="manager_dashboard.php">
-                <i class="fas fa-building me-2"></i>BookIT Manager
-            </a>
-            
-            <div class="collapse navbar-collapse">
-                <div class="navbar-nav ms-auto">
-                    <a class="nav-link" href="manager_dashboard.php">
-                        <i class="fas fa-tachometer-alt me-1"></i> Dashboard
-                    </a>
-                    <a class="nav-link active" href="manager_profile.php">
-                        <i class="fas fa-user me-1"></i> Profile
-                    </a>
-                    <a class="nav-link" href="../public/logout.php">
-                        <i class="fas fa-sign-out-alt me-1"></i> Logout
-                    </a>
-                </div>
-            </div>
-        </div>
-    </nav>
+    <div class="d-flex">
+        <?php include '../includes/sidebar.php'; ?>
+        
+        <main class="main-content flex-grow-1">
+            <div class="container-fluid">
 
-    <div class="container">
+
         <div class="profile-container">
             <!-- Profile Header -->
             <div class="profile-header">
@@ -506,6 +497,8 @@ if ($hasProfilePictureColumn && !empty($managerData['profile_picture'])) {
                 </div>
             </div>
         </div>
+            </div>
+        </main>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>

@@ -35,14 +35,22 @@ if (!$booking) {
     $error = "Booking not found.";
 }
 
-// Get payment info if exists
-$payment = null;
-if ($booking && $booking['status'] == 'approved') {
-    $payment = get_single_result(
-        "SELECT * FROM payments WHERE reservation_id = ? ORDER BY created_at DESC LIMIT 1",
-        [$bookingId]
-    );
-}
+// Get approved/pending addons
+$addons = get_multiple_results(
+    "SELECT ba.*, ua.name FROM booking_addons ba JOIN unit_addons ua ON ba.addon_id = ua.addon_id WHERE ba.booking_id = ?",
+    [$bookingId]
+);
+
+// Recalculate using Pricing Engine for consistency
+$pricing_data = BookIT_PricingEngine::calculatePrice(
+    (int)$booking['unit_id'], 
+    $booking['check_in_date'], 
+    $booking['check_out_date'], 
+    (int)$booking['num_adults'] + (int)$booking['num_children'], 
+    [], // Addon IDs handled by reservation_id
+    '', 
+    $bookingId
+);
 
 // Handle receipt upload (manual payment proof)
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['upload_receipt'])) {
@@ -391,16 +399,46 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['upload_receipt'])) {
                 <h4><i class="fas fa-receipt me-2"></i>Pricing Breakdown</h4>
                 <div class="pricing-box">
                     <div class="pricing-row">
-                        <span>Unit Rate & Addons</span>
-                        <span>₱<?php echo number_format($booking['total_amount'] - ($booking['security_deposit'] ?? 0), 2); ?></span>
+                        <span>Base Accommodation</span>
+                        <span>₱<?php echo number_format($pricing_data['subtotal'], 2); ?></span>
                     </div>
+
+                    <?php if (!empty($addons)): ?>
+                        <div class="mt-2 mb-2 p-2 bg-light rounded">
+                            <h6 class="text-xs font-bold text-muted mb-2 uppercase tracking-wider">Premium Services</h6>
+                            <?php foreach ($addons as $addon): ?>
+                                <div class="d-flex justify-content-between small mb-1">
+                                    <span>
+                                        <?php if ($addon['status'] === 'approved'): ?>
+                                            <i class="fas fa-check-circle text-success mr-1"></i>
+                                        <?php elseif ($addon['status'] === 'rejected'): ?>
+                                            <i class="fas fa-times-circle text-danger mr-1"></i>
+                                        <?php else: ?>
+                                            <i class="fas fa-clock text-warning mr-1"></i>
+                                        <?php endif; ?>
+                                        <?php echo htmlspecialchars($addon['name']); ?>
+                                    </span>
+                                    <span>₱<?php echo number_format($addon['status'] === 'approved' ? ($addon['approved_price'] ?: $addon['price']) : $addon['price'], 2); ?></span>
+                                </div>
+                            <?php endforeach; ?>
+                        </div>
+                    <?php endif; ?>
+
+                    <?php if ($pricing_data['fees'] > 0): ?>
                     <div class="pricing-row">
-                        <span>Security Deposit (Refundable)</span>
-                        <span>₱<?php echo number_format($booking['security_deposit'], 2); ?></span>
+                        <span>Fees (Cleaning/Service)</span>
+                        <span>₱<?php echo number_format($pricing_data['fees'], 2); ?></span>
                     </div>
+                    <?php endif; ?>
+
                     <div class="pricing-row total">
-                        <span>Total Amount Due</span>
-                        <span>₱<?php echo number_format($booking['total_amount'], 2); ?></span>
+                        <div class="d-flex flex-column">
+                            <span>Total Finalized Amount</span>
+                            <?php if ($pricing_data['pending_addons_total'] > 0): ?>
+                                <small class="text-warning fw-normal" style="font-size: 0.7rem;">+ ₱<?php echo number_format($pricing_data['pending_addons_total'], 2); ?> Awaiting Approval</small>
+                            <?php endif; ?>
+                        </div>
+                        <span>₱<?php echo number_format($pricing_data['total'] + $booking['security_deposit'], 2); ?></span>
                     </div>
                 </div>
             </div>

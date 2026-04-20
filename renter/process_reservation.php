@@ -12,7 +12,9 @@
 include_once '../includes/session.php';
 include_once '../includes/functions.php';
 include_once '../includes/auth.php';
+include_once '../includes/auth.php';
 include_once '../includes/renter_functions.php';
+include_once '../includes/pricing_engine.php';
 
 checkRole(['renter']); // Only renters can book
 
@@ -87,83 +89,37 @@ if (!$unit || (isset($unit['approval_status']) && $unit['approval_status'] !== '
 }
 
 $maxOcc = max(1, (int)($unit['max_occupancy'] ?? 10));
-if ($numAdults + $numChildren > $maxOcc) {
-    $_SESSION['flash_error'] = "Guest count exceeds this unit's maximum occupancy ($maxOcc).";
+$extra_allowed = (int)($unit['extra_guests_allowed'] ?? 0);
+if ($numAdults + $numChildren > ($maxOcc + $extra_allowed)) {
+    $_SESSION['flash_error'] = "Guest count exceeds this unit's maximum occupancy.";
     header('Location: reserve_unit.php');
     exit;
 }
 
-// Pricing calculation verification (Defensive re-calculation)
-$totalDays = calculateDays($checkInDate, $checkOutDate);
-$pricing_type = $unit['pricing_type'] ?? 'nightly';
-$dailyRate = in_array($pricing_type, ['nightly', 'daily']) ? (float)($unit['price_per_night'] ?? 0) : (float)($unit['price_per_month'] ?? 0) / 30;
-$dailyRate = max(0, $dailyRate);
+// Pricing calculation & Availability verification (Authoritative Engine)
+$addon_ids = $dataSource['amenities'] ?? ($dataSource['addon_ids'] ?? []);
+$promo_code = sanitize_input($dataSource['promo_code'] ?? '');
 
-$unitAmount = $dailyRate * $totalDays;
-$securityDeposit = (float)$unit['security_deposit'];
-$cleaningFee = isset($unit['cleaning_fee']) ? (float)$unit['cleaning_fee'] : 0.0;
-$serviceFee = isset($unit['service_fee']) ? (float)$unit['service_fee'] : 0.0;
+$pricing_result = BookIT_PricingEngine::calculatePrice($unitId, $checkInDate, $checkOutDate, $numAdults + $numChildren, $addon_ids, $promo_code);
 
-$amenityCosts = 0;
-$selectedAmenities = [];
-$addonArray = $dataSource['amenities'] ?? ($dataSource['addon_ids'] ?? []);
-
-if (is_array($addonArray)) {
-    foreach ($addonArray as $amenityId) {
-        $amenityId = (int)$amenityId;
-        if ($amenityId > 0) {
-            $amenity = get_single_result("SELECT * FROM amenities WHERE amenity_id = ?", [$amenityId]);
-            if ($amenity) {
-                $amenityCosts += (float)$amenity['hourly_rate'] * $totalDays;
-                $selectedAmenities[] = $amenity;
-            } else {
-                $addon = get_single_result("SELECT * FROM unit_addons WHERE addon_id = ? AND unit_id = ?", [$amenityId, $unitId]);
-                if ($addon) {
-                    $amenityCosts += (float)$addon['price'];
-                    $selectedAmenities[] = ['amenity_id' => $addon['addon_id'], 'amenity_name' => $addon['name'], 'hourly_rate' => $addon['price'] / $totalDays];
-                }
-            }
-        }
-    }
+if (!$pricing_result['success']) {
+    error_log("process_reservation: Pricing/Availability engine rejected request. Error: " . $pricing_result['error']);
+    $_SESSION['flash_error'] = $pricing_result['error'];
+    header('Location: reserve_unit.php?unit_id=' . $unitId);
+    exit;
 }
 
-$totalAmount = $unitAmount + $amenityCosts + $cleaningFee + $serviceFee;
-
-$promoCode = sanitize_input($dataSource['promo_code'] ?? '');
-$discountAmount = 0;
-if (!empty($promoCode)) {
-    $dateToday = date('Y-m-d');
-    $promo = get_single_result(
-        "SELECT * FROM promo_codes WHERE code = ? AND (status = 'active' OR is_active = 1) AND valid_from <= ? AND valid_until >= ?",
-        [$promoCode, $dateToday, $dateToday]
-    );
-    
-    if ($promo) {
-        $validPromo = true;
-        if ($promo['scope'] === 'host' && (int)$promo['host_id'] !== (int)($unit['host_id'] ?? 0)) $validPromo = false;
-        elseif ($promo['scope'] === 'branch' && (int)$promo['branch_id'] !== (int)$branchId) $validPromo = false;
-        
-        if ($validPromo && $unitAmount >= (float)$promo['min_booking_amount']) {
-            if (isset($promo['usage_limit']) && $promo['usage_limit'] > 0 && $promo['used_count'] >= $promo['usage_limit']) {
-                $validPromo = false;
-            }
-            if ($validPromo) {
-                $value = (float)$promo['discount_value'];
-                $discountAmount = ($promo['discount_type'] === 'percentage') ? $unitAmount * ($value / 100.0) : $value;
-                if (!empty($promo['max_discount']) && $promo['max_discount'] > 0) $discountAmount = min($discountAmount, (float)$promo['max_discount']);
-                $appliedPromo = $promo;
-            }
-        }
-    }
-}
-
-$totalAmount = max(0, $totalAmount - $discountAmount);
+$totalAmount = $pricing_result['total'];
+$security_deposit = (float)($unit['security_deposit'] ?? 0);
+$discountAmount = $pricing_result['discount'];
+$appliedPromoCode = $pricing_result['promo'];
+$selectedAmenities = $pricing_result['addons'];
 $_SESSION['last_booking_submission'] = time();
 
 // execute transactional insert (with overlap locks)
 $reservationId = createReservation(
     $_SESSION['user_id'], $unitId, $branchId, $checkInDate, $checkOutDate,
-    $totalAmount, $securityDeposit, $specialRequests, $numAdults, $numChildren
+    $totalAmount, $security_deposit, $specialRequests, $numAdults, $numChildren
 );
 
 if (!$reservationId) {
@@ -185,12 +141,18 @@ if (!empty($appliedPromo) && $discountAmount > 0) {
     } catch (Exception $e) {}
 }
 
-// Attach amenities
+// Attach Paid Amenities (Awaiting Approval)
 if (!empty($selectedAmenities)) {
-    foreach ($selectedAmenities as $amenity) {
-        if (isset($amenity['amenity_name'])) {
-            bookAmenity($_SESSION['user_id'], $amenity['amenity_id'], $branchId, $checkInDate, '00:00:00', '23:59:59', $amenity['hourly_rate'] * $totalDays);
-        }
+    foreach ($selectedAmenities as $addon) {
+        $addon_id = (int)$addon['addon_id'];
+        $price = (float)$addon['price'];
+        
+        // [DEFENSE] Price Consistency Lock & Duplicate Prevention
+        // We use INSERT IGNORE and snapshot the current catalog price
+        execute_query(
+            "INSERT IGNORE INTO booking_addons (booking_id, addon_id, price, status) VALUES (?, ?, ?, 'pending')", 
+            [$reservationId, $addon_id, $price]
+        );
     }
 }
 

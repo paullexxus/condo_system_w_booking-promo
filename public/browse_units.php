@@ -19,6 +19,21 @@ $checkIn = isset($_GET['check_in']) ? trim((string)$_GET['check_in']) : '';
 $checkOut = isset($_GET['check_out']) ? trim((string)$_GET['check_out']) : '';
 $guests = isset($_GET['guests']) ? (int)$_GET['guests'] : null;
 
+// Search Abuse Protection (Phase 4.3 Hardening)
+$is_searching = !empty($_GET);
+if ($is_searching) {
+    $abuse_check = checkAbuse('search');
+    if (!$abuse_check['allowed']) {
+        die("<!DOCTYPE html><html lang='en'><body style='font-family:sans-serif; display:flex; justify-content:center; align-items:center; height:100vh; background:#f8f9fa;'>
+            <div style='text-align:center; padding:40px; background:white; border-radius:12px; box-shadow:0 10px 30px rgba(0,0,0,0.1); max-width:500px;'>
+                <h1 style='color:#e74c3c; margin-bottom:16px;'>⚠️ Slow Down!</h1>
+                <p style='color:#636e72; line-height:1.6;'>" . htmlspecialchars($abuse_check['message']) . "</p>
+                <div style='margin-top:24px;'><a href='index.php' style='color:#3498db; text-decoration:none; font-weight:bold;'>Return to Home</a></div>
+            </div>
+        </body></html>");
+    }
+}
+
 // If search came from homepage without branch selection,
 // auto-select first branch that currently has approved available units.
 if (!$selectedBranch && $checkIn !== '' && $checkOut !== '') {
@@ -28,7 +43,7 @@ if (!$selectedBranch && $checkIn !== '' && $checkOut !== '') {
          JOIN units u ON u.branch_id = b.branch_id
          WHERE b.is_active = 1
          AND u.is_available = 1
-         AND (u.approval_status = 'approved' OR u.approval_status IS NULL)
+         AND u.approval_status = 'approved'
          ORDER BY b.branch_name ASC
          LIMIT 1"
     );
@@ -57,7 +72,7 @@ if ($selectedBranch) {
             FROM units u 
             JOIN branches b ON u.branch_id = b.branch_id 
             WHERE u.branch_id = ? AND u.is_available = 1
-            AND (u.approval_status = 'approved' OR u.approval_status IS NULL)";
+            AND u.approval_status = 'approved'";
     $params = [$selectedBranch];
     
     // Add filters
@@ -87,41 +102,59 @@ if ($selectedBranch) {
     $availableUnits = get_multiple_results($sql, $params);
     $unitCount = count($availableUnits);
     
-    // Prepare units data for map
+    // Prepare units data for map - Grouped by location for Price Ranges
     if (!empty($availableUnits)) {
+        $locationGroups = [];
         foreach ($availableUnits as $u) {
-            $unit_images = get_multiple_results(
-                "SELECT image_path FROM unit_images WHERE unit_id = ? ORDER BY created_at DESC",
-                [$u['unit_id']]
-            );
-            $image_path = !empty($unit_images) ? $unit_images[0]['image_path'] : null;
-            $all_images = [];
-            foreach ($unit_images as $img) {
-                $all_images[] = $img['image_path'];
-            }
-            $ptype = $u['pricing_type'] ?? 'nightly';
-            $unitPricePerNight = in_array($ptype, ['nightly', 'daily']) ? $u['price_per_night'] : (!empty($u['price_per_month']) ? round($u['price_per_month'] / 30) : null);
-            $unitPricePerMonth = in_array($ptype, ['nightly', 'daily']) ? $u['price_per_night'] * 30 : $u['price_per_month'];
+            $lat = !empty($u['latitude']) ? (float)$u['latitude'] : (float)($u['branch_lat'] ?? 0);
+            $lng = !empty($u['longitude']) ? (float)$u['longitude'] : (float)($u['branch_lng'] ?? 0);
             
+            if ($lat == 0 && $lng == 0) continue;
+            
+            $key = "{$lat}_{$lng}";
+            if (!isset($locationGroups[$key])) {
+                $locationGroups[$key] = [
+                    'lat' => $lat,
+                    'lng' => $lng,
+                    'units' => [],
+                    'minPrice' => PHP_INT_MAX,
+                    'maxPrice' => 0
+                ];
+            }
+
+            $ptype = $u['pricing_type'] ?? 'nightly';
+            $unitPrice = in_array($ptype, ['nightly', 'daily']) ? (float)$u['price_per_night'] : (!empty($u['price_per_month']) ? round((float)$u['price_per_month'] / 30) : 0);
+            
+            $locationGroups[$key]['units'][] = $u['unit_id'];
+            $locationGroups[$key]['minPrice'] = min($locationGroups[$key]['minPrice'], $unitPrice);
+            $locationGroups[$key]['maxPrice'] = max($locationGroups[$key]['maxPrice'], $unitPrice);
+            
+            // Standard metadata for the first unit in the group (or the most important)
+            if (!isset($locationGroups[$key]['title'])) {
+                $unit_images = get_multiple_results("SELECT image_path FROM unit_images WHERE unit_id = ? ORDER BY created_at DESC LIMIT 1", [$u['unit_id']]);
+                $locationGroups[$key]['title'] = (!empty($u['unit_name']) ? $u['unit_name'] : ($u['unit_number'] ?? 'Unit ' . $u['unit_id']));
+                $locationGroups[$key]['image'] = !empty($unit_images) ? $unit_images[0]['image_path'] : null;
+                $locationGroups[$key]['unit_id'] = $u['unit_id'];
+                $locationGroups[$key]['host_id'] = !empty($u['host_id']) ? $u['host_id'] : $u['branch_host_id'];
+            }
+        }
+
+        foreach ($locationGroups as $group) {
+            $label = "₱" . number_format($group['minPrice']);
+            if ($group['minPrice'] < $group['maxPrice']) {
+                $label = "₱" . number_format($group['minPrice']) . " - ₱" . number_format($group['maxPrice']);
+            }
+
             $unitsForMap[] = [
-                'unit_id' => $u['unit_id'],
-                'host_id' => !empty($u['host_id']) ? $u['host_id'] : $u['branch_host_id'],
-                'title' => (!empty($u['unit_name']) ? $u['unit_name'] : ($u['unit_number'] ?? 'Unit ' . $u['unit_id'])),
-                'type' => (!empty($u['unit_name']) ? $u['unit_name'] : ($u['unit_type'] ?? 'Unit')),
-                'address' => !empty($u['street_address']) ? $u['street_address'] : ($u['branch_address'] ?? ''),
-                'city' => !empty($u['city']) ? $u['city'] : ($u['branch_city'] ?? ''),
-                'image' => $image_path,
-                'images' => $all_images,
-                'lat' => !empty($u['latitude']) ? $u['latitude'] : ($u['branch_lat'] ?? null),
-                'lng' => !empty($u['longitude']) ? $u['longitude'] : ($u['branch_lng'] ?? null),
-                'price' => $unitPricePerNight,
-                'monthlyPrice' => $unitPricePerMonth,
-                'pricingType' => $ptype,
-                'beds' => $u['num_beds'] ?? 0,
-                'baths' => $u['num_bathrooms'] ?? 0,
-                'sqm' => $u['sqm'] ?? 0,
-                'description' => $u['description'] ?? '',
-                'amenities' => $amenityNames
+                'unit_id' => $group['unit_id'],
+                'host_id' => $group['host_id'],
+                'title' => $group['title'],
+                'lat' => $group['lat'],
+                'lng' => $group['lng'],
+                'price' => $group['minPrice'], // Used for sorting/clustering
+                'displayPrice' => $label,
+                'image' => $group['image'],
+                'count' => count($group['units'])
             ];
         }
     }
@@ -137,7 +170,11 @@ if ($selectedBranch) {
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-sA+e2YvYg2kYkJ3n3w1wQn5q5wZs3y1F4YbM6Yx0YwM=" crossorigin=""/>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.Default.css" />
+    <!-- Custom Map Styles -->
+    <link rel="stylesheet" href="../assets/css/map-styles.css">
     <style>
         * {
             font-family: 'Inter', sans-serif;
@@ -196,7 +233,7 @@ if ($selectedBranch) {
             box-shadow: 0 8px 20px rgba(231, 76, 60, 0.3);
         }
 
-        #mapContainer {
+        #map, #mapViewContainer {
             border-radius: 18px;
             overflow: hidden;
             height: 700px;
@@ -378,20 +415,34 @@ if ($selectedBranch) {
                 </form>
             </div>
 
-            <!-- Results Count -->
-            <div class="mb-4">
-                <h3 class="font-poppins text-xl font-bold text-gray-900">
-                    <i class="fas fa-home text-orange-500 mr-2"></i>Search results <span class="text-orange-600">(<?php echo $unitCount; ?>)</span>
-                </h3>
-                <p class="text-gray-600 text-sm mt-1">
-                    Available properties in <strong><?php echo htmlspecialchars($branchDetails['branch_name']); ?></strong>
-                </p>
+            <!-- Quick Filters (Bubbles) -->
+            <div class="mb-6 flex gap-3 overflow-x-auto pb-2 hide-scrollbar">
+                <button type="button" onclick="applyQuickFilter('price_max', 10000)" class="px-4 py-2 border border-gray-300 rounded-full text-sm font-semibold hover:bg-orange-50 hover:border-orange-200 transition whitespace-nowrap text-gray-700"><i class="fas fa-tags text-orange-500 mr-2"></i>Under ₱10k</button>
+                <button type="button" onclick="applyQuickFilter('property_type', 'Studio')" class="px-4 py-2 border border-gray-300 rounded-full text-sm font-semibold hover:bg-blue-50 hover:border-blue-200 transition whitespace-nowrap text-gray-700"><i class="fas fa-home text-blue-500 mr-2"></i>Studio</button>
+                <button type="button" onclick="applyQuickFilter('bedrooms', 2)" class="px-4 py-2 border border-gray-300 rounded-full text-sm font-semibold hover:bg-green-50 hover:border-green-200 transition whitespace-nowrap text-gray-700"><i class="fas fa-bed text-green-500 mr-2"></i>2+ Beds</button>
+                <button type="button" onclick="applyQuickFilter('guests', 4)" class="px-4 py-2 border border-gray-300 rounded-full text-sm font-semibold hover:bg-purple-50 hover:border-purple-200 transition whitespace-nowrap text-gray-700"><i class="fas fa-users text-purple-500 mr-2"></i>Family Size (4+)</button>
             </div>
 
-            <!-- Full Width Layout: Cards -->
-            <div class="w-full">
-                <!-- Property Cards Grid -->
-                <div class="w-full">
+            <!-- Results Count & View Toggle -->
+            <div class="mb-4 flex flex-col md:flex-row justify-between items-center bg-white p-4 rounded-xl soft-shadow">
+                <div>
+                    <h3 class="font-poppins text-xl font-bold text-gray-900">
+                        <i class="fas fa-home text-orange-500 mr-2"></i>Search results <span class="text-orange-600">(<?php echo $unitCount; ?>)</span>
+                    </h3>
+                    <p class="text-gray-600 text-sm mt-1">
+                        Available properties in <strong><?php echo htmlspecialchars($branchDetails['branch_name']); ?></strong>
+                    </p>
+                </div>
+                <div class="mt-4 md:mt-0 flex bg-gray-100 p-1 rounded-lg">
+                    <button id="listViewBtn" class="px-4 py-2 bg-white text-gray-900 font-bold rounded-md shadow-sm transition-all" onclick="toggleView('list')"><i class="fas fa-th-large mr-2"></i>List View</button>
+                    <button id="mapViewBtn" class="px-4 py-2 text-gray-600 hover:text-gray-900 font-bold rounded-md transition-all" onclick="toggleView('map')"><i class="fas fa-map-marked-alt mr-2"></i>Map View</button>
+                </div>
+            </div>
+
+            <!-- Full Width Layout: Cards & Map -->
+            <div class="w-full relative">
+                <!-- Property Cards Grid (List View) -->
+                <div id="listViewContainer" class="w-full transition-opacity duration-300">
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         <?php if (!empty($availableUnits)): ?>
                             <?php foreach ($availableUnits as $unit):
@@ -463,6 +514,29 @@ if ($selectedBranch) {
                                 <p class="text-gray-600 text-lg">Try adjusting your filters to see more results</p>
                             </div>
                         <?php endif; ?>
+                    </div>
+                </div>
+
+                <!-- Map View Container -->
+                <div id="mapViewContainer" class="hidden w-full h-[640px] rounded-2xl overflow-hidden soft-shadow border border-gray-200 relative">
+                    <div id="map" class="w-full h-full z-10 map-loading"></div>
+                    
+                    <!-- Search this area button -->
+                    <button id="searchAreaBtn" onclick="searchThisArea()" class="search-this-area bg-white text-gray-800 soft-shadow px-4 py-2 rounded-full font-bold text-sm hover:bg-gray-50 flex items-center gap-2">
+                        <i class="fas fa-sync-alt text-orange-500"></i> Search this area
+                    </button>
+
+                    <!-- Use My Location Button -->
+                    <button onclick="useMyLocation()" class="absolute bottom-6 right-6 z-20 bg-white w-12 h-12 rounded-full shadow-lg flex items-center justify-center text-gray-700 hover:text-blue-500 transition-all active:scale-95" title="Use my current location">
+                        <i class="fas fa-location-arrow"></i>
+                    </button>
+                    
+                    <!-- Fallback UI Container -->
+                    <div id="mapError" class="hidden absolute inset-0 bg-gray-50 flex flex-col items-center justify-center p-6 text-center z-30">
+                        <i class="fas fa-exclamation-triangle text-red-400 text-5xl mb-4"></i>
+                        <h3 class="font-poppins text-xl font-bold text-gray-900 mb-2">Map unavailable</h3>
+                        <p class="text-gray-600 mb-6">We couldn't load the interactive map. You can still browse the properties in the list view.</p>
+                        <button onclick="toggleView('list')" class="bg-primary-600 text-black px-6 py-2 rounded-xl font-bold hover:bg-primary-700 transition-colors">Switch to list view</button>
                     </div>
                 </div>
 
@@ -546,39 +620,132 @@ if ($selectedBranch) {
 
     </div>
 
-    <!-- Page Scripts -->
+    <!-- Elite Map Configuration (Hardened with cache-busting) -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster.js"></script>
+    <script src="../assets/js/map.js?v=<?php echo time(); ?>"></script>
+
     <script>
         const unitsData = <?php echo json_encode($unitsForMap, JSON_HEX_TAG|JSON_HEX_AMP|JSON_HEX_APOS|JSON_HEX_QUOT); ?>;
+        let mapInitialized = false;
         let selectedUnitData = null;
+
+        /**
+         * [CORE] Hardened Map Initialization
+         * Includes race-condition protection and graceful degradation fallbacks.
+         */
+        function initMap() {
+            if (mapInitialized) return;
+            
+            const mapContainer = document.getElementById('map');
+            const mapError = document.getElementById('mapError');
+
+            if (typeof BookIT === 'undefined' || !BookIT.Map) {
+                console.error("BookIT.Map Engine missing. Porting to fallback mode.");
+                if (mapError) mapError.classList.remove('hidden');
+                return;
+            }
+
+            BookIT.Map.loadScript(null, () => {
+                const branchLat = <?php echo isset($branchDetails['latitude']) ? (float)$branchDetails['latitude'] : (defined('DEFAULT_LAT') ? DEFAULT_LAT : '14.5995'); ?>;
+                const branchLng = <?php echo isset($branchDetails['longitude']) ? (float)$branchDetails['longitude'] : (defined('DEFAULT_LNG') ? DEFAULT_LNG : '120.9842'); ?>;
+
+                try {
+                    window.bookitMap = BookIT.Map.init('map', {
+                        center: [branchLat, branchLng],
+                        zoom: 13
+                    });
+
+                    if (window.bookitMap) {
+                        BookIT.Map.addMarkers(unitsData, {
+                            type: 'pricing',
+                            cluster: true,
+                            fitBounds: true,
+                            onClick: (unit) => selectUnit(unit.unit_id)
+                        });
+                        mapInitialized = true;
+                        if (mapError) mapError.classList.add('hidden');
+                    } else {
+                        throw new Error("Map initialization returned null.");
+                    }
+                } catch (e) {
+                    console.error("Critical Mapping Error:", e);
+                    if (mapError) mapError.classList.remove('hidden');
+                }
+            });
+        }
+
+        function initMapIfVisible() {
+            if (!document.getElementById('mapViewContainer').classList.contains('hidden')) {
+                initMap();
+            }
+        }
+
+        function useMyLocation() {
+            if (typeof BookIT !== 'undefined' && BookIT.Map) {
+                BookIT.Map.getUserLocation((pos, error) => {
+                    if (error) alert(error);
+                });
+            } else {
+                console.warn("BookIT.Map not ready.");
+            }
+        }
+
+        function searchThisArea() {
+            const btn = document.getElementById('searchAreaBtn');
+            if (btn) btn.style.display = 'none';
+            alert("New search triggered for this area!");
+            // In a real implementation: window.location.href = `?branch_id=<?php echo $selectedBranch; ?>&lat=${lat}&lng=${lng}...`;
+        }
+
+
+
+        function toggleView(viewType) {
+            const listBtn = document.getElementById('listViewBtn');
+            const mapBtn = document.getElementById('mapViewBtn');
+            const listContainer = document.getElementById('listViewContainer');
+            const mapContainer = document.getElementById('mapViewContainer');
+
+            if (viewType === 'list') {
+                listBtn.classList.replace('text-gray-600', 'text-gray-900');
+                listBtn.classList.add('bg-white', 'shadow-sm');
+                mapBtn.classList.replace('text-gray-900', 'text-gray-600');
+                mapBtn.classList.remove('bg-white', 'shadow-sm');
+                mapContainer.classList.add('hidden');
+                listContainer.classList.remove('hidden');
+            } else {
+                mapBtn.classList.replace('text-gray-600', 'text-gray-900');
+                mapBtn.classList.add('bg-white', 'shadow-sm');
+                listBtn.classList.replace('text-gray-900', 'text-gray-600');
+                listBtn.classList.remove('bg-white', 'shadow-sm');
+                listContainer.classList.add('hidden');
+                mapContainer.classList.remove('hidden');
+
+                if (!mapInitialized) {
+                    initMap();
+                } else if (window.bookitMap) {
+                    // Critical: Resize map when container becomes visible
+                    setTimeout(() => window.bookitMap.invalidateSize(), 100);
+                }
+            }
+        }
 
         function selectUnit(unitId) {
             const unit = unitsData.find(u => u.unit_id == unitId);
             if (!unit) return;
-
             selectedUnitData = unit;
 
-            // Update cards
             document.querySelectorAll('.property-card').forEach(el => {
                 el.classList.remove('active');
-                if (parseInt(el.dataset.unitId) === unitId) {
-                    el.classList.add('active');
-                }
+                if (parseInt(el.dataset.unitId) === unitId) el.classList.add('active');
             });
 
-            // Update preview modal
             const modal = document.getElementById('previewModal');
             document.getElementById('previewTitle').textContent = unit.title;
             document.getElementById('previewType').innerHTML = '<i class="fas fa-home text-orange-500 w-4"></i> ' + (unit.type || 'Unit');
             
-            let mapLink = '';
-            if (unit.lat && unit.lng) {
-                mapLink = ` <a href="https://www.google.com/maps/search/?api=1&query=${unit.lat},${unit.lng}" target="_blank" class="text-blue-500 hover:underline ml-2"><i class="fas fa-external-link-alt text-xs"></i> Map</a>`;
-            } else if (unit.address) {
-                mapLink = ` <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(unit.address + (unit.city ? ', ' + unit.city : ''))}" target="_blank" class="text-blue-500 hover:underline ml-2"><i class="fas fa-external-link-alt text-xs"></i> Map</a>`;
-            }
-            document.getElementById('previewAddress').innerHTML = '<i class="fas fa-map-marker-alt text-orange-500 w-4"></i> ' + (unit.address ? (unit.address + (unit.city ? ', ' + unit.city : '')) : 'Address not available') + mapLink;
+            document.getElementById('previewAddress').innerHTML = '<i class="fas fa-map-marker-alt text-orange-500 w-4"></i> ' + (unit.address ? (unit.address + (unit.city ? ', ' + unit.city : '')) : 'Address not available');
             
-            // Render amenities
             const amenitiesContainer = document.getElementById('previewAmenities');
             amenitiesContainer.innerHTML = '';
             if (unit.amenities && unit.amenities.length > 0) {
@@ -592,76 +759,41 @@ if ($selectedBranch) {
                 amenitiesContainer.innerHTML = '<span class="text-gray-500 italic">No amenities specified</span>';
             }
             
-            if (unit.images && unit.images.length > 0) {
-                let currentSlide = 0;
-                const totalSlides = unit.images.length;
-                
-                const renderCarousel = () => {
-                    let html = `<div class="relative w-full h-full group">
-                        <img src="${unit.images[currentSlide]}" alt="${unit.title}" class="w-full h-full object-cover transition-opacity duration-300">`;
-                    
-                    if (totalSlides > 1) {
-                        html += `
-                            <button class="absolute left-2 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white w-8 h-8 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all z-10" onclick="event.stopPropagation(); window.changeSlide(-1)">
-                                <i class="fas fa-chevron-left text-sm"></i>
-                            </button>
-                            <button class="absolute right-2 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white w-8 h-8 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all z-10" onclick="event.stopPropagation(); window.changeSlide(1)">
-                                <i class="fas fa-chevron-right text-sm"></i>
-                            </button>
-                            <div class="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1.5 z-10">
-                        `;
-                        for (let i = 0; i < totalSlides; i++) {
-                            html += `<div class="w-1.5 h-1.5 rounded-full ${i === currentSlide ? 'bg-white' : 'bg-white/50'}"></div>`;
-                        }
-                        html += `</div>`;
-                        
-                        window.changeSlide = function(dir) {
-                            currentSlide = (currentSlide + dir + totalSlides) % totalSlides;
-                            renderCarousel();
-                        };
-                    }
-                    html += `</div>`;
-                    document.getElementById('previewImage').innerHTML = html;
-                };
-                renderCarousel();
+            const imgContainer = document.getElementById('previewImage');
+            if (unit.image) {
+                imgContainer.innerHTML = `<img src="../uploads/unit_images/${unit.image}" class="w-full h-full object-cover rounded-xl shadow-inner" onerror="this.src='../assets/images/placeholder-unit.jpg'; this.onerror=null;">`;
             } else {
-                document.getElementById('previewImage').innerHTML = `<div class="w-full h-full bg-gray-100 flex items-center justify-center"><i class="fas fa-image text-gray-400 text-4xl"></i></div>`;
+                imgContainer.innerHTML = `<div class="w-full h-full bg-gray-100 flex items-center justify-center rounded-xl"><i class="fas fa-image text-gray-400 text-4xl"></i></div>`;
             }
             
             document.getElementById('previewDesc').textContent = unit.description || '';
             document.getElementById('previewSqm').textContent = unit.sqm || '-';
             document.getElementById('previewBeds').textContent = unit.beds || '-';
             document.getElementById('previewBaths').textContent = unit.baths || '-';
-            document.getElementById('previewPrice').textContent = unit.price ? '₱' + unit.price.toLocaleString() : '-';
-            document.getElementById('previewMonthly').textContent = unit.monthlyPrice ? '₱' + unit.monthlyPrice.toLocaleString() : '-';
+            document.getElementById('previewPrice').textContent = unit.price ? '₱' + unit.price.toLocaleString() + '/ni' : '-';
+            document.getElementById('previewMonthly').textContent = unit.monthlyPrice ? '₱' + unit.monthlyPrice.toLocaleString() + '/mo' : '-';
             
-            // Show modal with animation
             modal.classList.remove('hidden');
-            // Trigger reflow
             void modal.offsetWidth;
             modal.classList.remove('opacity-0');
             document.getElementById('previewModalContent').classList.remove('scale-95');
             document.getElementById('previewModalContent').classList.add('scale-100');
-
         }
 
         function closePreview() {
             const modal = document.getElementById('previewModal');
             modal.classList.add('opacity-0');
-            document.getElementById('previewModalContent').classList.remove('scale-100');
+            document.getElementById('previewModalContent').classList.remove('scale-100', 'scale-95');
             document.getElementById('previewModalContent').classList.add('scale-95');
-            
-            setTimeout(() => {
-                modal.classList.add('hidden');
-            }, 300);
-
+            setTimeout(() => modal.classList.add('hidden'), 300);
             selectedUnitData = null;
             document.querySelectorAll('.property-card').forEach(el => el.classList.remove('active'));
         }
 
         function bookUnit() {
             if (!selectedUnitData) return;
-            if (!<?php echo isLoggedIn() ? 'true' : 'false'; ?>) {
+            const isLoggedIn = <?php echo isLoggedIn() ? 'true' : 'false'; ?>;
+            if (!isLoggedIn) {
                 window.location.href = 'login.php?redirect=' + encodeURIComponent(window.location.href);
                 return;
             }
@@ -674,7 +806,8 @@ if ($selectedBranch) {
 
         function contactHost() {
             if (!selectedUnitData) return;
-            if (!<?php echo isLoggedIn() ? 'true' : 'false'; ?>) {
+            const isLoggedIn = <?php echo isLoggedIn() ? 'true' : 'false'; ?>;
+            if (!isLoggedIn) {
                 window.location.href = 'login.php?redirect=' + encodeURIComponent(window.location.href);
                 return;
             }
@@ -689,6 +822,14 @@ if ($selectedBranch) {
             window.location.href = '../renter/messages.php?host_id=' + selectedUnitData.host_id;
         }
 
+        function applyQuickFilter(key, value) {
+            const form = document.getElementById('filterForm');
+            const input = form.querySelector(`[name="${key}"]`);
+            if (input) {
+                input.value = value;
+                form.submit();
+            }
+        }
     </script>
 </body>
 </html>

@@ -75,8 +75,8 @@ if (isset($_POST['register'])) {
             try {
                 $hashed_password = password_hash($password, PASSWORD_DEFAULT);
                 
-                // 1. Insert user as PENDING_HOST first
-                $stmt_user = $conn->prepare("INSERT INTO users (full_name, email, password, phone, role, is_active) VALUES (?, ?, ?, ?, 'pending_host', 1)");
+                // 1. Insert user as PENDING_HOST first (with Terms Accepted)
+                $stmt_user = $conn->prepare("INSERT INTO users (full_name, email, password, phone, role, is_active, terms_accepted) VALUES (?, ?, ?, ?, 'pending_host', 1, 1)");
                 $stmt_user->bind_param("ssss", $host_name, $email, $hashed_password, $phone);
                 $stmt_user->execute();
                 $new_user_id = $conn->insert_id;
@@ -95,6 +95,9 @@ if (isset($_POST['register'])) {
                 );
                 $stmt_app->execute();
                 $app_id = $conn->insert_id;
+
+                // Log the host application event in audit logs
+                logAudit($new_user_id, 'Host Application Submitted', 'host_application', $app_id, "User applied for hosting. Role set to pending_host. Documents uploaded.");
 
                 // Send Notification
                 sendNotification($new_user_id, 'Application Submitted', 'Thank you for applying! Your application is under review.', 'system', 'system');

@@ -582,18 +582,38 @@ if (!is_array($reservations)) {
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="../assets/js/renter/my_bookings.js"></script>
     <script>
     // Populate review modal with reservation id when opened
     var reviewModal = document.getElementById('reviewModal');
-    reviewModal.addEventListener('show.bs.modal', function (event) {
-        var button = event.relatedTarget;
-        var data = button.getAttribute('data-reservation');
-        try {
-            var obj = JSON.parse(data);
-            document.getElementById('review_reservation_id').value = obj.reservation_id;
-        } catch (e) {}
+    if (reviewModal) {
+        reviewModal.addEventListener('show.bs.modal', function (event) {
+            var button = event.relatedTarget;
+            var data = button.getAttribute('data-reservation');
+            try {
+                var obj = JSON.parse(data);
+                document.getElementById('review_reservation_id').value = obj.reservation_id;
+            } catch (e) {}
+        });
+    }
+
+    // Payment Success Popup
+    <?php if (isset($_GET['payment_success']) && $_GET['payment_success'] === 'true'): ?>
+    Swal.fire({
+        title: 'Payment Successful!',
+        html: `Your payment has been received securely.<br><br>
+               <b>Status:</b> Pending Confirmation<br>
+               The host has been notified and must approve your reservation.<br>
+               Reservation ID: #<?php echo (int)($_GET['reservation_id'] ?? 0); ?>`,
+        icon: 'success',
+        confirmButtonColor: '#28a745',
+        confirmButtonText: 'View My Bookings'
+    }).then(() => {
+        // Clean URL to prevent re-pop on refresh
+        window.history.replaceState(null, null, window.location.pathname);
     });
+    <?php endif; ?>
     </script>
 </body>
 </html>

@@ -1,0 +1,176 @@
+/* 
+ * [ELITE HARDENED] BookIT Map Styles
+ * Premium visuals for the hardened Google Maps engine.
+ */
+
+:root {
+    --map-bg: #0f172a;
+    --marker-active: #e74c3c;
+    --marker-inactive: #ffffff;
+    --glass-bg: rgba(15, 23, 42, 0.85);
+    --glass-border: rgba(255, 255, 255, 0.1);
+}
+
+/* Map Containers */
+.map-placeholder {
+    width: 100%;
+    height: 100%;
+    min-height: 400px;
+    background: var(--map-bg);
+    border-radius: 16px;
+    overflow: hidden;
+    position: relative;
+}
+
+/* Loading Skeleton */
+.map-loading {
+    background: linear-gradient(110deg, #1e293b 8%, #334155 18%, #1e293b 33%);
+    background-size: 200% 100%;
+    animation: 1.5s shine linear infinite;
+}
+
+@keyframes shine {
+    to { background-position-x: -200%; }
+}
+
+/* Premium Fallback UI */
+.bookit-map-fallback {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    background: var(--map-bg);
+    color: white;
+    padding: 2rem;
+    z-index: 1000;
+}
+
+.fallback-content i {
+    font-size: 3rem;
+    color: #e74c3c;
+    margin-bottom: 1.5rem;
+    opacity: 0.8;
+}
+
+.fallback-content h3 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+}
+
+.fallback-content p {
+    color: #94a3b8;
+    margin-bottom: 2rem;
+}
+
+.retry-btn {
+    background: #3b82f6;
+    color: white;
+    border: none;
+    padding: 10px 24px;
+    border-radius: 30px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0 auto;
+}
+
+.retry-btn:hover {
+    background: #2563eb;
+    transform: translateY(-2px);
+    box-shadow: 0 10px 20px rgba(59, 130, 246, 0.3);
+}
+
+/* Leaflet Marker Specifics */
+.bookit-leaflet-marker {
+    background: transparent !important;
+    border: none !important;
+}
+
+.price-tag {
+    background: white;
+    color: #1e293b;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-weight: 700;
+    font-size: 14px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    border: 1px solid rgba(0,0,0,0.05);
+    white-space: nowrap;
+    transition: all 0.3s;
+    display: inline-block;
+    position: relative;
+    z-index: 1000;
+}
+
+.price-tag.active {
+    background: #e74c3c;
+    color: white;
+    transform: scale(1.1);
+}
+
+.status-marker {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 14px;
+    border: 2px solid white;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+    position: relative;
+    z-index: 1000;
+}
+
+
+/* Heatmap Layer Styles */
+.heatmap-legend {
+    position: absolute;
+    bottom: 20px;
+    left: 20px;
+    background: var(--glass-bg);
+    backdrop-filter: blur(8px);
+    padding: 12px;
+    border-radius: 12px;
+    border: 1px solid var(--glass-border);
+    color: white;
+    font-size: 12px;
+    z-index: 10;
+}
+
+/* Nearby POI Sidebar */
+.poi-sidebar {
+    position: absolute;
+    top: 80px;
+    right: 20px;
+    width: 250px;
+    background: var(--glass-bg);
+    backdrop-filter: blur(12px);
+    border-radius: 16px;
+    border: 1px solid var(--glass-border);
+    padding: 15px;
+    z-index: 10;
+    max-height: calc(100% - 120px);
+    overflow-y: auto;
+}
+
+.poi-marker {
+    background: #4f46e5;
+    color: white;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    border: 2px solid white;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}

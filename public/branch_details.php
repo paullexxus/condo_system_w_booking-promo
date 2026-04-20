@@ -19,6 +19,32 @@ if (!$branch) {
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link rel="stylesheet" href="../assets/css/public/index.css">
     <link rel="stylesheet" href="../assets/css/components/cta-light.css">
+    <!-- Leaflet & Map Infrastructure -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        #branchMap {
+            height: 400px;
+            border-radius: 20px;
+            z-index: 10;
+        }
+        .map-wrapper {
+            position: relative;
+            overflow: hidden;
+            border-radius: 20px;
+        }
+        .map-fallback {
+            position: absolute;
+            inset: 0;
+            background: #f8fafc;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 0;
+            text-align: center;
+            padding: 20px;
+        }
+    </style>
 </head>
 <body>
 <!doctype html>
@@ -146,9 +172,19 @@ if (!$branch) {
                 </div>
             </div>
             <div class="flex flex-col gap-3">
+                <?php 
+                $stats_header = getBranchStatistics($branch['branch_id']); 
+                $has_units = ($stats_header['active_units'] ?? 0) > 0;
+                if ($has_units): 
+                ?>
                 <a href="browse_units.php?branch_id=<?php echo $branch['branch_id']; ?>" class="btn-modern btn-luxury-primary justify-center text-base py-3">
                     <i class="fas fa-home"></i> View Available Units
                 </a>
+                <?php else: ?>
+                <button disabled title="No available units at this location" class="btn-modern bg-gray-400 text-white justify-center text-base py-3 cursor-not-allowed opacity-75">
+                    <i class="fas fa-home"></i> View Available Units (None)
+                </button>
+                <?php endif; ?>
                 <a href="mailto:<?php echo esc($branch['email'] ?: 'info@bookit.com'); ?>" class="btn-modern border-2 border-gray-900 text-gray-900 justify-center text-base py-3 hover:bg-gray-100 smooth-transition">
                     <i class="fas fa-envelope"></i> Contact Host
                 </a>
@@ -157,10 +193,31 @@ if (!$branch) {
 
         <!-- Description Section -->
         <div class="card-modern shadow-soft p-8 mb-12">
-            <h2 class="text-2xl font-bold text-gray-900 mb-4">About this Location</h2>
-            <p class="text-gray-600 text-lg leading-relaxed">
-                <?php echo !empty($branch['description']) ? esc($branch['description']) : 'Premium location with excellent amenities and services.'; ?>
-            </p>
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-12">
+                <div>
+                    <h2 class="text-2xl font-bold text-gray-900 mb-4">About this Location</h2>
+                    <p class="text-gray-600 text-lg leading-relaxed mb-6">
+                        <?php echo !empty($branch['description']) ? esc($branch['description']) : 'Premium location with excellent amenities and services.'; ?>
+                    </p>
+                    <div class="flex items-center gap-4 p-4 bg-orange-50 rounded-xl border border-orange-100">
+                        <i class="fas fa-info-circle text-orange-500 text-xl"></i>
+                        <p class="text-sm text-orange-800">
+                            <strong>Note:</strong> Check-in is at 2:00 PM and Check-out is at 12:00 PM.
+                        </p>
+                    </div>
+                </div>
+                <div class="map-wrapper shadow-soft">
+                    <div id="branchMap"></div>
+                    <div class="map-fallback">
+                        <i class="fas fa-map-marked-alt text-4xl text-gray-300 mb-4"></i>
+                        <h3 class="text-lg font-bold text-gray-900">Map Loading...</h3>
+                        <p class="text-gray-500 text-sm">Please ensure JavaScript is enabled.</p>
+                        <a href="https://www.google.com/maps/search/?api=1&query=<?php echo urlencode($branch['address'] . ' ' . $branch['city']); ?>" target="_blank" class="mt-4 text-blue-600 font-bold hover:underline">
+                            <i class="fas fa-external-link-alt"></i> Open in External Map
+                        </a>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <!-- Amenities Section -->
@@ -195,7 +252,7 @@ if (!$branch) {
                 <div class="text-center">
                     <div class="text-5xl font-bold mb-2">
                         <?php 
-                        $units = get_multiple_results("SELECT price_per_night, price_per_month, pricing_type FROM units WHERE branch_id = ? AND is_available = 1 AND (approval_status = 'approved' OR approval_status IS NULL)", [$branch['branch_id']]);
+                        $units = get_multiple_results("SELECT price_per_night, price_per_month, pricing_type FROM units WHERE branch_id = ? AND is_available = 1 AND approval_status = 'approved'", [$branch['branch_id']]);
                         if (!empty($units)) {
                             $total_sum = 0;
                             foreach ($units as $u) {
@@ -225,12 +282,50 @@ if (!$branch) {
         <div class="card-modern shadow-soft bg-gradient-to-r from-gray-900 to-gray-800 text-white p-12 text-center rounded-2xl">
             <h2 class="text-3xl font-bold mb-4">Ready to Reserve?</h2>
             <p class="text-gray-300 text-lg mb-8">Check out our available units at this premium location.</p>
+            <?php if ($has_units): ?>
             <a href="browse_units.php?branch_id=<?php echo $branch['branch_id']; ?>" class="btn-modern bg-white text-gray-900 justify-center text-base py-3 px-10 hover:bg-gray-100 smooth-transition font-bold">
                 <i class="fas fa-search"></i> View All Units
             </a>
+            <?php else: ?>
+            <button disabled class="btn-modern bg-gray-300 text-gray-500 justify-center text-base py-3 px-10 cursor-not-allowed opacity-75 font-bold">
+                <i class="fas fa-search"></i> No Units Available Currently
+            </button>
+            <?php endif; ?>
         </div>
     <?php endif; ?>
 </div>
 
+<!-- Map Dependencies -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="../assets/js/map.js?v=<?php echo time(); ?>"></script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const branchLat = <?php echo (float)($branch['latitude'] ?? 14.5995); ?>;
+        const branchLng = <?php echo (float)($branch['longitude'] ?? 120.9842); ?>;
+        const branchName = "<?php echo esc($branch['branch_name']); ?>";
+
+        if (typeof BookIT !== 'undefined' && BookIT.Map) {
+            BookIT.Map.loadScript(null, () => {
+                const map = BookIT.Map.init('branchMap', {
+                    center: [branchLat, branchLng],
+                    zoom: 15,
+                    scrollWheelZoom: false
+                });
+
+                if (map) {
+                    BookIT.Map.addMarkers([{
+                        lat: branchLat,
+                        lng: branchLng,
+                        title: branchName,
+                        branch_name: branchName
+                    }], {
+                        fitBounds: true
+                    });
+                }
+            });
+        }
+    });
+</script>
 </body>
 </html>

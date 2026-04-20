@@ -15,7 +15,7 @@ $featuredBranches = mysqli_query($conn, "
            MAX(IF(u.pricing_type IN ('daily', 'nightly'), u.price_per_night, u.price_per_month / 30)) as max_price,
            AVG(IF(u.pricing_type IN ('daily', 'nightly'), u.price_per_night, u.price_per_month / 30)) as avg_price
     FROM branches b 
-    LEFT JOIN units u ON b.branch_id = u.branch_id AND u.is_available = 1 AND (u.approval_status = 'approved' OR u.approval_status IS NULL)
+    LEFT JOIN units u ON b.branch_id = u.branch_id AND u.is_available = 1 AND u.approval_status = 'approved'
     LEFT JOIN reservations r ON b.branch_id = r.branch_id AND r.status = 'confirmed'
     WHERE b.is_active = 1 
     GROUP BY b.branch_id 
@@ -600,26 +600,27 @@ $hostEngagementRate = ($totalHosts['total'] > 0 && $totalUnits['total'] > 0) ? r
 
             <!-- Premium Booking Overlay Bar -->
             <div class="booking-overlay">
-                <div class="grid grid-cols-1 md:grid-cols-4 gap-6 items-end">
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+                    <div class="text-left relative">
+                        <label class="block text-gray-700 font-600 mb-2 text-sm uppercase tracking-wide">Location</label>
+                        <div class="flex items-center gap-1">
+                            <input type="text" class="booking-input w-full" id="locationSearch" placeholder="Search city or branch" autocomplete="off" oninput="fetchLocations(this.value)">
+                            <button type="button" class="text-blue-500 hover:text-blue-700 p-2" title="Use My Location" onclick="useMyLocation()">
+                                <i class="fas fa-location-crosshairs"></i>
+                            </button>
+                        </div>
+                        <ul id="locationSuggestions" class="absolute z-50 w-full bg-white border border-gray-200 mt-1 rounded-lg shadow-lg hidden max-h-60 overflow-y-auto hidden"></ul>
+                        <input type="hidden" id="selectedBranchId">
+                    </div>
                     <div class="text-left">
-                        <label class="block text-gray-700 font-600 mb-3 text-sm uppercase tracking-wide">Check-in Date</label>
+                        <label class="block text-gray-700 font-600 mb-2 text-sm uppercase tracking-wide">Check-in Date</label>
                         <input type="date" class="booking-input w-full" id="checkInBooking" placeholder="Select date">
                     </div>
                     <div class="text-left">
-                        <label class="block text-gray-700 font-600 mb-3 text-sm uppercase tracking-wide">Check-out Date</label>
+                        <label class="block text-gray-700 font-600 mb-2 text-sm uppercase tracking-wide">Check-out Date</label>
                         <input type="date" class="booking-input w-full" id="checkOutBooking" placeholder="Select date">
                     </div>
-                    <div class="text-left">
-                        <label class="block text-gray-700 font-600 mb-3 text-sm uppercase tracking-wide">Number of Guests</label>
-                        <select class="booking-input w-full" id="guestsBooking">
-                            <option value="1" selected>1 Guest</option>
-                            <option value="2">2 Guests</option>
-                            <option value="3">3 Guests</option>
-                            <option value="4">4 Guests</option>
-                            <option value="5">5+ Guests</option>
-                        </select>
-                    </div>
-                    <button class="btn-modern btn-luxury-primary w-full justify-center text-base py-4" onclick="handleSearch()">
+                    <button class="btn-modern btn-luxury-primary w-full justify-center text-base py-3" onclick="handleSearch()">
                         <i class="fas fa-search"></i> Search
                     </button>
                 </div>
@@ -986,19 +987,19 @@ $hostEngagementRate = ($totalHosts['total'] > 0 && $totalUnits['total'] > 0) ? r
                                     ?>
                                 </div>
 
-                                <!-- Premium Action Buttons -->
-                                <div class="flex gap-3 mt-auto pt-4 border-t border-gray-100">
-                                    <button class="flex-1 btn-modern btn-luxury-primary justify-center text-base py-3 font-600 book-now-btn"
-                                            data-branch-id="<?php echo $branch['branch_id']; ?>"
-                                            data-branch-name="<?php echo htmlspecialchars($branch['branch_name']); ?>"
-                                            data-branch-price="<?php echo $branch['min_price'] ?? 2500; ?>"
-                                            data-branch-location="<?php echo htmlspecialchars($branch_city); ?>">
-                                        <i class="fas fa-calendar-check"></i> Book Now
-                                    </button>
-                                    <a href="branch_details.php?id=<?php echo $branch['branch_id']; ?>" 
-                                       class="flex-1 btn-modern btn-luxury-secondary justify-center text-base py-3 font-600">
-                                        <i class="fas fa-info-circle"></i> Details
-                                    </a>
+                                <!-- Action Button: Dynamic Flow (Requirement: View Units) -->
+                                <div class="mt-auto pt-4 border-t border-gray-100">
+                                    <?php if ((int)$branch['unit_count'] > 0): ?>
+                                        <a href="browse_units.php?branch_id=<?php echo $branch['branch_id']; ?>" 
+                                           class="w-full btn-modern btn-luxury-primary justify-center text-base py-3 font-700 shadow-sm hover:shadow-lg smooth-transition">
+                                            <i class="fas fa-th-list"></i> View Units
+                                        </a>
+                                    <?php else: ?>
+                                        <button disabled 
+                                                class="w-full btn-modern bg-gray-200 text-gray-400 justify-center text-base py-3 font-700 cursor-not-allowed border border-gray-300">
+                                            <i class="fas fa-door-closed"></i> No Units Available
+                                        </button>
+                                    <?php endif; ?>
                                 </div>
                             </div>
                         </div>
@@ -1152,27 +1153,85 @@ $hostEngagementRate = ($totalHosts['total'] > 0 && $totalUnits['total'] > 0) ? r
         function handleSearch() {
             const checkIn = document.getElementById('checkInBooking').value;
             const checkOut = document.getElementById('checkOutBooking').value;
-            const guests = document.getElementById('guestsBooking')?.value || '1';
+            const location = document.getElementById('locationSearch')?.value || '';
             
             if (checkIn && checkOut) {
                 const params = new URLSearchParams({
                     check_in: checkIn,
-                    check_out: checkOut,
-                    guests: guests
+                    check_out: checkOut
                 });
+                if (location) params.append('location', location);
                 window.location.href = `browse_units.php?${params.toString()}`;
             } else {
                 alert('Please select both check-in and check-out dates');
             }
         }
 
-        // Book Now Button Handler
+        // Basic GeoLocation
+        function useMyLocation() {
+            if ("geolocation" in navigator) {
+                navigator.geolocation.getCurrentPosition(function(position) {
+                    const lat = position.coords.latitude;
+                    const lon = position.coords.longitude;
+                    // For demo purposes, we fetch reverse geocoding via free API or set string
+                    fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`)
+                        .then(res => res.json())
+                        .then(data => {
+                            let city = data.address.city || data.address.town || data.address.village || '';
+                            if (city) {
+                                document.getElementById('locationSearch').value = city;
+                            } else {
+                                alert("Couldn't determine city from location.");
+                            }
+                        }).catch(e => {
+                            alert("Geolocation failed.");
+                        });
+                }, function(error) {
+                    alert("Location access denied or unavailable.");
+                });
+            } else {
+                alert("Geolocation is not supported by your browser.");
+            }
+        }
+
+        // Autocomplete
+        function fetchLocations(query) {
+            const suggestions = document.getElementById('locationSuggestions');
+            if (!query || query.length < 2) {
+                suggestions.classList.add('hidden');
+                return;
+            }
+            // Add static suggestion logic or fetch from browse_units logic
+            suggestions.innerHTML = `
+                <li class="px-4 py-2 hover:bg-gray-100 cursor-pointer" onclick="selectLocation('${query}')">
+                    <i class="fas fa-search text-gray-400 mr-2"></i> ${query} (Search all)
+                </li>
+            `;
+            suggestions.classList.remove('hidden');
+        }
+
+        function selectLocation(val) {
+            document.getElementById('locationSearch').value = val;
+            document.getElementById('locationSuggestions').classList.add('hidden');
+        }
+        
+        // Hide autocomplete when clicking outside
+        document.addEventListener('click', function(e) {
+            if (e.target.id !== 'locationSearch') {
+                const suggestions = document.getElementById('locationSuggestions');
+                if (suggestions) suggestions.classList.add('hidden');
+            }
+        });
+
+        // Book Now Button Handler - Retired in favor of 'View Units' flow
+        /*
         document.querySelectorAll('.book-now-btn').forEach(btn => {
             btn.addEventListener('click', function() {
                 const branchId = this.dataset.branchId;
                 window.location.href = `branch_details.php?id=${branchId}#booking`;
             });
         });
+        */
 
         // Smooth scroll for navigation links
         document.querySelectorAll('a[href^="#"]').forEach(anchor => {

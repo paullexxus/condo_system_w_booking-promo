@@ -1,555 +1,144 @@
 <?php
 // Host Notifications
-// View booking alerts, payment updates, and maintenance reminders
-
 include '../includes/session.php';
 include '../includes/functions.php';
 include_once '../config/db.php';
 checkRole(['host', 'manager']);
 
 $host_id = $_SESSION['user_id'];
-$action_message = '';
-$action_success = false;
+$message = '';
 
-// Handle notification actions via form submission
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    if (isset($_POST['action'])) {
-        $action = sanitize_input($_POST['action']);
-        
-        if ($action === 'mark_read' && isset($_POST['notification_id'])) {
-            $notif_id = (int)sanitize_input($_POST['notification_id']);
-            $conn->query("UPDATE notifications SET is_read = 1 WHERE notification_id = $notif_id AND user_id = $host_id");
-            $action_message = "Marked as read";
-            $action_success = true;
-        } else if ($action === 'mark_all_read') {
-            $conn->query("UPDATE notifications SET is_read = 1 WHERE user_id = $host_id");
-            $action_message = "All notifications marked as read";
-            $action_success = true;
-        } else if ($action === 'delete' && isset($_POST['notification_id'])) {
-            $notif_id = (int)sanitize_input($_POST['notification_id']);
-            $conn->query("DELETE FROM notifications WHERE notification_id = $notif_id AND user_id = $host_id");
-            $action_message = "Notification deleted";
-            $action_success = true;
-        }
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
+    $action = $_POST['action'];
+    if ($action === 'mark_read' && isset($_POST['id'])) {
+        execute_query("UPDATE notifications SET is_read = 1 WHERE notification_id = ? AND user_id = ?", [(int) $_POST['id'], $host_id]);
+    } else if ($action === 'mark_all_read') {
+        execute_query("UPDATE notifications SET is_read = 1 WHERE user_id = ?", [$host_id]);
+    } else if ($action === 'delete' && isset($_POST['id'])) {
+        execute_query("DELETE FROM notifications WHERE notification_id = ? AND user_id = ?", [(int) $_POST['id'], $host_id]);
     }
 }
 
-// Get all notifications for this host
-$notifications = get_multiple_results("
-    SELECT * FROM notifications 
-    WHERE user_id = $host_id
-    ORDER BY created_at DESC
-    LIMIT 50
-");
-if (!is_array($notifications)) {
-    $notifications = [];
-}
+$notifications = get_multiple_results("SELECT * FROM notifications WHERE user_id = ? ORDER BY created_at DESC LIMIT 100", [$host_id]);
+$unread_count = get_single_result("SELECT COUNT(*) as cnt FROM notifications WHERE user_id = ? AND is_read = 0", [$host_id])['cnt'];
 
-// Get notification counts
-$unread_count = $conn->query(
-    "SELECT COUNT(*) as cnt FROM notifications 
-     WHERE user_id = $host_id AND is_read = 0"
-)->fetch_assoc()['cnt'];
-
-// Group notifications by type
-$booking_notifications = [];
-$payment_notifications = [];
-$maintenance_notifications = [];
-$system_notifications = [];
-
-foreach ($notifications as $notif) {
-    if (strpos(strtolower($notif['type']), 'booking') !== false) {
-        $booking_notifications[] = $notif;
-    } elseif (strpos(strtolower($notif['type']), 'payment') !== false) {
-        $payment_notifications[] = $notif;
-    } elseif (strpos(strtolower($notif['type']), 'maintenance') !== false) {
-        $maintenance_notifications[] = $notif;
-    } else {
-        $system_notifications[] = $notif;
-    }
-}
-
-$page_title = 'Notifications';
+$page_title = 'Notifications & Alerts';
+include '../templates/host_layout_header.php';
 ?>
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?php echo $page_title; ?> | BookIT Host</title>
-    <link rel="stylesheet" href="../assets/css/sidebar-common.css?v=<?php echo time(); ?>">
-    <link rel="stylesheet" href="../assets/css/admin/admin-common.css?v=<?php echo time(); ?>">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <style>
-        .main-container {
-            min-height: 100vh;
-        }
 
-        .content {
-            margin-left: var(--sidebar-width, 230px);
-            width: calc(100% - var(--sidebar-width, 230px));
-            max-width: 100%;
-            min-height: 100vh;
-            padding: 30px;
-            box-sizing: border-box;
-        }
-        .page-header {
-            margin-bottom: 30px;
-            padding-bottom: 20px;
-            border-bottom: 2px solid #e9ecef;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .page-header h1 {
-            margin: 0;
-            color: #2c3e50;
-            font-size: 28px;
-            font-weight: 600;
-        }
-        
-        .header-actions {
-            display: flex;
-            gap: 10px;
-        }
-        
-        .badge {
-            background: #dc3545;
-            color: white;
-            padding: 4px 8px;
-            border-radius: 12px;
-            font-size: 12px;
-            font-weight: 600;
-        }
-        
-        .btn-header {
-            padding: 8px 16px;
-            border: 1px solid #ddd;
-            background: white;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 13px;
-            transition: all 0.3s;
-        }
-        
-        .btn-header:hover {
-            background: #f5f5f5;
-        }
-        
-        .notifications-container {
-            width: 100%;
-            max-width: 100%;
-        }
-        
-        .notification-section {
-            margin-bottom: 25px;
-        }
-        
-        .section-title {
-            font-size: 16px;
-            font-weight: 600;
-            color: #2c3e50;
-            margin-bottom: 12px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        
-        .notification-item {
-            background: white;
-            border-left: 4px solid #3498db;
-            padding: 16px;
-            margin-bottom: 10px;
-            border-radius: 4px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-            transition: all 0.3s;
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            gap: 12px;
-        }
-        
-        .notification-item.unread {
-            background: #f0f8ff;
-            border-left-color: #dc3545;
-        }
-        
-        .notification-item.booking {
-            border-left-color: #3498db;
-        }
-        
-        .notification-item.payment {
-            border-left-color: #27ae60;
-        }
-        
-        .notification-item.maintenance {
-            border-left-color: #f39c12;
-        }
-        
-        .notification-item.system {
-            border-left-color: #95a5a6;
-        }
-        
-        .notification-content {
-            flex: 1;
-        }
-        
-        .notification-title {
-            font-weight: 600;
-            color: #2c3e50;
-            margin-bottom: 4px;
-        }
-        
-        .notification-message {
-            color: #666;
-            font-size: 14px;
-            line-height: 1.4;
-        }
-        
-        .notification-time {
-            font-size: 12px;
-            color: #999;
-            margin-top: 6px;
-        }
-        
-        .notification-actions {
-            display: flex;
-            gap: 8px;
-            margin-left: 10px;
-        }
-        
-        .notification-actions button {
-            background: none;
-            border: none;
-            color: #999;
-            cursor: pointer;
-            font-size: 14px;
-            padding: 4px 8px;
-            transition: color 0.3s;
-        }
+<div class="page-header">
+    <div>
+        <h1 class="page-title"><i class="fas fa-bell me-2 text-primary"></i>Activity Center</h1>
+        <p class="text-muted">Stay updated with bookings, payments, and system alerts</p>
+    </div>
+    <div class="page-actions d-flex gap-2">
+        <?php if ($unread_count > 0): ?>
+            <form method="POST"><input type="hidden" name="action" value="mark_all_read"><button
+                    class="btn btn-outline-secondary btn-sm rounded-pill px-3">Mark All Read</button></form>
+        <?php endif; ?>
+    </div>
+</div>
 
-        .notification-actions form {
-            margin: 0;
-        }
-        
-        .notification-actions button:hover {
-            color: #2c3e50;
-        }
-        
-        .empty-state {
-            text-align: center;
-            padding: 48px 20px;
-            color: #999;
-            background: white;
-            border-radius: 8px;
-            border: 1px dashed #ddd;
-            min-height: 260px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-        }
-        
-        .empty-state i {
-            font-size: 48px;
-            margin-bottom: 15px;
-            opacity: 0.5;
-        }
-        
-        @media (max-width: 1200px) {
-            .content {
-                margin-left: 0;
-                width: 100%;
-            }
-        }
-        
-        @media (max-width: 768px) {
-            .content {
-                padding: 16px;
-            }
-            .page-header {
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 12px;
-            }
-            .notification-item {
-                flex-direction: column;
-            }
-            .notification-actions {
-                margin-left: 0;
-                width: 100%;
-                justify-content: flex-end;
-            }
-        }
-        
-        .icon-booking { color: #3498db; }
-        .icon-payment { color: #27ae60; }
-        .icon-maintenance { color: #f39c12; }
-        .icon-system { color: #95a5a6; }
-    </style>
-</head>
-<body>
-    <div class="main-container">
-        <?php include '../includes/sidebar.php'; ?>
-        
-        <div class="content">
-            <div class="page-header">
-                <h1><i class="fas fa-bell"></i> Notifications</h1>
-                <div class="header-actions">
-                    <?php if ($unread_count > 0): ?>
-                    <span class="badge"><?php echo $unread_count; ?> Unread</span>
-                    <form method="POST" style="display:inline;">
-                        <input type="hidden" name="action" value="mark_all_read">
-                        <button type="submit" class="btn-header" onclick="return confirm('Mark all as read?')">Mark all as read</button>
-                    </form>
-                    <?php endif; ?>
+<div class="row g-4 mb-5">
+    <div class="col-lg-8">
+        <?php if (empty($notifications)): ?>
+            <div class="card-modern text-center py-5 border-0 shadow-sm">
+                <div class="py-5">
+                    <i class="fas fa-bell-slash fa-3x text-muted opacity-25 mb-4"></i>
+                    <h5 class="fw-bold text-dark">No notifications yet</h5>
+                    <p class="text-muted small">We'll alert you when something important happens in your properties.</p>
                 </div>
             </div>
-            
-            <div class="notifications-container">
-                <?php if (empty($notifications)): ?>
-                    <div class="empty-state">
-                        <i class="fas fa-inbox"></i>
-                        <p class="mb-1"><strong>No notifications yet</strong></p>
-                        <small>New booking, payment, and system updates will appear here.</small>
-                    </div>
-                <?php else: ?>
-                    <!-- Booking Notifications -->
-                    <?php if (!empty($booking_notifications)): ?>
-                    <div class="notification-section">
-                        <div class="section-title">
-                            <i class="fas fa-calendar-check icon-booking"></i>
-                            Booking Alerts (<?php echo count($booking_notifications); ?>)
-                        </div>
-                        <?php foreach ($booking_notifications as $notif): ?>
-                        <div class="notification-item booking <?php echo $notif['is_read'] ? '' : 'unread'; ?>" data-id="<?php echo $notif['notification_id']; ?>">
-                            <div class="notification-content">
-                                <div class="notification-title"><?php echo htmlspecialchars($notif['title']); ?></div>
-                                <div class="notification-message"><?php echo htmlspecialchars($notif['message']); ?></div>
-                                <div class="notification-time">
-                                    <i class="fas fa-clock"></i>
-                                    <?php 
-                                    $time = strtotime($notif['created_at']);
-                                    $diff = time() - $time;
-                                    if ($diff < 60) {
-                                        echo 'Just now';
-                                    } elseif ($diff < 3600) {
-                                        echo round($diff / 60) . ' minutes ago';
-                                    } elseif ($diff < 86400) {
-                                        echo round($diff / 3600) . ' hours ago';
-                                    } else {
-                                        echo date('M d, Y', $time);
-                                    }
-                                    ?>
+        <?php else: ?>
+            <div class="d-flex flex-column gap-3">
+                <?php foreach ($notifications as $n):
+                    $icon = 'fa-info-circle';
+                    $bg_class = 'bg-blue-500';
+                    $text_class = 'text-primary';
+
+                    if (stripos($n['type'], 'booking') !== false) {
+                        $icon = 'fa-calendar-check';
+                        $bg_class = 'bg-blue-500';
+                        $text_class = 'text-primary';
+                    } elseif (stripos($n['type'], 'payment') !== false) {
+                        $icon = 'fa-credit-card';
+                        $bg_class = 'bg-emerald-500';
+                        $text_class = 'text-success';
+                    } elseif (stripos($n['type'], 'system') !== false) {
+                        $icon = 'fa-cog';
+                        $bg_class = 'bg-slate-500';
+                        $text_class = 'text-muted';
+                    } elseif (stripos($n['type'], 'maintenance') !== false) {
+                        $icon = 'fa-tools';
+                        $bg_class = 'bg-amber-500';
+                        $text_class = 'text-warning';
+                    }
+                    ?>
+                    <div
+                        class="card-modern border-0 shadow-sm rounded-4 <?php echo !$n['is_read'] ? 'border-start border-primary border-4' : 'opacity-75'; ?> hover-lift transition">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div class="d-flex gap-3">
+                                <div class="bg-primary bg-opacity-10 p-3 rounded-circle text-primary"
+                                    style="width: 50px; height: 50px; display: grid; place-items: center;">
+                                    <i class="fas <?php echo $icon; ?> fs-5"></i>
+                                </div>
+                                <div>
+                                    <h6 class="mb-1 fw-bold <?php echo !$n['is_read'] ? 'text-primary' : 'text-dark'; ?>">
+                                        <?php echo htmlspecialchars($n['title']); ?></h6>
+                                    <p class="small mb-2 text-muted"><?php echo htmlspecialchars($n['message']); ?></p>
+                                    <div class="d-flex align-items-center gap-3">
+                                        <small class="text-muted"><i
+                                                class="far fa-clock me-1 opacity-50"></i><?php echo time_ago($n['created_at']); ?></small>
+                                        <?php if (!$n['is_read']): ?>
+                                            <form method="POST" class="d-inline">
+                                                <input type="hidden" name="action" value="mark_read">
+                                                <input type="hidden" name="id" value="<?php echo $n['notification_id']; ?>">
+                                                <button class="btn btn-link p-0 text-primary fw-bold text-decoration-none"
+                                                    style="font-size: 0.7rem;">Dismiss <i
+                                                        class="fas fa-check-circle ms-1"></i></button>
+                                            </form>
+                                        <?php endif; ?>
+                                    </div>
                                 </div>
                             </div>
-                            <div class="notification-actions">
-                                <a href="reservations.php" title="View Reservation" style="color:#3498db;padding:4px 8px;transition:color 0.3s;display:inline-block;" onmouseover="this.style.color='#2c3e50'" onmouseout="this.style.color='#3498db'">
-                                    <i class="fas fa-eye"></i> View
-                                </a>
-                                <?php if (!$notif['is_read']): ?>
-                                <form method="POST" style="display:inline;">
-                                    <input type="hidden" name="action" value="mark_read">
-                                    <input type="hidden" name="notification_id" value="<?php echo $notif['notification_id']; ?>">
-                                    <button type="submit" title="Mark as read" style="background:none;border:none;color:#999;cursor:pointer;padding:4px 8px;transition:color 0.3s;" onmouseover="this.style.color='#2c3e50'" onmouseout="this.style.color='#999'">
-                                        <i class="fas fa-check"></i>
-                                    </button>
-                                </form>
-                                <?php endif; ?>
-                                <form method="POST" style="display:inline;">
-                                    <input type="hidden" name="action" value="delete">
-                                    <input type="hidden" name="notification_id" value="<?php echo $notif['notification_id']; ?>">
-                                    <button type="submit" title="Delete" onclick="return confirm('Delete this notification?')" style="background:none;border:none;color:#999;cursor:pointer;padding:4px 8px;transition:color 0.3s;" onmouseover="this.style.color='#2c3e50'" onmouseout="this.style.color='#999'">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
-                                </form>
+                            <div class="dropdown">
+                                <button class="btn btn-link text-muted p-0" data-bs-toggle="dropdown"><i
+                                        class="fas fa-ellipsis-h opacity-50"></i></button>
+                                <ul class="dropdown-menu dropdown-menu-end shadow border-0 rounded-3">
+                                    <li>
+                                        <form method="POST"><input type="hidden" name="action" value="delete"><input
+                                                type="hidden" name="id" value="<?php echo $n['notification_id']; ?>"><button
+                                                class="dropdown-item text-danger small py-2"><i
+                                                    class="fas fa-trash-alt me-2"></i>Remove</button></form>
+                                    </li>
+                                </ul>
                             </div>
                         </div>
-                        <?php endforeach; ?>
                     </div>
-                    <?php endif; ?>
-                    
-                    <!-- Payment Notifications -->
-                    <?php if (!empty($payment_notifications)): ?>
-                    <div class="notification-section">
-                        <div class="section-title">
-                            <i class="fas fa-credit-card icon-payment"></i>
-                            Payment Updates (<?php echo count($payment_notifications); ?>)
-                        </div>
-                        <?php foreach ($payment_notifications as $notif): ?>
-                        <div class="notification-item payment <?php echo $notif['is_read'] ? '' : 'unread'; ?>" data-id="<?php echo $notif['notification_id']; ?>">
-                            <div class="notification-content">
-                                <div class="notification-title"><?php echo htmlspecialchars($notif['title']); ?></div>
-                                <div class="notification-message"><?php echo htmlspecialchars($notif['message']); ?></div>
-                                <div class="notification-time">
-                                    <i class="fas fa-clock"></i>
-                                    <?php 
-                                    $time = strtotime($notif['created_at']);
-                                    $diff = time() - $time;
-                                    if ($diff < 60) {
-                                        echo 'Just now';
-                                    } elseif ($diff < 3600) {
-                                        echo round($diff / 60) . ' minutes ago';
-                                    } elseif ($diff < 86400) {
-                                        echo round($diff / 3600) . ' hours ago';
-                                    } else {
-                                        echo date('M d, Y', $time);
-                                    }
-                                    ?>
-                                </div>
-                            </div>
-                            <div class="notification-actions">
-                                <a href="payment_management.php" title="View Payment" style="color:#27ae60;padding:4px 8px;transition:color 0.3s;display:inline-block;" onmouseover="this.style.color='#2c3e50'" onmouseout="this.style.color='#27ae60'">
-                                    <i class="fas fa-eye"></i> View
-                                </a>
-                                <?php if (!$notif['is_read']): ?>
-                                <form method="POST" style="display:inline;">
-                                    <input type="hidden" name="action" value="mark_read">
-                                    <input type="hidden" name="notification_id" value="<?php echo $notif['notification_id']; ?>">
-                                    <button type="submit" title="Mark as read" style="background:none;border:none;color:#999;cursor:pointer;padding:4px 8px;transition:color 0.3s;" onmouseover="this.style.color='#2c3e50'" onmouseout="this.style.color='#999'">
-                                        <i class="fas fa-check"></i>
-                                    </button>
-                                </form>
-                                <?php endif; ?>
-                                <form method="POST" style="display:inline;">
-                                    <input type="hidden" name="action" value="delete">
-                                    <input type="hidden" name="notification_id" value="<?php echo $notif['notification_id']; ?>">
-                                    <button type="submit" title="Delete" onclick="return confirm('Delete this notification?')" style="background:none;border:none;color:#999;cursor:pointer;padding:4px 8px;transition:color 0.3s;" onmouseover="this.style.color='#2c3e50'" onmouseout="this.style.color='#999'">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
-                                </form>
-                            </div>
-                        </div>
-                        <?php endforeach; ?>
-                    </div>
-                    <?php endif; ?>
-                    
-                    <!-- Maintenance Notifications -->
-                    <?php if (!empty($maintenance_notifications)): ?>
-                    <div class="notification-section">
-                        <div class="section-title">
-                            <i class="fas fa-tools icon-maintenance"></i>
-                            Maintenance Reminders (<?php echo count($maintenance_notifications); ?>)
-                        </div>
-                        <?php foreach ($maintenance_notifications as $notif): ?>
-                        <div class="notification-item maintenance <?php echo $notif['is_read'] ? '' : 'unread'; ?>" data-id="<?php echo $notif['notification_id']; ?>">
-                            <div class="notification-content">
-                                <div class="notification-title"><?php echo htmlspecialchars($notif['title']); ?></div>
-                                <div class="notification-message"><?php echo htmlspecialchars($notif['message']); ?></div>
-                                <div class="notification-time">
-                                    <i class="fas fa-clock"></i>
-                                    <?php 
-                                    $time = strtotime($notif['created_at']);
-                                    $diff = time() - $time;
-                                    if ($diff < 60) {
-                                        echo 'Just now';
-                                    } elseif ($diff < 3600) {
-                                        echo round($diff / 60) . ' minutes ago';
-                                    } elseif ($diff < 86400) {
-                                        echo round($diff / 3600) . ' hours ago';
-                                    } else {
-                                        echo date('M d, Y', $time);
-                                    }
-                                    ?>
-                                </div>
-                            </div>
-                            <div class="notification-actions">
-                                <a href="unit_management.php" title="View Unit" style="color:#f39c12;padding:4px 8px;transition:color 0.3s;display:inline-block;" onmouseover="this.style.color='#2c3e50'" onmouseout="this.style.color='#f39c12'">
-                                    <i class="fas fa-eye"></i> View
-                                </a>
-                                <?php if (!$notif['is_read']): ?>
-                                <form method="POST" style="display:inline;">
-                                    <input type="hidden" name="action" value="mark_read">
-                                    <input type="hidden" name="notification_id" value="<?php echo $notif['notification_id']; ?>">
-                                    <button type="submit" title="Mark as read" style="background:none;border:none;color:#999;cursor:pointer;padding:4px 8px;transition:color 0.3s;" onmouseover="this.style.color='#2c3e50'" onmouseout="this.style.color='#999'">
-                                        <i class="fas fa-check"></i>
-                                    </button>
-                                </form>
-                                <?php endif; ?>
-                                <form method="POST" style="display:inline;">
-                                    <input type="hidden" name="action" value="delete">
-                                    <input type="hidden" name="notification_id" value="<?php echo $notif['notification_id']; ?>">
-                                    <button type="submit" title="Delete" onclick="return confirm('Delete this notification?')" style="background:none;border:none;color:#999;cursor:pointer;padding:4px 8px;transition:color 0.3s;" onmouseover="this.style.color='#2c3e50'" onmouseout="this.style.color='#999'">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
-                                </form>
-                            </div>
-                        </div>
-                        <?php endforeach; ?>
-                    </div>
-                    <?php endif; ?>
-                    
-                    <!-- System Notifications -->
-                    <?php if (!empty($system_notifications)): ?>
-                    <div class="notification-section">
-                        <div class="section-title">
-                            <i class="fas fa-info-circle icon-system"></i>
-                            System Notifications (<?php echo count($system_notifications); ?>)
-                        </div>
-                        <?php foreach ($system_notifications as $notif): ?>
-                        <div class="notification-item system <?php echo $notif['is_read'] ? '' : 'unread'; ?>" data-id="<?php echo $notif['notification_id']; ?>">
-                            <div class="notification-content">
-                                <div class="notification-title"><?php echo htmlspecialchars($notif['title']); ?></div>
-                                <div class="notification-message"><?php echo htmlspecialchars($notif['message']); ?></div>
-                                <?php if (!empty($notif['admin_message'])): ?>
-                                <div style="margin-top: 10px; background: #f9f9f9; padding: 10px; border-left: 3px solid <?php echo (isset($notif['status']) && $notif['status'] == 'approved') ? '#2ecc71' : '#e74c3c'; ?>;">
-                                    <strong style="font-size: 13px; color: #555;">Admin Note:</strong><br>
-                                    <span style="font-size: 13px; color: #666; font-style: italic;">"<?php echo htmlspecialchars($notif['admin_message']); ?>"</span>
-                                </div>
-                                <?php endif; ?>
-                                <div class="notification-time">
-                                    <i class="fas fa-clock"></i>
-                                    <?php 
-                                    $time = strtotime($notif['created_at']);
-                                    $diff = time() - $time;
-                                    if ($diff < 60) {
-                                        echo 'Just now';
-                                    } elseif ($diff < 3600) {
-                                        echo round($diff / 60) . ' minutes ago';
-                                    } elseif ($diff < 86400) {
-                                        echo round($diff / 3600) . ' hours ago';
-                                    } else {
-                                        echo date('M d, Y', $time);
-                                    }
-                                    ?>
-                                </div>
-                            </div>
-                            <div class="notification-actions">
-                                <?php 
-                                    $sys_view_link = 'host_dashboard.php';
-                                    if (strpos(strtolower($notif['title']), 'message') !== false) {
-                                        $sys_view_link = 'messages.php';
-                                    }
-                                ?>
-                                <a href="<?php echo $sys_view_link; ?>" title="View Details" style="color:#95a5a6;padding:4px 8px;transition:color 0.3s;display:inline-block;" onmouseover="this.style.color='#2c3e50'" onmouseout="this.style.color='#95a5a6'">
-                                    <i class="fas fa-eye"></i> View
-                                </a>
-                                <?php if (!$notif['is_read']): ?>
-                                <form method="POST" style="display:inline;">
-                                    <input type="hidden" name="action" value="mark_read">
-                                    <input type="hidden" name="notification_id" value="<?php echo $notif['notification_id']; ?>">
-                                    <button type="submit" title="Mark as read" style="background:none;border:none;color:#999;cursor:pointer;padding:4px 8px;transition:color 0.3s;" onmouseover="this.style.color='#2c3e50'" onmouseout="this.style.color='#999'">
-                                        <i class="fas fa-check"></i>
-                                    </button>
-                                </form>
-                                <?php endif; ?>
-                                <form method="POST" style="display:inline;">
-                                    <input type="hidden" name="action" value="delete">
-                                    <input type="hidden" name="notification_id" value="<?php echo $notif['notification_id']; ?>">
-                                    <button type="submit" title="Delete" onclick="return confirm('Delete this notification?')" style="background:none;border:none;color:#999;cursor:pointer;padding:4px 8px;transition:color 0.3s;" onmouseover="this.style.color='#2c3e50'" onmouseout="this.style.color='#999'">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
-                                </form>
-                            </div>
-                        </div>
-                        <?php endforeach; ?>
-                    </div>
-                    <?php endif; ?>
-                <?php endif; ?>
+                <?php endforeach; ?>
             </div>
+        <?php endif; ?>
+    </div>
+
+    <div class="col-lg-4">
+        <div class="card-modern border-0 shadow-sm mb-4">
+            <h6 class="fw-bold mb-4"><i class="fas fa-chart-pie text-primary me-2"></i>Activity Summary</h6>
+            <div class="d-flex justify-content-between align-items-center mb-3 pb-3 border-bottom">
+                <span class="small text-muted fw-bold">Unread Messages</span>
+                <span class="badge bg-primary rounded-pill px-3"><?php echo $unread_count; ?></span>
+            </div>
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <span class="small text-muted fw-bold">Total History</span>
+                <span class="badge bg-light text-dark rounded-pill px-3"><?php echo count($notifications); ?></span>
+            </div>
+            <hr class="my-4 opacity-10">
+            <button class="btn btn-primary w-100 rounded-pill shadow-sm" onclick="window.location.href='messaging.php'">
+                <i class="fas fa-comments me-2"></i>Go to Inbox
+            </button>
         </div>
     </div>
-    
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-</body>
-</html>
+</div>
+</div>
+</div>
+
+<?php include '../templates/host_layout_footer.php'; ?>

@@ -195,11 +195,11 @@ if (!function_exists('bookit_uvm_amenity_visuals')) {
         <div class="uvm-dash-card-title d-flex flex-wrap align-items-center justify-content-between gap-2">
             <span><i class="fas fa-map text-primary"></i> Map</span>
             <a class="btn btn-sm btn-outline-secondary" target="_blank" rel="noopener"
-               href="https://www.google.com/maps?q=<?php echo rawurlencode((string) $lat . ',' . (string) $lng); ?>">
-                <i class="fas fa-external-link-alt"></i> View on Google Maps
+               href="https://www.openstreetmap.org/?mlat=<?php echo (string)$lat; ?>&mlon=<?php echo (string)$lng; ?>#map=16/<?php echo (string)$lat; ?>/<?php echo (string)$lng; ?>">
+                <i class="fas fa-external-link-alt"></i> View on OpenStreetMap
             </a>
         </div>
-        <div id="uvm-leaflet-<?php echo (int) $unit_id; ?>"
+        <div id="uvm-map-<?php echo (int) $unit_id; ?>"
              class="uvm-dash-map"
              data-lat="<?php echo htmlspecialchars((string) $lat); ?>"
              data-lng="<?php echo htmlspecialchars((string) $lng); ?>"></div>

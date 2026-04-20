@@ -14,34 +14,49 @@ $error = '';
 // Handle notification actions
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     if (isset($_POST['mark_read'])) {
-        $notificationId = $_POST['notification_id'];
+        $notificationId = (int)$_POST['notification_id'];
         $sql = "UPDATE notifications SET is_read = 1 WHERE notification_id = ? AND user_id = ?";
-        if (execute_query($sql, [$notificationId, $_SESSION['user_id']])) {
-            $message = "Notification marked as read.";
-        }
+        execute_query($sql, [$notificationId, $_SESSION['user_id']]);
     }
     
     if (isset($_POST['mark_all_read'])) {
         $sql = "UPDATE notifications SET is_read = 1 WHERE user_id = ?";
-        if (execute_query($sql, [$_SESSION['user_id']])) {
-            $message = "All notifications marked as read.";
-        }
+        execute_query($sql, [$_SESSION['user_id']]);
     }
     
     if (isset($_POST['delete_notification'])) {
-        $notificationId = $_POST['notification_id'];
+        $notificationId = (int)$_POST['notification_id'];
         $sql = "DELETE FROM notifications WHERE notification_id = ? AND user_id = ?";
-        if (execute_query($sql, [$notificationId, $_SESSION['user_id']])) {
-            $message = "Notification deleted.";
-        }
+        execute_query($sql, [$notificationId, $_SESSION['user_id']]);
     }
 }
 
-// Kumuha ng user notifications
-$notifications = mysqli_query($conn, "SELECT * FROM notifications WHERE user_id = " . $_SESSION['user_id'] . " ORDER BY created_at DESC LIMIT 50");
+// 🔍 5. Filter & Search Logic
+$filter_type = sanitize_input($_GET['type'] ?? 'all');
+$search = sanitize_input($_GET['search'] ?? '');
+$highlight_id = (int)($_GET['highlight_id'] ?? 0);
 
-// Kumuha ng unread count
-$unreadCount = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as count FROM notifications WHERE user_id = " . $_SESSION['user_id'] . " AND is_read = 0"));
+$query = "SELECT * FROM notifications WHERE user_id = " . (int)$_SESSION['user_id'] . " AND is_archived = 0";
+$params = [];
+
+if ($filter_type !== 'all') {
+    $query .= " AND type = ?";
+    $params[] = $filter_type;
+}
+
+if (!empty($search)) {
+    $query .= " AND (title LIKE ? OR message LIKE ?)";
+    $params[] = "%$search%";
+    $params[] = "%$search%";
+}
+
+$query .= " ORDER BY (priority = 'urgent') DESC, (priority = 'overdue') DESC, created_at DESC LIMIT 50";
+
+$notifications = get_multiple_results($query, $params);
+
+// Kumuha ng unread count for badge
+$unreadCountRes = get_single_result("SELECT COUNT(*) as count FROM notifications WHERE user_id = ? AND is_read = 0", [$_SESSION['user_id']]);
+$unreadCount = $unreadCountRes['count'] ?? 0;
 
 // Function para gumawa ng Gmail URL
 function createGmailUrl($subject, $message, $recipient = '') {
@@ -173,7 +188,7 @@ function createGmailUrl($subject, $message, $recipient = '') {
                 <p class="text-gray-500 font-medium text-lg">Stay updated with your bookings and reservations.</p>
             </div>
             
-            <?php if ($unreadCount['count'] > 0): ?>
+            <?php if ($unreadCount > 0): ?>
             <div class="mt-4 md:mt-0">
                 <form method="POST">
                     <button type="submit" name="mark_all_read" class="text-sm font-bold text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 py-2 px-4 rounded-xl transition-colors">
@@ -184,21 +199,40 @@ function createGmailUrl($subject, $message, $recipient = '') {
             <?php endif; ?>
         </div>
 
-        <!-- Notification Tabs (Future-ready) -->
+        <!-- 🔍 Searching & Filtering -->
+        <div class="mb-8 flex flex-col sm:flex-row gap-4">
+            <div class="relative flex-grow">
+                <form method="GET" class="relative">
+                    <input type="hidden" name="type" value="<?php echo $filter_type; ?>">
+                    <input type="text" name="search" value="<?php echo htmlspecialchars($search); ?>" 
+                           placeholder="Search notifications..." 
+                           class="w-full bg-white border border-gray-200 rounded-xl py-3 pl-12 pr-4 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all">
+                    <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                </form>
+            </div>
+        </div>
+
+        <!-- Notification Tabs -->
         <div class="mb-8 overflow-x-auto hide-scrollbar">
             <ul class="flex whitespace-nowrap gap-8 border-b border-gray-200">
+                <?php 
+                $tabs = [
+                    'all' => 'All',
+                    'booking' => 'Bookings',
+                    'payment' => 'Payments',
+                    'reminder' => 'Reminders',
+                    'system' => 'System'
+                ];
+                foreach ($tabs as $key => $label):
+                    $active = ($filter_type === $key);
+                ?>
                 <li>
-                    <a href="#" class="inline-block pb-4 text-blue-600 border-b-2 border-blue-600 font-bold text-base px-1">All</a>
+                    <a href="?type=<?php echo $key; ?>&search=<?php echo urlencode($search); ?>" 
+                       class="inline-block pb-4 <?php echo $active ? 'text-blue-600 border-b-2 border-blue-600 font-bold' : 'text-gray-500 hover:text-gray-900 font-semibold'; ?> text-base px-1 transition-colors">
+                        <?php echo $label; ?>
+                    </a>
                 </li>
-                <li>
-                    <a href="#" class="inline-block pb-4 text-gray-500 hover:text-gray-900 font-semibold text-base px-1 transition-colors">Bookings</a>
-                </li>
-                <li>
-                    <a href="#" class="inline-block pb-4 text-gray-500 hover:text-gray-900 font-semibold text-base px-1 transition-colors">Payments</a>
-                </li>
-                <li>
-                    <a href="#" class="inline-block pb-4 text-gray-500 hover:text-gray-900 font-semibold text-base px-1 transition-colors">Messages</a>
-                </li>
+                <?php endforeach; ?>
             </ul>
         </div>
 
@@ -217,11 +251,15 @@ function createGmailUrl($subject, $message, $recipient = '') {
         <?php endif; ?>
 
         <!-- Content Area -->
-        <?php if (mysqli_num_rows($notifications) > 0): ?>
+        <?php if (!empty($notifications)): ?>
             <div class="bg-white rounded-[24px] shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-gray-100 overflow-hidden">
-                <?php while ($notification = mysqli_fetch_assoc($notifications)): ?>
+                <?php foreach ($notifications as $notification): 
+                    $is_highlighted = ($highlight_id == $notification['notification_id']);
+                    $unread_class = !$notification['is_read'] ? 'bg-blue-50/40' : '';
+                    $highlight_class = $is_highlighted ? 'border-2 border-orange-400 bg-orange-50/10' : '';
+                ?>
                     <!-- Notification Item -->
-                    <div class="p-6 md:p-8 border-b border-gray-100 last:border-b-0 hover:bg-gray-50 transition-colors flex gap-5 <?php echo !$notification['is_read'] ? 'bg-blue-50/40' : ''; ?>">
+                    <div class="p-6 md:p-8 border-b border-gray-100 last:border-b-0 hover:bg-gray-50 transition-colors flex gap-5 <?php echo $unread_class; ?> <?php echo $highlight_class; ?>">
                         
                         <!-- Small icon avatar -->
                         <div class="shrink-0 w-14 h-14 rounded-full flex items-center justify-center text-2xl <?php 
@@ -249,6 +287,11 @@ function createGmailUrl($subject, $message, $recipient = '') {
                             <div class="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-2 gap-1 sm:gap-4">
                                 <h4 class="font-bold text-gray-900 text-lg leading-tight">
                                     <?php echo htmlspecialchars($notification['title']); ?>
+                                    <?php if ($notification['priority'] === 'urgent'): ?>
+                                        <span class="ml-2 text-[10px] bg-red-100 text-red-600 px-2 py-0.5 rounded-md uppercase tracking-wider">Urgent</span>
+                                    <?php elseif ($notification['priority'] === 'overdue'): ?>
+                                        <span class="ml-2 text-[10px] bg-purple-100 text-purple-600 px-2 py-0.5 rounded-md uppercase tracking-wider">Overdue</span>
+                                    <?php endif; ?>
                                 </h4>
                                 <!-- Small timestamp on the right -->
                                 <span class="shrink-0 text-sm font-semibold text-gray-400 whitespace-nowrap hidden sm:block">
@@ -268,7 +311,13 @@ function createGmailUrl($subject, $message, $recipient = '') {
                             </div>
                             <?php endif; ?>
                             
-                            <?php if (isset($notification['status']) && $notification['status'] == 'rejected'): ?>
+                            <?php if (!empty($notification['redirect_url'])): ?>
+                            <div class="mb-4">
+                                <a href="<?php echo htmlspecialchars($notification['redirect_url']); ?>" class="inline-flex items-center gap-2 bg-blue-600 text-white font-bold py-2.5 px-5 rounded-xl hover:bg-blue-700 transition-colors shadow-sm text-sm">
+                                    <i class="fas fa-external-link-alt"></i> View Details
+                                </a>
+                            </div>
+                            <?php elseif (isset($notification['status']) && $notification['status'] == 'rejected'): ?>
                             <div class="mb-4">
                                 <a href="../renter/my_application.php" class="inline-flex items-center gap-2 bg-orange-100 text-orange-700 font-bold py-2.5 px-5 rounded-xl hover:bg-orange-200 transition-colors shadow-sm text-sm">
                                     <i class="fas fa-edit"></i> Edit & Resubmit
@@ -303,7 +352,7 @@ function createGmailUrl($subject, $message, $recipient = '') {
                             </div>
                         </div>
                     </div>
-                <?php endwhile; ?>
+                <?php endforeach; ?>
             </div>
             
             <div class="mt-8 text-center">

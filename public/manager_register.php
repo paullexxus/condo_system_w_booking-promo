@@ -86,15 +86,23 @@ if (isset($_POST['register'])) {
         if (!isset($error)) {
             $hashed_password = password_hash($password, PASSWORD_DEFAULT);
             
-            // Insert into users table with manager role and additional fields
-            $query = "INSERT INTO users (full_name, email, password, phone, role, condo_name, branch_name, condo_address, social_media, valid_id1, valid_id2, status) 
-                     VALUES ('$manager_name', '$email', '$hashed_password', '$phone', 'manager', '$condo_name', '$branch_name', '$condo_address', '$social_media', '$valid_id1_path', '$valid_id2_path', 'pending')";
+            // FIXED: Use prepared statements to prevent SQL Injection
+            $stmt = $conn->prepare("INSERT INTO users (full_name, email, password, phone, role, condo_name, branch_name, condo_address, social_media, valid_id1, valid_id2, status, terms_accepted) 
+                                   VALUES (?, ?, ?, ?, 'manager', ?, ?, ?, ?, ?, ?, 'pending', 1)");
             
-            if (mysqli_query($conn, $query)) {
+            $stmt->bind_param("ssssssssss", $manager_name, $email, $hashed_password, $phone, $condo_name, $branch_name, $condo_address, $social_media, $valid_id1_path, $valid_id2_path);
+            
+            if ($stmt->execute()) {
+                $new_user_id = $conn->insert_id;
+                
+                // Log the registration event in audit logs
+                logAudit($new_user_id, 'Manager Registration', 'user', $new_user_id, "Manager registered and accepted Terms & Conditions. Application status: pending.");
+
                 $success = "Account created successfully! Your application is under review. You will be notified once approved.";
             } else {
-                $error = "Something went wrong. Please try again. Error: " . mysqli_error($conn);
+                $error = "Something went wrong. Please try again. Error: " . $conn->error;
             }
+            $stmt->close();
         }
     }
 }

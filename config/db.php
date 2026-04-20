@@ -12,6 +12,9 @@ if ($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);
 }
 
+// Set connection charset to ensure consistent collation for string literals
+$conn->set_charset('utf8mb4');
+
 // Database helper functions
 if (!function_exists('get_single_result')) {
     function get_single_result($sql, $params = []) {
@@ -232,6 +235,21 @@ if (!function_exists('column_exists')) {
         $exists = ($res->num_rows > 0);
         $res->free();
         return $exists;
+    }
+}
+
+/**
+ * Payout Schema Hardening Helpers
+ */
+if (!function_exists('get_payout_user_col')) {
+    function get_payout_user_col() {
+        return column_exists('payouts', 'user_id') ? 'user_id' : 'host_id';
+    }
+}
+
+if (!function_exists('get_payout_account_col')) {
+    function get_payout_account_col() {
+        return column_exists('payout_accounts', 'account_details') ? 'account_details' : 'account_number';
     }
 }
 ?>

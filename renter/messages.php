@@ -339,15 +339,17 @@ if ($selected_host_id) {
 
                         if (msg.file_path) {
                             if (msg.file_type === 'image') {
-                                contentHtml += `<div class="mt-2"><img src="../${msg.file_path}" class="rounded shadow-sm max-h-[150px] cursor-pointer hover:opacity-90 transition-opacity" onclick="openFullscreenImage('../${escapeHtml(msg.file_path)}')"></div>`;
+                                const proxyUrl = `../public/access_file.php?file=${encodeURIComponent(msg.file_path.replace('uploads/', ''))}`;
+                                contentHtml += `<div class="mt-2"><img src="${proxyUrl}" class="rounded shadow-sm max-h-[150px] cursor-pointer hover:opacity-90 transition-opacity" onclick="openFullscreenImage('${proxyUrl}')"></div>`;
                             } else {
+                                const proxyUrl = `../public/access_file.php?file=${encodeURIComponent(msg.file_path.replace('uploads/', ''))}`;
                                 contentHtml += `
                                     <div class="mt-2 border border-gray-200 rounded bg-white text-gray-800 p-2 flex items-center justify-between gap-3 shadow-sm">
                                         <div class="flex items-center gap-2 text-sm max-w-[200px] overflow-hidden">
                                             <i class="fas fa-file-word text-blue-500 text-lg"></i>
                                             <span class="truncate">${escapeHtml(msg.original_file_name)}</span>
                                         </div>
-                                        <a href="../${msg.file_path}" download class="text-blue-600 hover:text-blue-800" title="Download"><i class="fas fa-download"></i></a>
+                                        <a href="${proxyUrl}" download="${escapeHtml(msg.original_file_name)}" class="text-blue-600 hover:text-blue-800" title="Download"><i class="fas fa-download"></i></a>
                                     </div>
                                 `;
                             }

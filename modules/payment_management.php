@@ -275,39 +275,38 @@ if (isset($_POST['update_status']) && $is_admin) {
     }
     
     if (execute_query($sql, $params)) {
-        // If payment is paid, update reservation status
+        // 💰 5. Host Earnings Lifecycle Integration
         if ($new_status === 'paid' && $reservation_id) {
-            $reservation = get_single_result("SELECT total_amount FROM reservations WHERE reservation_id = ?", [$reservation_id]);
-            if ($reservation) {
-                // Apply 50% rule or full payment
-                if ($payment['amount'] >= ($reservation['total_amount'] * 0.5)) {
-                    $new_payment_status = ($payment['amount'] >= $reservation['total_amount']) ? 'paid' : 'partial_paid';
-                    execute_query(
-                        "UPDATE reservations SET status = 'confirmed', payment_status = ? WHERE reservation_id = ?", 
-                        [$new_payment_status, $reservation_id]
-                    );
-                    
-                    // Share revenue
-                    $admin_cut = $payment['amount'] * 0.10;
-                    $host_cut = $payment['amount'] * 0.90;
-                    execute_query(
-                        "UPDATE reservations SET admin_notes = CONCAT(IFNULL(admin_notes,''), '\n[FISCAL] Admin: ₱', ?, ' | Host: ₱', ?) WHERE reservation_id = ?",
-                        [$admin_cut, $host_cut, $reservation_id]
-                    );
-                    
-                    // Notify user
-                    $payment_user = get_single_result("SELECT user_id FROM payments WHERE payment_id = ?", [$payment_id]);
-                    if ($payment_user) {
-                        sendNotification($payment_user['user_id'], 'Payment Verified', 'Good news! Your payment has been verified and your reservation #' . $reservation_id . ' is now confirmed.', 'payment', 'system');
-                    }
-                }
+            // Update Reservation status to confirmed (Strict Lock)
+            execute_query(
+                "UPDATE reservations SET status = 'confirmed', payment_status = 'paid' WHERE reservation_id = ?", 
+                [$reservation_id]
+            );
+            
+            // Move Host Earnings to 'pending_release' (Wait for check-out)
+            execute_query("UPDATE host_earnings SET status = 'pending_release' WHERE reservation_id = ?", [$reservation_id]);
+            
+            // Notify Host and Renter (Requirement 11)
+            $res_data = get_single_result("SELECT user_id, unit_id FROM reservations WHERE reservation_id = ?", [$reservation_id]);
+            $unit_data = get_single_result("SELECT host_id, unit_number FROM units WHERE unit_id = ?", [$res_data['unit_id']]);
+            
+            // To Renter
+            sendNotification($res_data['user_id'], 'Reservation Confirmed', 'Your payment for unit ' . $unit_data['unit_number'] . ' has been verified. Your reservation is now confirmed.', 'booking', 'system', null, '../renter/my_bookings.php');
+            
+            // To Host
+            sendNotification($unit_data['host_id'], 'Booking Confirmed', 'Payment for reservation #' . $reservation_id . ' (Unit ' . $unit_data['unit_number'] . ') has been verified. Funds are now pending release after stay.', 'payment', 'system', null, '../host/earnings.php');
+            
+        } elseif (($new_status === 'failed' || $new_status === 'refunded') && $reservation_id) {
+            // Cancel host earnings entries
+            execute_query("UPDATE host_earnings SET status = 'failed' WHERE reservation_id = ?", [$reservation_id]);
+            
+            // If failed, auto-cancel reservation to release unit
+            if ($new_status === 'failed') {
+                execute_query("UPDATE reservations SET status = 'cancelled', payment_status = 'failed' WHERE reservation_id = ?", [$reservation_id]);
             }
-        } elseif ($new_status === 'failed' && $reservation_id) {
-            // Un-hold unit? Or let it naturally expire? Let's just update payment_status
-            execute_query("UPDATE reservations SET payment_status = 'failed' WHERE reservation_id = ?", [$reservation_id]);
         }
         
-        $_SESSION['success_message'] = "Payment status updated and verified successfully!";
+        $_SESSION['success_message'] = "Payment status updated and lifecycle synced successfully!";
         header("Location: " . $_SERVER['PHP_SELF']);
         exit();
     } else {

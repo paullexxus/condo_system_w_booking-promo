@@ -133,6 +133,85 @@ try {
         }
 
         $_SESSION['flash_success'] = 'Reservation status updated.';
+    } elseif ($action === 'reserve' || $action === 'book_confirm') {
+        // 🔒 1. Create New Reservation with Safety Layer
+        $data = $_SESSION['pending_booking_data'] ?? $_POST;
+        if (empty($data['unit_id'])) throw new Exception('Booking data expired. Please try again.');
+
+        $unitId = (int)$data['unit_id'];
+        $checkIn = sanitize_input($data['check_in_date']);
+        $checkOut = sanitize_input($data['check_out_date']);
+
+        // Check availability strictly one last time
+        if (!isUnitAvailable($unitId, $checkIn, $checkOut)) {
+            throw new Exception('Unit was just booked by someone else. Please try another unit.');
+        }
+
+        // Calculate Snapshots (Requirement 2: PLATFORM FEE CONSISTENCY)
+        $unit = getUnitWithDefaults($unitId);
+        $totalDays = calculateDays($checkIn, $checkOut);
+        
+        $pricing_type = $unit['pricing_type'] ?? 'nightly';
+        $dailyRate = in_array($pricing_type, ['nightly', 'daily']) ? (float)$unit['price_per_night'] : (float)$unit['price_per_month'] / 30;
+        
+        $baseTotal = $dailyRate * $totalDays;
+        
+        // Extra Guests
+        $adults = (int)($data['num_adults'] ?? 1);
+        $children = (int)($data['num_children'] ?? 0);
+        $totalGuests = $adults + $children;
+        $maxBase = (int)($unit['max_occupancy'] ?? 1);
+        $extraGuests = max(0, $totalGuests - $maxBase);
+        $extraFeeTotal = $extraGuests * (float)($unit['extra_guest_fee'] ?? 0) * $totalDays;
+        
+        // Amenities Snapshot
+        $amenityTotal = 0;
+        $selectedAmenities = $data['amenities'] ?? $data['addon_ids'] ?? [];
+        foreach ($selectedAmenities as $aid) {
+            $am = get_single_result("SELECT hourly_rate FROM amenities WHERE amenity_id = ?", [(int)$aid]);
+            if ($am) $amenityTotal += (float)$am['hourly_rate'] * $totalDays;
+        }
+
+        // Total Booking Amount for Host cut calculation (90/10)
+        $totalGross = $baseTotal + $extraFeeTotal + $amenityTotal;
+        $platformFee = $totalGross * 0.10;
+        $hostAmount = $totalGross * 0.90;
+
+        // Security Deposit & Fees (Non-revenue for Host)
+        $cleaning = (float)($unit['cleaning_fee'] ?? 0);
+        $service = (float)($unit['service_fee'] ?? 0);
+        $deposit = (float)($unit['security_deposit'] ?? 0);
+        
+        $grandTotal = $totalGross + $cleaning + $service + $deposit;
+
+        // INSERT Reservation with Hold Expiry (Requirement 2: Reservation Expiry Safety Layer)
+        $holdExpiry = date('Y-m-d H:i:s', strtotime('+30 minutes'));
+        
+        $sql = "INSERT INTO reservations (
+                    user_id, unit_id, branch_id, check_in_date, check_out_date, 
+                    num_adults, num_children, status, payment_status, total_amount, 
+                    security_deposit, special_requests, hold_expiry,
+                    base_amount_snapshot, amenities_amount_snapshot, extra_guest_amount_snapshot,
+                    platform_fee_snapshot, host_amount_snapshot
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, 'pending', 'pending', ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        
+        execute_query($sql, [
+            $_SESSION['user_id'], $unitId, (int)$data['branch_id'], $checkIn, $checkOut,
+            $adults, $children, $grandTotal, $deposit, $data['special_requests'] ?? '', $holdExpiry,
+            $baseTotal, $amenityTotal, $extraFeeTotal, $platformFee, $hostAmount
+        ]);
+
+        $newID = $conn->insert_id;
+        unset($_SESSION['pending_booking_data']);
+
+        if ($action === 'book_confirm') {
+            header("Location: ../renter/payment.php?reservation_id=" . $newID);
+            exit;
+        } else {
+            $_SESSION['flash_success'] = 'Unit held for 30 minutes. Please complete payment.';
+            header("Location: ../renter/my_bookings.php");
+            exit;
+        }
     } else {
         throw new Exception('Unknown action');
     }

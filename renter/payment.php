@@ -69,53 +69,73 @@ if (isset($_GET['type']) && isset($_GET['id'])) {
 // Handle payment processing
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['process_payment'])) {
     $paymentMethod = $_POST['payment_method'];
-    $amount = $_POST['amount'];
+    $amountSubmitted = (float)$_POST['amount'];
     $transactionReference = sanitize_input($_POST['transaction_reference']);
     
     $reservationId = null;
     $amenityBookingId = null;
-    
+    $totalRequired = 0;
+
     if ($reservation) {
         $reservationId = $reservation['reservation_id'];
+        $base = (float)$reservation['total_amount'];
+        $sec_deposit = (float)($reservation['security_deposit'] ?? 0);
+        $service_fee = $base * 0.05;
+        $vat = ($base + $service_fee) * 0.12;
+        $totalRequired = $base + $sec_deposit + $service_fee + $vat;
     } elseif ($amenityBooking) {
         $amenityBookingId = $amenityBooking['booking_id'];
+        $totalRequired = (float)$amenityBooking['total_amount'];
+    }
+
+    if (abs($amountSubmitted - $totalRequired) > 0.01) {
+        $error = "Payment amount discrepancy detected. Please try again.";
     }
     
-    // Handle payment proof upload
     $paymentProofPath = '';
-    if (isset($_FILES['payment_proof']) && $_FILES['payment_proof']['error'] === UPLOAD_ERR_OK) {
-        $uploadDir = dirname(__FILE__, 2) . '/uploads/receipts/';
-        if (!is_dir($uploadDir)) mkdir($uploadDir, 0755, true);
+    if (empty($error) && isset($_FILES['payment_proof']) && $_FILES['payment_proof']['error'] === UPLOAD_ERR_OK) {
+        $fileTmpPath = $_FILES['payment_proof']['tmp_name'];
+        $fileSize = $_FILES['payment_proof']['size'];
+        $fileName = $_FILES['payment_proof']['name'];
+        $fileExtension = strtolower(pathinfo($fileName, PATHINFO_EXTENSION));
         
-        $origName = basename($_FILES['payment_proof']['name']);
-        $ext = pathinfo($origName, PATHINFO_EXTENSION);
-        $allowed = ['jpg','jpeg','png','pdf'];
+        $allowedExtensions = ['jpg', 'jpeg', 'png', 'pdf'];
+        $allowedMimeTypes = ['image/jpeg', 'image/png', 'application/pdf'];
         
-        if (in_array(strtolower($ext), $allowed) && $_FILES['payment_proof']['size'] <= 5 * 1024 * 1024) {
-            $prefix = $reservationId ? "res_{$reservationId}" : "am_{$amenityBookingId}";
-            $targetName = 'payment_' . $prefix . '_' . time() . '.' . $ext;
-            $targetPath = $uploadDir . $targetName;
-            
-            if (move_uploaded_file($_FILES['payment_proof']['tmp_name'], $targetPath)) {
-                $paymentProofPath = 'uploads/receipts/' . $targetName;
-            } else {
-                $error = "Failed to upload payment proof.";
-            }
+        $finfo = new finfo(FILEINFO_MIME_TYPE);
+        $mimeType = $finfo->file($fileTmpPath);
+        
+        if (!in_array($fileExtension, $allowedExtensions)) {
+            $error = "Invalid file extension. Only JPG, PNG, and PDF allowed.";
+        } elseif (!in_array($mimeType, $allowedMimeTypes)) {
+            $error = "Invalid file content. Please upload a real image or PDF.";
+        } elseif ($fileSize > 5 * 1024 * 1024) {
+            $error = "File size exceeds 5MB limit.";
         } else {
-            $error = "Invalid file format or file size too large (max 5MB).";
+            $uploadDir = dirname(__FILE__, 2) . '/uploads/receipts/';
+            if (!is_dir($uploadDir)) mkdir($uploadDir, 0755, true);
+            
+            $newFileName = 'RCPT_' . bin2hex(random_bytes(8)) . '_' . time() . '.' . $fileExtension;
+            $destPath = $uploadDir . $newFileName;
+            
+            if (move_uploaded_file($fileTmpPath, $destPath)) {
+                $paymentProofPath = 'uploads/receipts/' . $newFileName;
+            } else {
+                $error = "Failed to save the uploaded file.";
+            }
         }
-    } else {
+    } else if (empty($error)) {
         $error = "Payment proof is required. Please upload your receipt.";
     }
     
     if (empty($error)) {
-        // I-process ang payment with proof
-        $paymentId = processPayment($reservationId, $amenityBookingId, $_SESSION['user_id'], $amount, $paymentMethod, $transactionReference, 'pending', $paymentProofPath);
+        $paymentId = processPayment($reservationId, $amenityBookingId, $_SESSION['user_id'], $totalRequired, $paymentMethod, $transactionReference, 'pending', $paymentProofPath);
         
         if ($paymentId) {
-            $message = "Payment processed successfully! Payment ID: " . $paymentId . ". Awaiting admin verification.";
+            header('Location: my_bookings.php?payment_success=true&reservation_id=' . ($reservationId ?? $amenityBookingId));
+            exit;
         } else {
-            $error = "Failed to process payment. Please try again.";
+            $error = "Failed to process payment. Possibly already under review.";
         }
     }
 }
@@ -240,29 +260,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['process_payment'])) {
                                         $partialAmount = $reservation ? round($totalToPay * 0.5, 2) : 0;
                                     ?>
                                     
-                                    <!-- Payment Choice -->
-                                    <?php if ($reservation): ?>
-                                    <div class="mb-4">
-                                        <label class="form-label fw-bold">Payment Plan</label>
-                                        <div class="d-flex gap-3">
-                                            <div class="form-check card border p-3 flex-fill">
-                                                <input class="form-check-input" type="radio" name="payment_plan" id="planFull" value="full" checked onchange="updatePaymentAmount(<?php echo $totalToPay; ?>)">
-                                                <label class="form-check-label" for="planFull">
-                                                    <strong>Full Payment</strong><br>
-                                                    <small class="text-muted"><?php echo format_currency($totalToPay); ?></small>
-                                                </label>
-                                            </div>
-                                            <div class="form-check card border p-3 flex-fill">
-                                                <input class="form-check-input" type="radio" name="payment_plan" id="planPartial" value="partial" onchange="updatePaymentAmount(<?php echo $partialAmount; ?>)">
-                                                <label class="form-check-label" for="planPartial">
-                                                    <strong>Partial (50%)</strong><br>
-                                                    <small class="text-muted"><?php echo format_currency($partialAmount); ?></small>
-                                                </label>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <?php endif; ?>
-
+                                    <!-- Payment Choice Removed, Full Payment Default enforced -->
+                                    <input type="hidden" name="payment_plan" value="full">
                                     <input type="hidden" name="amount" id="paymentAmountInput" value="<?php echo $totalToPay; ?>">
                                     <input type="hidden" name="is_partial" id="isPartialInput" value="0">
                                     

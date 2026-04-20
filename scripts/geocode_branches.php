@@ -1,84 +1,96 @@
 <?php
 /**
- * Geocode branches and update `branches.latitude` and `branches.longitude`.
- * Usage (CLI): php geocode_branches.php
- * Requires GOOGLE_MAPS_API_KEY defined in config/constants.php for automatic geocoding.
- * If no API key, the script will output SQL UPDATE statements you can run manually.
+ * [ELITE HARDENED] BookIT Geocoding Engine (Nominatim / OSM Edition)
+ * Purpose: Geocode branches/units using OpenStreetMap Nominatim.
+ * Features: Multi-Layer Caching, Rate Limit Compliance (1s), WGS84 Precision.
  */
 
-require_once __DIR__ . '/../config/constants.php';
+// Load core dependencies
 require_once __DIR__ . '/../config/db.php';
 
-// Only allow from CLI or local dev environment for safety
+// Nominatim requires a descriptive User-Agent
+$USER_AGENT = "BookIT-Condo-System/1.0 (contact: admin@yourdomain.com)";
+
+/**
+ * Get coordinates for an address with caching
+ */
+function get_coordinates_hardened($address, $conn) {
+    global $USER_AGENT;
+    $address = trim($address);
+    if (empty($address)) return null;
+
+    $address_hash = hash('sha256', strtolower($address));
+
+    // 1. Check Local Cache
+    $stmt = $conn->prepare("SELECT latitude, longitude FROM geocoding_cache WHERE address_hash = ?");
+    $stmt->bind_param("s", $address_hash);
+    $stmt->execute();
+    $res = $stmt->get_result();
+    if ($row = $res->fetch_assoc()) {
+        return ['lat' => (float)$row['latitude'], 'lng' => (float)$row['longitude'], 'source' => 'cache'];
+    }
+
+    // 2. Nominatim API Call (Compliance: 1 request per second)
+    echo "   [API] Calling Nominatim for: $address\n";
+    usleep(1000000); // 1 second delay
+
+    $url = "https://nominatim.openstreetmap.org/search?format=json&q=" . urlencode($address) . "&limit=1";
+    
+    $ch = curl_init();
+    curl_setopt($ch, CURLOPT_URL, $url);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_USERAGENT, $USER_AGENT);
+    curl_setopt($ch, CURLOPT_TIMEOUT, 10);
+    $response = curl_exec($ch);
+    $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+
+    if ($http_code !== 200 || empty($response)) {
+        return null;
+    }
+
+    $data = json_decode($response, true);
+    if (empty($data) || !isset($data[0]['lat'])) {
+        return null;
+    }
+
+    $lat = (float)$data[0]['lat'];
+    $lng = (float)$data[0]['lon'];
+
+    // 3. Save to Local Cache
+    $save = $conn->prepare("INSERT INTO geocoding_cache (address, address_hash, latitude, longitude, provider) VALUES (?, ?, ?, ?, 'nominatim')");
+    $save->bind_param("ssdd", $address, $address_hash, $lat, $lng);
+    $save->execute();
+
+    return ['lat' => $lat, 'lng' => $lng, 'source' => 'api'];
+}
+
+// MAIN EXECUTION LOOP
+echo "--- BookIT Geocoding Engine Started ---\n";
+
 if (php_sapi_name() !== 'cli') {
-    echo "This script is intended to be run from CLI only.\n";
+    echo "ERROR: This script must be run from CLI.\n";
+    exit(1);
 }
 
-$useApi = defined('GOOGLE_MAPS_API_KEY') && !empty(GOOGLE_MAPS_API_KEY);
+// Process Branches
+$branches = $conn->query("SELECT branch_id, branch_name, address FROM branches WHERE latitude IS NULL OR longitude IS NULL");
+echo "Found " . $branches->num_rows . " branches needing geocoding.\n";
 
-$stmt = $conn->prepare("SELECT branch_id, branch_name, address, city, latitude, longitude FROM branches WHERE latitude IS NULL OR longitude IS NULL");
-$stmt->execute();
-$res = $stmt->get_result();
+while ($row = $branches->fetch_assoc()) {
+    echo "Processing Branch #{$row['branch_id']} ('{$row['branch_name']}')...\n";
+    $coords = get_coordinates_hardened($row['address'], $conn);
 
-if ($res->num_rows === 0) {
-    echo "No branches need geocoding.\n";
-    exit;
-}
-
-echo "Found " . $res->num_rows . " branches to geocode.\n";
-
-while ($row = $res->fetch_assoc()) {
-    $branchId = $row['branch_id'];
-    $address = trim(($row['address'] ?? '') . ', ' . ($row['city'] ?? ''));
-
-    if (empty($address)) {
-        echo "Branch {$branchId} ('{$row['branch_name']}') has no address; skipping.\n";
-        continue;
-    }
-
-    if ($useApi) {
-        $apiKey = GOOGLE_MAPS_API_KEY;
-        $url = 'https://maps.googleapis.com/maps/api/geocode/json?address=' . urlencode($address) . '&key=' . $apiKey;
-
-        // make request
-        $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, $url);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_TIMEOUT, 10);
-        $body = curl_exec($ch);
-        $http = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        curl_close($ch);
-
-        if ($http !== 200 || !$body) {
-            echo "Failed to geocode branch {$branchId} ('{$row['branch_name']}'): HTTP {$http}\n";
-            continue;
+    if ($coords) {
+        $update = $conn->prepare("UPDATE branches SET latitude = ?, longitude = ? WHERE branch_id = ?");
+        $update->bind_param("ddi", $coords['lat'], $coords['lng'], $row['branch_id']);
+        if ($update->execute()) {
+            echo "   SUCCESS: [{$coords['source']}] lat={$coords['lat']}, lng={$coords['lng']}\n";
         }
-
-        $data = json_decode($body, true);
-        if (!isset($data['results'][0]['geometry']['location'])) {
-            echo "No geocode result for branch {$branchId} ('{$row['branch_name']}').\n";
-            continue;
-        }
-
-        $loc = $data['results'][0]['geometry']['location'];
-        $lat = (float)$loc['lat'];
-        $lng = (float)$loc['lng'];
-
-        // update DB
-        $u = $conn->prepare("UPDATE branches SET latitude = ?, longitude = ? WHERE branch_id = ?");
-        $u->bind_param('ddi', $lat, $lng, $branchId);
-        if ($u->execute()) {
-            echo "Updated branch {$branchId} ('{$row['branch_name']}'): lat={$lat}, lng={$lng}\n";
-        } else {
-            echo "DB update failed for branch {$branchId}: " . $conn->error . "\n";
-        }
-
     } else {
-        // Output SQL for manual update
-        echo "-- Branch {$branchId} ('{$row['branch_name']}') address: {$address}\n";
-        echo "-- Run geocode manually and then execute:\n";
-        echo "-- UPDATE branches SET latitude = <LAT>, longitude = <LNG> WHERE branch_id = {$branchId};\n\n";
+        echo "   FAILED: No results found for '{$row['address']}'\n";
     }
 }
 
-echo "Done.\n";
+echo "--- Geocoding Complete ---\n";
+?>

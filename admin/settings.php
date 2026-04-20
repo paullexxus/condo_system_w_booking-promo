@@ -13,13 +13,9 @@ $active_tab = $_GET['tab'] ?? 'general';
 
 // Helper function to update setting in database
 function updateSetting($key, $value) {
-    global $conn;
-    $stmt = $conn->prepare("INSERT INTO system_settings (setting_key, setting_value) VALUES (?, ?) ON DUPLICATE KEY UPDATE setting_value = ?");
-    if (!$stmt) {
-        throw new RuntimeException('Database error: ' . ($conn->error ?? 'prepare failed'));
-    }
-    if (!$stmt->execute([$key, $value, $value])) {
-        throw new RuntimeException('Database error: ' . ($stmt->error ?? 'execute failed'));
+    $sql = "INSERT INTO system_settings (setting_key, setting_value) VALUES (?, ?) ON DUPLICATE KEY UPDATE setting_value = ?";
+    if (!execute_query($sql, [$key, $value, $value])) {
+        throw new RuntimeException("Database error: Could not update setting '$key'");
     }
     return true;
 }
@@ -77,9 +73,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             updateSetting('payment_dragonpay', isset($_POST['payment_dragonpay']) ? 'yes' : 'no');
             updateSetting('dragonpay_id', sanitize_input($_POST['dragonpay_id'] ?? ''));
             updateSetting('transaction_fee', sanitize_input($_POST['transaction_fee'] ?? '0'));
+            updateSetting('admin_revenue_percent', sanitize_input($_POST['admin_revenue_percent'] ?? '10'));
+            updateSetting('host_revenue_percent', sanitize_input($_POST['host_revenue_percent'] ?? '90'));
+            updateSetting('min_downpayment_percent', sanitize_input($_POST['min_downpayment_percent'] ?? '50'));
             updateSetting('payment_instructions', sanitize_input($_POST['payment_instructions'] ?? ''));
             $response['success'] = true;
-            $response['message'] = "Payment settings updated successfully!";
+            $response['message'] = "Payment and Revenue settings updated successfully!";
         } catch (Throwable $e) {
             $response['message'] = "Error updating settings: " . $e->getMessage();
         }
@@ -100,8 +99,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             updateSetting('two_factor', isset($_POST['two_factor']) ? 'yes' : 'no');
             updateSetting('force_https', isset($_POST['force_https']) ? 'yes' : 'no');
             updateSetting('ip_whitelist', isset($_POST['ip_whitelist']) ? 'yes' : 'no');
+            updateSetting('search_limit_per_min', sanitize_input($_POST['search_limit_per_min'] ?? '5'));
+            updateSetting('search_lockout_duration', sanitize_input($_POST['search_lockout_duration'] ?? '10'));
+            updateSetting('msg_limit_per_min', sanitize_input($_POST['msg_limit_per_min'] ?? '10'));
+            updateSetting('msg_lockout_duration', sanitize_input($_POST['msg_lockout_duration'] ?? '5'));
             $response['success'] = true;
-            $response['message'] = "Security settings updated successfully!";
+            $response['message'] = "Security and Abuse Protection settings updated successfully!";
         } catch (Throwable $e) {
             $response['message'] = "Error updating settings: " . $e->getMessage();
         }
@@ -530,19 +533,35 @@ $all_amenities = get_multiple_results(
                         <h5 class="section-title"><i class="fas fa-cog"></i> Transaction Settings</h5>
                         
                         <div class="row">
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label class="form-label">Default Currency</label>
-                                    <div class="currency-display">
-                                        <span class="currency-symbol">₱</span>
-                                        <input type="text" class="form-control" value="Philippine Peso (PHP)" disabled>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
+                            <div class="col-md-4">
                                 <div class="form-group">
                                     <label class="form-label">Transaction Fee (%)</label>
-                                    <input type="number" class="form-control" name="transaction_fee" value="<?php echo htmlspecialchars(getSetting('transaction_fee', '2.5')); ?>" step="0.01" placeholder="2.5">
+                                    <input type="number" class="form-control" name="transaction_fee" value="<?php echo htmlspecialchars(getSetting('transaction_fee', '2.5')); ?>" step="0.01">
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-group text-primary">
+                                    <label class="form-label font-bold">Admin Revenue (%)</label>
+                                    <input type="number" class="form-control border-primary" name="admin_revenue_percent" value="<?php echo htmlspecialchars(getSetting('admin_revenue_percent', '10')); ?>" step="0.5">
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-group text-success">
+                                    <label class="form-label font-bold">Host Return (%)</label>
+                                    <input type="number" class="form-control border-success" name="host_revenue_percent" value="<?php echo htmlspecialchars(getSetting('host_revenue_percent', '90')); ?>" step="0.5">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row mt-3">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label class="form-label">Minimum Downpayment (%)</label>
+                                    <div class="input-group">
+                                        <input type="number" class="form-control" name="min_downpayment_percent" value="<?php echo htmlspecialchars(getSetting('min_downpayment_percent', '50')); ?>" min="1" max="100">
+                                        <span class="input-group-text">%</span>
+                                    </div>
+                                    <small class="form-text text-muted">Required partial payment to confirm booking</small>
                                 </div>
                             </div>
                         </div>
@@ -657,6 +676,40 @@ $all_amenities = get_multiple_results(
                             <input type="checkbox" id="ip_whitelist" name="ip_whitelist" value="yes" <?php echo getSetting('ip_whitelist') === 'yes' ? 'checked' : ''; ?>>
                             <label for="ip_whitelist">IP Whitelist for Admin Panel</label>
                             <p class="text-muted">Restrict admin access to specific IP addresses</p>
+                        </div>
+                    </div>
+
+                    <div class="form-section">
+                        <h5 class="section-title text-warning"><i class="fas fa-biohazard"></i> Abuse Protection</h5>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label class="form-label">Search Rate Limit (per min)</label>
+                                    <input type="number" class="form-control border-warning" name="search_limit_per_min" value="<?php echo htmlspecialchars(getSetting('search_limit_per_min', '5')); ?>">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label class="form-label">Search Lockout (minutes)</label>
+                                    <input type="number" class="form-control border-warning" name="search_lockout_duration" value="<?php echo htmlspecialchars(getSetting('search_lockout_duration', '10')); ?>">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row mt-3">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label class="form-label">Messaging Rate Limit (per min)</label>
+                                    <input type="number" class="form-control border-warning" name="msg_limit_per_min" value="<?php echo htmlspecialchars(getSetting('msg_limit_per_min', '10')); ?>">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label class="form-label">Messaging Lockout (minutes)</label>
+                                    <input type="number" class="form-control border-warning" name="msg_lockout_duration" value="<?php echo htmlspecialchars(getSetting('msg_lockout_duration', '5')); ?>">
+                                </div>
+                            </div>
                         </div>
                     </div>
 
@@ -965,32 +1018,32 @@ $all_amenities = get_multiple_results(
                             <div class="color-item">
                                 <label class="form-label">Primary Color</label>
                                 <div class="color-picker-group">
-                                    <input type="color" class="color-picker" value="#3498db">
-                                    <input type="text" class="form-control form-control-sm" value="#3498db">
+                                    <input type="color" class="color-picker" name="primary_color" value="<?php echo htmlspecialchars(getSetting('primary_color', '#3498db')); ?>">
+                                    <input type="text" class="form-control form-control-sm" value="<?php echo htmlspecialchars(getSetting('primary_color', '#3498db')); ?>" readonly>
                                 </div>
                             </div>
 
                             <div class="color-item">
                                 <label class="form-label">Secondary Color</label>
                                 <div class="color-picker-group">
-                                    <input type="color" class="color-picker" value="#2c3e50">
-                                    <input type="text" class="form-control form-control-sm" value="#2c3e50">
+                                    <input type="color" class="color-picker" name="secondary_color" value="<?php echo htmlspecialchars(getSetting('secondary_color', '#2c3e50')); ?>">
+                                    <input type="text" class="form-control form-control-sm" value="<?php echo htmlspecialchars(getSetting('secondary_color', '#2c3e50')); ?>" readonly>
                                 </div>
                             </div>
 
                             <div class="color-item">
                                 <label class="form-label">Success Color</label>
                                 <div class="color-picker-group">
-                                    <input type="color" class="color-picker" value="#27ae60">
-                                    <input type="text" class="form-control form-control-sm" value="#27ae60">
+                                    <input type="color" class="color-picker" name="success_color" value="#27ae60">
+                                    <input type="text" class="form-control form-control-sm" value="#27ae60" readonly>
                                 </div>
                             </div>
 
                             <div class="color-item">
                                 <label class="form-label">Danger Color</label>
                                 <div class="color-picker-group">
-                                    <input type="color" class="color-picker" value="#e74c3c">
-                                    <input type="text" class="form-control form-control-sm" value="#e74c3c">
+                                    <input type="color" class="color-picker" name="danger_color" value="#e74c3c">
+                                    <input type="text" class="form-control form-control-sm" value="#e74c3c" readonly>
                                 </div>
                             </div>
                         </div>
@@ -1022,12 +1075,12 @@ $all_amenities = get_multiple_results(
                         
                         <div class="form-group">
                             <label class="form-label">Homepage Welcome Title</label>
-                            <input type="text" class="form-control" placeholder="Welcome to BookIT Rentals">
+                            <input type="text" class="form-control" name="welcome_title" value="<?php echo htmlspecialchars(getSetting('welcome_title', 'Welcome to BookIT Rentals')); ?>">
                         </div>
 
                         <div class="form-group">
                             <label class="form-label">Homepage Welcome Description</label>
-                            <textarea class="form-control" rows="4" placeholder="Add welcome message..."></textarea>
+                            <textarea class="form-control" name="custom_message" rows="4" placeholder="Add welcome message..."><?php echo htmlspecialchars(getSetting('custom_message', '')); ?></textarea>
                         </div>
 
                         <div class="form-group">

@@ -161,6 +161,13 @@ if ($action === 'send_message') {
         exit;
     }
 
+    // Messaging Abuse Protection (Phase 4.3 Hardening)
+    $abuse_check = checkAbuse('messaging');
+    if (!$abuse_check['allowed']) {
+        echo json_encode(['success' => false, 'message' => $abuse_check['message']]);
+        exit;
+    }
+
     // 1. Check if user is blocked from messaging
     $sender_status = get_single_result("SELECT can_message, role FROM users WHERE user_id = ?", [$user_id]);
     if (!$sender_status || $sender_status['can_message'] == 0) {

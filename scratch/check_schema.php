@@ -1,6 +1,13 @@
 <?php
-require_once dirname(__DIR__) . '/config/db.php';
-$stmt = $pdo->query("DESCRIBE users");
-print_r($stmt->fetchAll(PDO::FETCH_ASSOC));
-$stmt = $pdo->query("DESCRIBE notifications");
-print_r($stmt->fetchAll(PDO::FETCH_ASSOC));
+include 'config/db.php';
+$tables = ['units', 'unit_images', 'unit_amenities', 'amenities', 'audit_logs'];
+foreach($tables as $t) {
+    $res = $conn->query("DESCRIBE $t");
+    if($res) {
+        echo "\n--- Table: $t ---\n";
+        while($row = $res->fetch_assoc()) echo $row['Field'] . ' (' . $row['Type'] . ")\n";
+    } else {
+        echo "\n--- Table $t does not exist ---\n";
+    }
+}
+?>

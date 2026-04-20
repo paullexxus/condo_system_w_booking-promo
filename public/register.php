@@ -25,6 +25,10 @@ if (isset($_POST['register'])) {
     if (!isset($_POST['csrf_token']) || !verifyCSRFToken($_POST['csrf_token'])) {
         $error = "Security validation failed. Please try again.";
     }
+    // Validate Terms and Conditions acceptance (Backend enforcement)
+    else if (!isset($_POST['terms'])) {
+        $error = "You must accept the Terms & Conditions to register.";
+    }
     // Input validation using the validation function
     else if (!empty($error = registerValidation($fullname, $email, $password, $confirm_password, $phone))) {
         // Error already set by registerValidation
@@ -39,8 +43,8 @@ if (isset($_POST['register'])) {
         }
         else {
             $hashed_password = password_hash($password, PASSWORD_DEFAULT);
-            // FIXED: Use prepared statement for user insertion
-            $insert_query = "INSERT INTO users (full_name, email, password, phone, role, is_active) VALUES (?, ?, ?, ?, 'renter', 1)";
+            // FIXED: Use prepared statement for user insertion with terms_accepted=1
+            $insert_query = "INSERT INTO users (full_name, email, password, phone, role, is_active, terms_accepted) VALUES (?, ?, ?, ?, 'renter', 1, 1)";
             $result = execute_query($insert_query, [$fullname, $email, $hashed_password, $phone]);
 
             if ($result) {
@@ -50,6 +54,11 @@ if (isset($_POST['register'])) {
                     // try to fetch by email as fallback
                     $row = get_single_result("SELECT user_id FROM users WHERE email = ? LIMIT 1", [$email]);
                     $new_user_id = $row['user_id'] ?? null;
+                }
+
+                if ($new_user_id) {
+                    // Log the registration event in audit logs
+                    logAudit($new_user_id, 'User Registration', 'user', $new_user_id, "User registered and accepted Terms & Conditions. IP: " . $_SERVER['REMOTE_ADDR']);
                 }
 
                 // Generate OTP

@@ -9,26 +9,40 @@ function runCleanup() {
     global $conn;
     
     // 1. Cancel expired pending reservations (Hold Expiry)
-    // Formula: Status is pending AND hold_expiry < NOW
     $sql = "UPDATE reservations 
             SET status = 'cancelled', 
-                cancellation_reason = 'Automated: Payment hold expired (10-minute limit exceeded)' 
+                cancellation_reason = 'Automated: Payment hold expired (30-minute limit exceeded)' 
             WHERE status = 'pending' 
             AND hold_expiry IS NOT NULL 
             AND hold_expiry < NOW()";
+    $conn->query($sql);
+
+    // 2. Automate 'Completed' status for checked-out bookings
+    $sql_complete = "UPDATE reservations 
+                     SET status = 'completed' 
+                     WHERE status IN ('confirmed', 'checked_in') 
+                     AND check_out_date < CURDATE()";
+    $conn->query($sql_complete);
+
+    // 💰 3. Host Fund Release (Check-out + 1 day)
+    $sql_release = "UPDATE host_earnings he
+                    JOIN reservations r ON he.reservation_id = r.reservation_id
+                    SET he.status = 'available', he.available_at = NOW()
+                    WHERE he.status = 'pending_release'
+                    AND r.status = 'completed'
+                    AND DATE_ADD(r.check_out_date, INTERVAL 1 DAY) <= CURDATE()";
     
-    if ($conn->query($sql)) {
-        $affected = $conn->affected_rows;
-        if ($affected > 0) {
-            error_log("CRON: Cancelled $affected expired reservations.");
-            // Optional: Send notifications to affected users here if needed
+    if ($conn->query($sql_release)) {
+        $released = $conn->affected_rows;
+        if ($released > 0) {
+            error_log("CRON: Released $released items to host available balance.");
         }
-    } else {
-        error_log("CRON ERROR: " . $conn->error);
     }
 
-    // 2. Release units that were cancelled (already handled by status update, but double check is_available if your logic uses it)
-    // In this system, availability checks ignore 'cancelled' status automatically.
+    // 🔔 4. Handle Pending Review Alerts for Admin
+    execute_query("UPDATE notifications SET priority = 'urgent' 
+                   WHERE type = 'approval' AND is_read = 0 
+                   AND created_at < DATE_SUB(NOW(), INTERVAL 24 HOUR)");
 }
 
 // If called directly, run it

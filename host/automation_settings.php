@@ -17,12 +17,10 @@ $host_id = $_SESSION['user_id'];
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link href="../assets/css/sidebar-common.css" rel="stylesheet">
     <style>
-        @media (min-width: 769px) {
-            .main-content { margin-left: 230px; width: calc(100% - 230px); }
-        }
-        @media (max-width: 768px) {
-            .main-content { margin-left: 0; width: 100%; }
-        }
+        body { font-family: 'Inter', system-ui, -apple-system, sans-serif; background: #f5f7fa; }
+        .main-content { margin-left: 230px; padding: 30px; transition: margin 0.3s; }
+        @media (max-width: 1200px) { .main-content { margin-left: 210px; } }
+        @media (max-width: 768px) { .main-content { margin-left: 0; } }
     </style>
 </head>
 <body>
@@ -31,7 +29,8 @@ $host_id = $_SESSION['user_id'];
     <!-- Sidebar -->
     <?php include '../includes/sidebar.php'; ?>
 
-    <main class="main-content flex-grow-1 p-4 bg-light">
+    <main class="main-content flex-grow-1">
+        <div class="container-fluid">
         <div class="d-flex justify-content-between align-items-center mb-4">
             <div>
                 <h2 class="mb-1"><i class="fas fa-robot text-primary me-2"></i>Automation Settings</h2>
@@ -49,6 +48,7 @@ $host_id = $_SESSION['user_id'];
                 <div class="spinner-border text-primary"></div>
             </div>
         </div>
+            </div>
     </main>
 </div>
 

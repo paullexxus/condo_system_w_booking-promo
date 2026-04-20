@@ -44,41 +44,44 @@ $menu_items = [
     'settings.php' => 'Settings'
 ];
 
-// Function to check if menu item is active
-function isActive($page, $current_page, $menu_items) {
-    return $page === $current_page;
+if (!function_exists('isActive')) {
+    function isActive($page, $current_page, $menu_items) {
+        return $page === $current_page;
+    }
 }
 
-// Alternative method: check by page name pattern
-function isActivePattern($menu_key, $current_page) {
-    $admin_patterns = [
-        'Dashboard' => ['admin_dashboard.php'],
-        'Branch Management' => ['manage_branch.php', 'add_branch.php', 'edit_branch.php'],
-        'User Management' => ['user_management.php', 'add_user.php', 'edit_user.php'],
-        'Host Verifications' => ['host_verifications.php'],
-        'Unit Management' => ['unit_management.php', 'add_unit.php', 'edit_unit.php', 'pending_units.php'],
-        'Reservation Management' => ['reservations.php', 'reservation_details.php'],
-        'Payment Management' => ['payment_management.php', 'payment_details.php'],
-        'Amenity Management' => ['amenity_management.php', 'amenity_bookings.php', 'add_amenity.php', 'edit_amenity.php'],
-        'Reports' => ['reports.php', 'report_generator.php'],
-        'Notifications' => ['notifications.php'],
-        'Settings' => ['settings.php', 'profile.php']
-    ];
+if (!function_exists('isActivePattern')) {
+    function isActivePattern($menu_key, $current_page) {
+        $admin_patterns = [
+            'Dashboard' => ['admin_dashboard.php'],
+            'Branch Management' => ['manage_branch.php', 'add_branch.php', 'edit_branch.php'],
+            'User Management' => ['user_management.php', 'add_user.php', 'edit_user.php'],
+            'Host Verifications' => ['host_verifications.php'],
+            'Unit Management' => ['unit_management.php', 'add_unit.php', 'edit_unit.php', 'pending_units.php'],
+            'Reservation Management' => ['reservations.php', 'reservation_details.php'],
+            'Payment Management' => ['payment_management.php', 'payment_details.php'],
+            'Amenity Management' => ['amenity_management.php', 'amenity_bookings.php', 'add_amenity.php', 'edit_amenity.php'],
+            'Reports' => ['reports.php', 'report_generator.php'],
+            'Notifications' => ['notifications.php'],
+            'Settings' => ['settings.php', 'profile.php']
+        ];
 
-    $host_patterns = [
-        'Dashboard' => ['host_dashboard.php'],
-        'Unit Management' => ['unit_management.php', 'add_unit.php', 'edit_unit.php'],
-        'Reservations' => ['reservations.php', 'reservation_details.php', 'reservation_calendar.php'],
-        'Payments' => ['payment_management.php', 'payment_details.php'],
-        'Amenities' => ['amenities.php', 'amenity_requests.php', 'amenity_details.php'],
-        'Feedback' => ['reviews.php', 'feedback.php'],
-        'Notifications' => ['notifications.php'],
-        'Profile' => ['profile.php', 'settings.php']
-    ];
-    
-    $patterns = ($GLOBALS['user_role'] === 'host' || $GLOBALS['user_role'] === 'manager') ? $host_patterns : $admin_patterns;
-    
-    return isset($patterns[$menu_key]) && in_array($current_page, $patterns[$menu_key]);
+        $host_patterns = [
+            'Dashboard' => ['host_dashboard.php'],
+            'Unit Management' => ['unit_management.php', 'add_unit.php', 'edit_unit.php'],
+            'Reservations' => ['reservations.php', 'reservation_details.php', 'reservation_calendar.php'],
+            'Payments' => ['payment_management.php', 'payment_details.php'],
+            'Earnings' => ['earnings.php'],
+            'Amenities' => ['amenities.php', 'amenity_requests.php', 'amenity_details.php'],
+            'Feedback' => ['reviews.php', 'feedback.php'],
+            'Notifications' => ['notifications.php'],
+            'Profile' => ['profile.php', 'settings.php']
+        ];
+        
+        $patterns = ($GLOBALS['user_role'] === 'host' || $GLOBALS['user_role'] === 'manager') ? $host_patterns : $admin_patterns;
+        
+        return isset($patterns[$menu_key]) && in_array($current_page, $patterns[$menu_key]);
+    }
 }
 ?>
 
@@ -121,10 +124,29 @@ function isActivePattern($menu_key, $current_page) {
                     </a>
                 </li>
                 <li>
+                    <a href="<?php echo SITE_URL; ?>/host/earnings.php" 
+                       class="<?php echo isActivePattern('Earnings', $current_page) ? 'active' : ''; ?>">
+                        <i class="fas fa-wallet text-success"></i> 
+                        <span>Earnings & Payouts</span>
+                    </a>
+                </li>
+                <li>
                     <a href="<?php echo SITE_URL; ?>/host/amenities.php" 
                        class="<?php echo isActivePattern('Amenities', $current_page) ? 'active' : ''; ?>">
                         <i class="fas fa-star"></i> 
                         <span>Amenities</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="<?php echo SITE_URL; ?>/admin/amenity_requests.php" 
+                       class="<?php echo isActivePattern('Amenity Requests', $current_page) ? 'active' : ''; ?>">
+                        <i class="fas fa-user-shield text-info"></i> 
+                        <span>Amenity Dispatch</span>
+                        <?php 
+                        $pending_count = (int)(get_single_result("SELECT COUNT(*) as cnt FROM booking_addons WHERE status = 'pending'")['cnt'] ?? 0);
+                        if ($pending_count > 0): ?>
+                            <span class="badge bg-danger rounded-pill ms-auto" style="font-size: 0.6rem;"><?php echo $pending_count; ?></span>
+                        <?php endif; ?>
                     </a>
                 </li>
                 <li>
@@ -218,6 +240,20 @@ function isActivePattern($menu_key, $current_page) {
                     </a>
                 </li>
                 <li>
+                    <a href="<?php echo SITE_URL; ?>/admin/revenue.php" 
+                       class="<?php echo $current_page === 'revenue.php' ? 'active' : ''; ?>">
+                        <i class="fas fa-hand-holding-usd text-success"></i> 
+                        <span>Platform Revenue</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="<?php echo SITE_URL; ?>/admin/payouts.php" 
+                       class="<?php echo $current_page === 'payouts.php' ? 'active' : ''; ?>">
+                        <i class="fas fa-money-check-alt"></i> 
+                        <span>Payout Requests</span>
+                    </a>
+                </li>
+                <li>
                     <a href="<?php echo SITE_URL; ?>/modules/amenities.php" 
                        class="<?php echo isActivePattern('Amenity Management', $current_page) ? 'active' : ''; ?>">
                         <i class="fas fa-swimming-pool"></i> 
@@ -270,12 +306,16 @@ function isActivePattern($menu_key, $current_page) {
     <!-- =================== PROFILE SECTION =================== -->
     <div class="sidebar-profile">
         <div class="profile-info">
-            <div class="profile-avatar">
-                <i class="fas fa-user-circle"></i>
+            <div class="profile-avatar overflow-hidden" style="width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,0.1);">
+                <?php if (isset($_SESSION['profile_picture']) && !empty($_SESSION['profile_picture'])): ?>
+                    <img src="<?php echo SITE_URL; ?>/uploads/profile_pictures/<?php echo $_SESSION['profile_picture']; ?>" style="width: 100%; height: 100%; object-fit: cover;">
+                <?php else: ?>
+                    <img src="https://ui-avatars.com/api/?name=<?php echo urlencode($_SESSION['fullname'] ?? 'User'); ?>&background=random&color=fff" style="width: 100%; height: 100%; object-fit: cover;">
+                <?php endif; ?>
             </div>
             <div class="profile-details">
-                <span class="profile-name"><?php echo htmlspecialchars($_SESSION['fullname'] ?? 'Admin'); ?></span>
-                <span class="profile-role"><?php echo htmlspecialchars(ucfirst($_SESSION['role'] ?? 'Admin')); ?></span>
+                <span class="profile-name"><?php echo htmlspecialchars($_SESSION['fullname'] ?? 'User'); ?></span>
+                <span class="profile-role"><?php echo htmlspecialchars(ucfirst($_SESSION['role'] ?? 'User')); ?></span>
             </div>
         </div>
         <a href="<?php echo SITE_URL; ?>/public/logout.php" class="logout-btn">

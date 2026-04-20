@@ -301,33 +301,18 @@ function initAddUnitMap() {
     const defaultLat = 14.5995;
     const defaultLng = 120.9842;
 
-    if (typeof google !== 'undefined' && typeof google.maps !== 'undefined') {
-        // Google Maps implementation
-        addUnitMap = new google.maps.Map(document.getElementById('addUnitMap'), {
-            center: { lat: defaultLat, lng: defaultLng },
-            zoom: 13
-        });
+    // Leaflet implementation
+    addUnitMap = L.map('addUnitMap').setView([defaultLat, defaultLng], 13);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '&copy; OpenStreetMap'
+    }).addTo(addUnitMap);
 
-        addUnitMap.addListener('click', function(ev) {
-            placeAddUnitMarker(ev.latLng.lat(), ev.latLng.lng());
-        });
-        // After map ready, fetch host location and draw trace
-        fetchHostLocationAndDraw();
-    } else if (typeof L !== 'undefined') {
-        // Leaflet implementation
-        addUnitMap = L.map('addUnitMap').setView([defaultLat, defaultLng], 13);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            maxZoom: 19
-        }).addTo(addUnitMap);
-
-        addUnitMap.on('click', function(e) {
-            placeAddUnitMarker(e.latlng.lat, e.latlng.lng);
-        });
-        // After map ready, fetch host location and draw trace
-        fetchHostLocationAndDraw();
-    } else {
-        console.warn('No map provider available. Please configure MAP_PROVIDER or include map scripts.');
-    }
+    addUnitMap.on('click', function(e) {
+        placeAddUnitMarker(e.latlng.lat, e.latlng.lng);
+    });
+    // After map ready, fetch host location and draw trace
+    fetchHostLocationAndDraw();
 
     // Wire up input events to run duplicate checks and map geocoding
     const fields = ['building_name', 'street_address', 'city', 'unit_number'];
@@ -345,12 +330,7 @@ function initAddUnitMap() {
                         const lat = parseFloat(data[0].lat);
                         const lon = parseFloat(data[0].lon);
                         if (addUnitMap) {
-                            if (typeof google !== 'undefined' && typeof google.maps !== 'undefined') {
-                                addUnitMap.setCenter({ lat, lng: lon });
-                                addUnitMap.setZoom(16);
-                            } else if (typeof L !== 'undefined') {
-                                addUnitMap.setView([lat, lon], 16);
-                            }
+                            addUnitMap.setView([lat, lon], 16);
                         }
                         placeAddUnitMarker(lat, lon);
                     }
@@ -395,21 +375,17 @@ function fetchHostLocationAndDraw() {
     });
 }
 
-function placeHostMarker(lat, lng, label) {
-    if (typeof google !== 'undefined' && typeof google.maps !== 'undefined') {
-        const pos = { lat: lat, lng: lng };
-        if (!hostMarker) {
-            hostMarker = new google.maps.Marker({ position: pos, map: addUnitMap, icon: { url: 'https://maps.google.com/mapfiles/ms/icons/blue-dot.png' }, title: label });
-        } else {
-            hostMarker.setPosition(pos);
-        }
-    } else if (typeof L !== 'undefined') {
-        if (!hostMarker) {
-            hostMarker = L.marker([lat, lng], { icon: L.icon({ iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png' }) }).addTo(addUnitMap);
-        } else {
-            addUnitMap.removeLayer(hostMarker);
-            hostMarker = L.marker([lat, lng]).addTo(addUnitMap);
-        }
+    if (!hostMarker) {
+        hostMarker = L.marker([lat, lng], { 
+            icon: L.icon({ 
+                iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png',
+                shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
+                iconSize: [25, 41],
+                iconAnchor: [12, 41]
+            }) 
+        }).addTo(addUnitMap).bindPopup("Host: " + label);
+    } else {
+        hostMarker.setLatLng([lat, lng]);
     }
 
     // If unit marker exists, draw a line and show distance
@@ -421,29 +397,12 @@ function placeHostMarker(lat, lng, label) {
 }
 
 function drawHostUnitLine(hostLat, hostLng, unitLat, unitLng) {
-    // remove previous line
     if (hostLine) {
-        if (typeof google !== 'undefined' && typeof google.maps !== 'undefined') {
-            hostLine.setMap(null);
-        } else if (typeof L !== 'undefined') {
-            addUnitMap.removeLayer(hostLine);
-        }
+        addUnitMap.removeLayer(hostLine);
         hostLine = null;
     }
 
-    if (typeof google !== 'undefined' && typeof google.maps !== 'undefined') {
-        const line = new google.maps.Polyline({
-            path: [ {lat: hostLat, lng: hostLng}, {lat: unitLat, lng: unitLng} ],
-            geodesic: true,
-            strokeColor: '#FF0000',
-            strokeOpacity: 0.7,
-            strokeWeight: 2
-        });
-        line.setMap(addUnitMap);
-        hostLine = line;
-    } else if (typeof L !== 'undefined') {
-        hostLine = L.polyline([[hostLat, hostLng], [unitLat, unitLng]], { color: 'red' }).addTo(addUnitMap);
-    }
+    hostLine = L.polyline([[hostLat, hostLng], [unitLat, unitLng]], { color: 'red', weight: 2, dashArray: '5, 10' }).addTo(addUnitMap);
 
     // Show distance
     const distance = haversineDistance([hostLat, hostLng], [unitLat, unitLng]);
@@ -460,22 +419,10 @@ function haversineDistance(coord1, coord2) {
     return R * c;
 }
 
-function placeAddUnitMarker(lat, lng) {
-    // set or move marker
-    if (typeof google !== 'undefined' && typeof google.maps !== 'undefined') {
-        const pos = { lat: lat, lng: lng };
-        if (!addUnitMarker) {
-            addUnitMarker = new google.maps.Marker({ position: pos, map: addUnitMap });
-        } else {
-            addUnitMarker.setPosition(pos);
-        }
-    } else if (typeof L !== 'undefined') {
-        if (!addUnitMarker) {
-            addUnitMarker = L.marker([lat, lng]).addTo(addUnitMap);
-        } else {
-            addUnitMap.removeLayer(addUnitMarker);
-            addUnitMarker = L.marker([lat, lng]).addTo(addUnitMap);
-        }
+    if (!addUnitMarker) {
+        addUnitMarker = L.marker([lat, lng]).addTo(addUnitMap);
+    } else {
+        addUnitMarker.setLatLng([lat, lng]);
     }
 
     // update hidden fields

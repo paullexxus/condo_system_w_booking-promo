@@ -3,7 +3,37 @@
 // Multi-branch Condo Rental Reservation System
 
     include_once __DIR__ . "/../config/db.php";
-    require_once __DIR__ . "/../config/constants.php";
+require_once __DIR__ . "/../config/constants.php";
+require_once __DIR__ . "/../config/map.php";
+
+/**
+ * Convert timestamp to "X time ago" format
+ */
+function time_ago($timestamp) {
+    if (!$timestamp) return "N/A";
+    $time = is_numeric($timestamp) ? $timestamp : strtotime($timestamp);
+    $diff = time() - $time;
+    
+    if ($diff < 60) return "Just now";
+    
+    $intervals = [
+        31536000 => 'year',
+        2592000 => 'month',
+        604800 => 'week',
+        86400 => 'day',
+        3600 => 'hour',
+        60 => 'minute'
+    ];
+    
+    foreach ($intervals as $secs => $label) {
+        $div = $diff / $secs;
+        if ($div >= 1) {
+            $n = round($div);
+            return $n . " " . $label . ($n > 1 ? "s" : "") . " ago";
+        }
+    }
+    return "Just now";
+}
 
     // ==================== CSRF PROTECTION FUNCTIONS ====================
     
@@ -44,6 +74,31 @@
     function rotateCSRFToken() {
         unset($_SESSION['csrf_token'], $_SESSION['csrf_expiry']);
         return generateCSRFToken();
+    }
+
+    // ==================== GLOBAL SYSTEM SETTINGS ====================
+
+    /**
+     * Fetch a system setting from the database
+     * @param string $key - Setting key
+     * @param mixed $default - Default value if not found
+     * @return mixed
+     */
+    function getSystemSetting($key, $default = '') {
+        global $conn;
+        static $settings_cache = null;
+
+        if ($settings_cache === null) {
+            $settings_cache = [];
+            $res = mysqli_query($conn, "SELECT setting_key, setting_value FROM system_settings");
+            if ($res) {
+                while ($row = mysqli_fetch_assoc($res)) {
+                    $settings_cache[$row['setting_key']] = $row['setting_value'];
+                }
+            }
+        }
+
+        return isset($settings_cache[$key]) ? $settings_cache[$key] : $default;
     }
 
     // ==================== ADVANCED SECURITY & HARDENING ====================
@@ -93,6 +148,71 @@
             execute_query("INSERT INTO request_throttles (ip_address, user_id, endpoint, hits) VALUES (?, ?, ?, 1)", [$ip, $user_id, $action]);
         }
         return true;
+    }
+
+    /**
+     * Advanced Abuse Protection (Rate Limiting & Lockout)
+     * @param string $type - 'search' or 'messaging'
+     * @return array - ['allowed' => bool, 'message' => string, 'remaining' => int]
+     */
+    function checkAbuse($type) {
+        global $conn;
+        $ip = $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1';
+        $user_id = isset($_SESSION['user_id']) ? (int)$_SESSION['user_id'] : 0;
+        $identifier = $user_id > 0 ? "user_$user_id" : "ip_$ip";
+
+        // Fetch limits from settings
+        $limit_key = $type . '_limit_per_min';
+        $lockout_key = $type . '_lockout_duration';
+        
+        $limit = (int)getSystemSetting($limit_key, ($type === 'search' ? 5 : 10));
+        $lockout_mins = (int)getSystemSetting($lockout_key, ($type === 'search' ? 10 : 5));
+
+        // 1. Check if currently locked out
+        $stmt = mysqli_prepare($conn, "SELECT lockout_until, hits, last_hit FROM throttling WHERE type = ? AND identifier = ?");
+        mysqli_stmt_bind_param($stmt, "ss", $type, $identifier);
+        mysqli_stmt_execute($stmt);
+        $res = mysqli_stmt_get_result($stmt);
+        $data = mysqli_fetch_assoc($res);
+
+        if ($data) {
+            if ($data['lockout_until'] && strtotime($data['lockout_until']) > time()) {
+                $remaining = strtotime($data['lockout_until']) - time();
+                return [
+                    'allowed' => false, 
+                    'message' => "Too many attempts. Please try again in " . ceil($remaining / 60) . " minutes.",
+                    'remaining' => $remaining
+                ];
+            }
+
+            // 2. Check hits in the last minute
+            // If last hit was more than 1 minute ago, reset hits
+            if (strtotime($data['last_hit']) < (time() - 60)) {
+                mysqli_query($conn, "UPDATE throttling SET hits = 1, last_hit = NOW() WHERE type = '$type' AND identifier = '$identifier'");
+            } else {
+                $new_hits = $data['hits'] + 1;
+                if ($new_hits > $limit) {
+                    // TRIGGER LOCKOUT
+                    $lockout_until = date('Y-m-d H:i:s', time() + ($lockout_mins * 60));
+                    mysqli_query($conn, "UPDATE throttling SET hits = $new_hits, lockout_until = '$lockout_until' WHERE type = '$type' AND identifier = '$identifier'");
+                    
+                    logAudit($user_id ?: null, 'abuse_lockout', $type, 0, "User/IP $identifier locked out from $type for $lockout_mins mins.");
+                    
+                    return [
+                        'allowed' => false,
+                        'message' => "Rate limit exceeded. Locked for $lockout_mins minutes.",
+                        'remaining' => $lockout_mins * 60
+                    ];
+                } else {
+                    mysqli_query($conn, "UPDATE throttling SET hits = $new_hits, last_hit = NOW() WHERE type = '$type' AND identifier = '$identifier'");
+                }
+            }
+        } else {
+            // First time entry
+            mysqli_query($conn, "INSERT INTO throttling (type, identifier, hits) VALUES ('$type', '$identifier', 1)");
+        }
+
+        return ['allowed' => true, 'message' => '', 'remaining' => 0];
     }
 
     /**
@@ -459,7 +579,7 @@
                 JOIN branches b ON u.branch_id = b.branch_id
                 WHERE u.branch_id = ?
                 AND u.is_available = 1
-                AND (u.approval_status = 'approved' OR u.approval_status IS NULL)
+                AND u.approval_status = 'approved'
                 AND u.unit_id NOT IN (
                     SELECT unit_id FROM reservations 
                     WHERE branch_id = ? 
@@ -897,10 +1017,25 @@
     function processPayment($reservation_id, $amenity_booking_id, $user_id, $amount, $payment_method, $transaction_reference = '', $payment_status = 'pending', $payment_proof = '') {
         global $conn;
         
-        // FIXED CRITICAL BUG: FRAUD RISK - Don't hardcode to 'completed'
-        // Use actual payment status from payment gateway
         if (!in_array($payment_status, ['pending', 'paid', 'completed', 'failed'])) {
             $payment_status = 'pending';
+        }
+
+        // 🔐 1. Payment Integrity Hardening: Enforce single active payment review
+        if ($reservation_id) {
+            $check = get_single_result(
+                "SELECT COUNT(*) as active_review FROM payments 
+                 WHERE reservation_id = ? AND payment_status IN ('pending', 'completed') 
+                 AND payment_status != 'failed'",
+                [$reservation_id]
+            );
+            
+            $res_status = get_single_result("SELECT status FROM reservations WHERE reservation_id = ?", [$reservation_id]);
+            
+            if (($check && $check['active_review'] > 0) || ($res_status && in_array($res_status['status'], ['confirmed', 'paid', 'checked_in']))) {
+                // Reject duplicate upload or payment for already confirmed/reviewing booking
+                return false; 
+            }
         }
         
         $sql = "INSERT INTO payments (reservation_id, amenity_booking_id, user_id, amount, payment_method, transaction_reference, payment_status, payment_proof) 
@@ -909,10 +1044,9 @@
         if (execute_query($sql, [$reservation_id, $amenity_booking_id, $user_id, $amount, $payment_method, $transaction_reference, $payment_status, $payment_proof])) {
             $payment_id = $conn->insert_id;
             
-            // FIXED HIGH #16: Process reservation status and finance logic
             if ($reservation_id) {
                 $reservation = get_single_result(
-                    "SELECT r.*, u.unit_number, b.branch_name FROM reservations r 
+                    "SELECT r.*, u.unit_number, u.host_id as unit_host, b.branch_name FROM reservations r 
                      JOIN units u ON r.unit_id = u.unit_id 
                      JOIN branches b ON r.branch_id = b.branch_id 
                      WHERE r.reservation_id = ?",
@@ -921,24 +1055,60 @@
                 
                 if ($reservation) {
                     $user = get_single_result("SELECT * FROM users WHERE user_id = ?", [$user_id]);
-                    $total_req = (float)$reservation['total_amount'];
-                    $amount_paid = (float)$amount;
                     
-                    // ALL payments require verification before confirmation
-                    // Even if fully paid, it stays pending until Admin verifies it.
+                    // 📊 7. EARNINGS SNAPSHOT (PER BOOKING)
+                    $total_amount = (float)$reservation['total_amount'];
+                    $base_amount = (float)($reservation['base_amount'] ?? 0);
+                    $addons_total = (float)($reservation['addons_total'] ?? 0);
+                    $extra_guest_fee = (float)($reservation['extra_guest_amount_snapshot'] ?? 0); // Placeholder if not pre-computed
+
+                    $platform_fee_percent = (float)(getSystemSetting('admin_revenue_percent') ?: 10);
+                    $platform_fee = ($total_amount * $platform_fee_percent) / 100;
+                    $host_amount = $total_amount - $platform_fee;
+
+                    // 🚨 8. Fail-safe logic
+                    if ($total_amount <= 0 || $host_amount < 0) {
+                        // Rollback payment if computation is corrupted
+                        execute_query("DELETE FROM payments WHERE payment_id = ?", [$payment_id]);
+                        return false;
+                    }
+
+                    // 🔐 1. PAYMENT VERIFICATION LOCK: Force pending_review
                     $new_payment_status = 'pending';
-                    $new_reservation_status = 'pending';
                     
-                    // Update reservation to indicate payment was submitted (but pending verification)
+                    // Store snapshots in reservation
                     execute_query(
-                        "UPDATE reservations SET payment_status = ? WHERE reservation_id = ?", 
-                        [$new_payment_status, $reservation_id]
+                        "UPDATE reservations SET 
+                            payment_status = ?, 
+                            base_amount_snapshot = ?, 
+                            amenities_amount_snapshot = ?, 
+                            platform_fee_snapshot = ?, 
+                            host_amount_snapshot = ? 
+                         WHERE reservation_id = ?", 
+                        [$new_payment_status, $base_amount, $addons_total, $platform_fee, $host_amount, $reservation_id]
+                    );
+
+                    // Create host_earnings entry in 'pending_review' state
+                    $host_id = $reservation['unit_host'] ?: 0;
+                    execute_query(
+                        "INSERT INTO host_earnings (host_id, reservation_id, total_booking_amount, platform_fee, host_amount, status) 
+                         VALUES (?, ?, ?, ?, ?, 'pending_review')",
+                        [$host_id, $reservation_id, $total_amount, $platform_fee, $host_amount]
                     );
                     
-                    // Send notifications for Verification Queue
-                    sendNotification($user_id, 'Payment Submitted', 'Your payment is under review. Reservation #' . $reservation_id . ' will be confirmed once verified by our team.', 'payment', 'system');
-
-                    // Note: Revenue split and status upgrade (to confirmed) will be executed during Admin Verification.
+                    // 🔔 5. Notification Deduplication & Refinement
+                    $redirect_renter = SITE_URL . "/renter/my_bookings.php?reservation_id=" . $reservation_id;
+                    sendNotification($user_id, 'Payment Received & Under Review', 'Your payment is being verified by admin. Reservation #' . $reservation_id . ' is locked for review.', 'payment', 'system', null, $redirect_renter, $reservation_id, 'normal');
+                    
+                    if ($host_id) {
+                        $redirect_host = SITE_URL . "/host/reservations.php?reservation_id=" . $reservation_id;
+                        sendNotification($host_id, 'New Payment for Review', 'Renter has submitted payment for Reservation #' . $reservation_id . '. Awaiting Admin verification.', 'payment', 'user', null, $redirect_host, $reservation_id, 'normal');
+                    }
+                    
+                    // Admin escalation / alert
+                    execute_query("INSERT INTO notifications (user_id, title, message, type, source, priority, related_id) 
+                                   SELECT user_id, 'Admin: Payment Review Required', CONCAT('Reservation #', ?, ' requires verification.'), 'approval', 'system', 'urgent', ? 
+                                   FROM users WHERE role = 'admin'", [$reservation_id, $reservation_id]);
                 }
             }
             
@@ -960,21 +1130,25 @@
      * @param string|null $admin_message Optional detail shown as "Admin note" in UI (notifications.admin_message).
      * @return bool - true kung successful, false kung failed
      */
-    function sendNotification($user_id, $title, $message, $type = 'system', $sent_via = 'system', $admin_message = null) {
+    function sendNotification($user_id, $title, $message, $type = 'system', $source = 'system', $admin_message = null, $redirect_url = null, $related_id = null, $priority = 'normal') {
         $allowed = ['booking', 'payment', 'reminder', 'system', 'approval'];
         if (!in_array($type, $allowed, true)) {
             $type = 'system';
         }
 
-        // Duplication Prevention: Avoid spamming the same exact unread alert
-        $check_sql = "SELECT notification_id FROM notifications WHERE user_id = ? AND title = ? AND message = ? AND is_read = 0 AND is_archived = 0 LIMIT 1";
-        $existing = get_single_result($check_sql, [(int)$user_id, $title, $message]);
+        // 🔔 5. Notification Deduplication System
+        // Check for same unread notification to prevent spam
+        $check_sql = "SELECT notification_id FROM notifications 
+                      WHERE user_id = ? AND type = ? AND related_id = ? AND is_read = 0 AND is_archived = 0 
+                      AND (title = ? OR message = ?) LIMIT 1";
+        $existing = get_single_result($check_sql, [(int)$user_id, $type, $related_id, $title, $message]);
         if ($existing) {
-            return true; // Already exists an exact unread copy, silently drop to avoid spam
+            return true; 
         }
 
-        $sql = "INSERT INTO notifications (user_id, title, message, admin_message, status, type) VALUES (?, ?, ?, ?, 'info', ?)";
-        return execute_query($sql, [(int) $user_id, $title, $message, $admin_message, $type]);
+        $sql = "INSERT INTO notifications (user_id, title, message, admin_message, type, source, redirect_url, related_id, priority) 
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        return execute_query($sql, [(int) $user_id, $title, $message, $admin_message, $type, $source, $redirect_url, $related_id, $priority]);
     }
 
     /**
@@ -1352,7 +1526,7 @@
     function getBranchStatistics($branch_id) {
         $sql = "SELECT 
                     b.branch_name,
-                    (SELECT COUNT(*) FROM units WHERE branch_id = b.branch_id AND is_available = 1) as active_units,
+                    (SELECT COUNT(*) FROM units WHERE branch_id = b.branch_id AND is_available = 1 AND approval_status = 'approved') as active_units,
                     (SELECT COUNT(*) FROM reservations WHERE branch_id = b.branch_id) as total_reservations,
                     (SELECT SUM(total_amount) FROM reservations WHERE branch_id = b.branch_id AND status IN ('confirmed', 'checked_in', 'completed')) as total_revenue,
                     (SELECT COUNT(DISTINCT unit_id) FROM reservations WHERE branch_id = b.branch_id AND status IN ('confirmed', 'checked_in')) as currently_booked
@@ -1382,5 +1556,63 @@
         }
         return 0;
     }
+    /**
+     * [ELITE HARDENED] Geocode an address using OpenStreetMap Nominatim API
+     * Features: SHA256 Caching, Rate-limit compliance, and Auto-recovery.
+     * @param string $address
+     * @return array|null [lat, lng] or null on failure
+     */
+    function geocodeAddress($address) {
+        global $conn;
+        if (empty($address)) return null;
+
+        $address_hash = hash('sha256', strtolower(trim($address)));
+
+        // 1. Check Local Cache (Defense-Grade Resilience)
+        $sql = "SELECT latitude, longitude FROM geocoding_cache WHERE address_hash = ?";
+        $cached = get_single_result($sql, [$address_hash]);
+        if ($cached) {
+            return ['lat' => (float)$cached['latitude'], 'lng' => (float)$cached['longitude']];
+        }
+
+        // 2. Nominatim API Call (Rate-Limit Compliant: 1req/s)
+        // [DEFENSE] Compliance sleep to honor Nominatim usage policy
+        usleep(1100000); 
+
+        $userAgent = "BookIT-Condo-System/1.1 (Defense-Grade; contact@bookit.com)";
+        $url = "https://nominatim.openstreetmap.org/search?format=json&q=" . urlencode($address) . "&limit=1";
+
+        $opts = [
+            "http" => [
+                "method" => "GET",
+                "header" => "User-Agent: $userAgent\r\n"
+            ]
+        ];
+        $context = stream_context_create($opts);
+        $response = @file_get_contents($url, false, $context);
+
+        if ($response) {
+            $data = json_decode($response, true);
+            if (!empty($data) && isset($data[0]['lat'])) {
+                $lat = (float)$data[0]['lat'];
+                $lng = (float)$data[0]['lon'];
+
+                // 3. Update Cache
+                $sql = "INSERT IGNORE INTO geocoding_cache (address, address_hash, latitude, longitude, provider) 
+                        VALUES (?, ?, ?, ?, 'nominatim')";
+                execute_query($sql, [$address, $address_hash, $lat, $lng]);
+
+                return ['lat' => $lat, 'lng' => $lng];
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * [UX HARDENING] Time Ago Helper
+     * Converts timestamps to human-readable format (e.g. "2 hours ago")
+     */
+
 ?>
 

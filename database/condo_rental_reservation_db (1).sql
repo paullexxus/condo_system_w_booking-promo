@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1:3306
--- Generation Time: Apr 17, 2026 at 10:13 PM
+-- Generation Time: Apr 20, 2026 at 01:16 AM
 -- Server version: 9.1.0
 -- PHP Version: 8.3.14
 
@@ -47,6 +47,8 @@ DROP TABLE IF EXISTS `amenities`;
 CREATE TABLE IF NOT EXISTS `amenities` (
   `id` int NOT NULL AUTO_INCREMENT,
   `name` varchar(100) NOT NULL,
+  `is_paid` tinyint(1) DEFAULT '0',
+  `price` decimal(10,2) NOT NULL DEFAULT '0.00',
   PRIMARY KEY (`id`)
 ) ENGINE=MyISAM AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
@@ -54,12 +56,12 @@ CREATE TABLE IF NOT EXISTS `amenities` (
 -- Dumping data for table `amenities`
 --
 
-INSERT INTO `amenities` (`id`, `name`) VALUES
-(1, 'WiFi'),
-(2, 'Air Conditioning'),
-(3, 'Swimming Pool'),
-(4, 'Parking'),
-(5, 'TV');
+INSERT INTO `amenities` (`id`, `name`, `is_paid`, `price`) VALUES
+(1, 'WiFi', 0, 0.00),
+(2, 'Air Conditioning', 0, 0.00),
+(3, 'Swimming Pool', 0, 0.00),
+(4, 'Parking', 0, 0.00),
+(5, 'TV', 0, 0.00);
 
 -- --------------------------------------------------------
 
@@ -105,43 +107,81 @@ CREATE TABLE IF NOT EXISTS `audit_logs` (
   `action_type` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `entity_type` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `entity_id` int NOT NULL,
-  `from_status` varchar(50) DEFAULT NULL,
-  `to_status` varchar(50) DEFAULT NULL,
+  `from_status` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `to_status` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `details` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`log_id`),
   KEY `user_id` (`user_id`),
   KEY `entity` (`entity_type`,`entity_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=24 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=30 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Dumping data for table `audit_logs`
 --
 
-INSERT INTO `audit_logs` (`log_id`, `user_id`, `action_type`, `entity_type`, `entity_id`, `details`, `created_at`) VALUES
-(1, 1, 'Admin Approved Application', 'host_application', 3, 'Notes: approve', '2026-04-09 19:14:20'),
-(2, 1, 'Admin Approved Application', 'host_application', 4, 'Notes: approve', '2026-04-09 19:39:43'),
-(3, 1, 'Admin Re-opened Application', 'host_application', 2, 'Notes: bye', '2026-04-10 02:55:11'),
-(4, 1, 'Admin Rejected Application', 'host_application', 2, 'Reason: bye', '2026-04-10 02:55:18'),
-(5, 1, 'Admin Rejected Application', 'host_application', 2, 'Reason: bye', '2026-04-10 02:55:26'),
-(6, 1, 'Admin Rejected Application', 'host_application', 2, 'Reason: bye', '2026-04-10 02:55:30'),
-(7, 1, 'Admin Rejected Application', 'host_application', 2, 'Reason: bye', '2026-04-10 02:55:38'),
-(8, 1, 'Admin Approved Rejected Application', 'host_application', 2, 'Notes: bye', '2026-04-10 02:56:58'),
-(9, 1, 'Admin Approved Application', 'host_application', 2, 'Notes: bye', '2026-04-10 02:57:09'),
-(10, 1, 'Admin Approved Application', 'host_application', 2, 'Notes: bye', '2026-04-10 02:57:20'),
-(11, 1, 'Admin Approved Application', 'host_application', 2, 'Notes: bye', '2026-04-10 02:57:48'),
-(12, 1, 'Admin Approved Application', 'host_application', 2, 'Notes: bye', '2026-04-10 02:58:01'),
-(13, 1, 'Admin Rejected Application', 'host_application', 5, 'Reason: pasensya ka na masyado ka nang mayaman at mayabang, iron man.', '2026-04-10 03:03:43'),
-(14, 1, 'Admin Approved Application', 'host_application', 6, 'Notes: approve, welcome to our system', '2026-04-11 16:03:11'),
-(15, 1, 'Admin Rejected Application', 'host_application', 7, 'Reason: im sorry but im busted', '2026-04-13 06:12:22'),
-(16, 1, 'Admin Rejected Application', 'host_application', 7, 'Reason: im sorry but im busted', '2026-04-13 06:12:28'),
-(17, 1, 'Admin Re-opened Application', 'host_application', 7, 'Notes: im sorry but im busted', '2026-04-13 06:21:15'),
-(18, 1, 'Admin Approved Application', 'host_application', 7, 'Notes: approve', '2026-04-13 06:21:39'),
-(19, 1, 'approve_unit', 'unit', 33, '[UNIT-33] APPROVE | PENDING -> APPROVED | N/A', '2026-04-16 11:57:31'),
-(20, 1, 'reject_host', 'host_application', 8, '[HOSTAPP-8] REJECT | PENDING -> REJECTED | Reason: panget mo', '2026-04-16 13:30:21'),
-(21, 1, 'reject_host', 'host_application', 8, '[HOSTAPP-8] REJECT | REJECTED -> REJECTED | Reason: panget mo', '2026-04-16 13:30:25'),
-(22, 1, 'approve_host', 'host_application', 9, '[HOSTAPP-9] APPROVE | PENDING -> APPROVED | Notes: you are welcome to our system, king of the pirates!', '2026-04-17 07:06:50'),
-(23, 1, 'approve_unit', 'unit', 34, '[UNIT-34] APPROVE | PENDING -> APPROVED | N/A', '2026-04-17 07:13:04');
+INSERT INTO `audit_logs` (`log_id`, `user_id`, `action_type`, `entity_type`, `entity_id`, `from_status`, `to_status`, `details`, `created_at`) VALUES
+(1, 1, 'Admin Approved Application', 'host_application', 3, NULL, NULL, 'Notes: approve', '2026-04-09 19:14:20'),
+(2, 1, 'Admin Approved Application', 'host_application', 4, NULL, NULL, 'Notes: approve', '2026-04-09 19:39:43'),
+(3, 1, 'Admin Re-opened Application', 'host_application', 2, NULL, NULL, 'Notes: bye', '2026-04-10 02:55:11'),
+(4, 1, 'Admin Rejected Application', 'host_application', 2, NULL, NULL, 'Reason: bye', '2026-04-10 02:55:18'),
+(5, 1, 'Admin Rejected Application', 'host_application', 2, NULL, NULL, 'Reason: bye', '2026-04-10 02:55:26'),
+(6, 1, 'Admin Rejected Application', 'host_application', 2, NULL, NULL, 'Reason: bye', '2026-04-10 02:55:30'),
+(7, 1, 'Admin Rejected Application', 'host_application', 2, NULL, NULL, 'Reason: bye', '2026-04-10 02:55:38'),
+(8, 1, 'Admin Approved Rejected Application', 'host_application', 2, NULL, NULL, 'Notes: bye', '2026-04-10 02:56:58'),
+(9, 1, 'Admin Approved Application', 'host_application', 2, NULL, NULL, 'Notes: bye', '2026-04-10 02:57:09'),
+(10, 1, 'Admin Approved Application', 'host_application', 2, NULL, NULL, 'Notes: bye', '2026-04-10 02:57:20'),
+(11, 1, 'Admin Approved Application', 'host_application', 2, NULL, NULL, 'Notes: bye', '2026-04-10 02:57:48'),
+(12, 1, 'Admin Approved Application', 'host_application', 2, NULL, NULL, 'Notes: bye', '2026-04-10 02:58:01'),
+(13, 1, 'Admin Rejected Application', 'host_application', 5, NULL, NULL, 'Reason: pasensya ka na masyado ka nang mayaman at mayabang, iron man.', '2026-04-10 03:03:43'),
+(14, 1, 'Admin Approved Application', 'host_application', 6, NULL, NULL, 'Notes: approve, welcome to our system', '2026-04-11 16:03:11'),
+(15, 1, 'Admin Rejected Application', 'host_application', 7, NULL, NULL, 'Reason: im sorry but im busted', '2026-04-13 06:12:22'),
+(16, 1, 'Admin Rejected Application', 'host_application', 7, NULL, NULL, 'Reason: im sorry but im busted', '2026-04-13 06:12:28'),
+(17, 1, 'Admin Re-opened Application', 'host_application', 7, NULL, NULL, 'Notes: im sorry but im busted', '2026-04-13 06:21:15'),
+(18, 1, 'Admin Approved Application', 'host_application', 7, NULL, NULL, 'Notes: approve', '2026-04-13 06:21:39'),
+(19, 1, 'approve_unit', 'unit', 33, NULL, NULL, '[UNIT-33] APPROVE | PENDING -> APPROVED | N/A', '2026-04-16 11:57:31'),
+(20, 1, 'reject_host', 'host_application', 8, NULL, NULL, '[HOSTAPP-8] REJECT | PENDING -> REJECTED | Reason: panget mo', '2026-04-16 13:30:21'),
+(21, 1, 'reject_host', 'host_application', 8, NULL, NULL, '[HOSTAPP-8] REJECT | REJECTED -> REJECTED | Reason: panget mo', '2026-04-16 13:30:25'),
+(22, 1, 'approve_host', 'host_application', 9, NULL, NULL, '[HOSTAPP-9] APPROVE | PENDING -> APPROVED | Notes: you are welcome to our system, king of the pirates!', '2026-04-17 07:06:50'),
+(23, 1, 'approve_unit', 'unit', 34, NULL, NULL, '[UNIT-34] APPROVE | PENDING -> APPROVED | N/A', '2026-04-17 07:13:04'),
+(24, NULL, 'abuse_lockout', 'search', 0, NULL, NULL, 'User/IP ip_ locked out from search for 10 mins.', '2026-04-19 02:18:55'),
+(25, 10, 'Add Unit', 'unit', 35, NULL, NULL, 'Host added new unit: unit506. Status set to pending.', '2026-04-19 11:52:37'),
+(26, 1, 'approve_unit', 'unit', 35, NULL, NULL, '[UNIT-35] APPROVE | PENDING -> APPROVED | N/A', '2026-04-19 11:53:05'),
+(27, 25, 'User Registration', 'user', 25, NULL, NULL, 'User registered and accepted Terms & Conditions. IP: ::1', '2026-04-19 12:22:07'),
+(28, 10, 'Edit Unit', 'unit', 35, NULL, NULL, 'Host updated unit: unit506. Status reset to pending.', '2026-04-19 14:01:17'),
+(29, 10, 'Edit Unit', 'unit', 35, NULL, NULL, 'Host updated unit: unit506. Status reset to pending.', '2026-04-19 16:10:19');
+
+--
+-- Triggers `audit_logs`
+--
+DROP TRIGGER IF EXISTS `audit_logs_protect_delete`;
+DELIMITER $$
+CREATE TRIGGER `audit_logs_protect_delete` BEFORE DELETE ON `audit_logs` FOR EACH ROW BEGIN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'DATA INTEGRITY VIOLATION: Audit logs are immutable and cannot be deleted.';
+END
+$$
+DELIMITER ;
+DROP TRIGGER IF EXISTS `audit_logs_protect_update`;
+DELIMITER $$
+CREATE TRIGGER `audit_logs_protect_update` BEFORE UPDATE ON `audit_logs` FOR EACH ROW BEGIN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'DATA INTEGRITY VIOLATION: Audit logs are immutable and cannot be updated.';
+END
+$$
+DELIMITER ;
+DROP TRIGGER IF EXISTS `before_audit_delete`;
+DELIMITER $$
+CREATE TRIGGER `before_audit_delete` BEFORE DELETE ON `audit_logs` FOR EACH ROW BEGIN 
+               SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Audit logs are immutable and cannot be deleted.'; 
+             END
+$$
+DELIMITER ;
+DROP TRIGGER IF EXISTS `before_audit_update`;
+DELIMITER $$
+CREATE TRIGGER `before_audit_update` BEFORE UPDATE ON `audit_logs` FOR EACH ROW BEGIN 
+               SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Audit logs are immutable and cannot be updated.'; 
+             END
+$$
+DELIMITER ;
 
 -- --------------------------------------------------------
 
@@ -177,7 +217,13 @@ CREATE TABLE IF NOT EXISTS `booking_addons` (
   `booking_id` int NOT NULL,
   `addon_id` int NOT NULL,
   `price` decimal(10,2) NOT NULL,
-  PRIMARY KEY (`id`)
+  `status` enum('pending','approved','rejected','cancelled') DEFAULT 'pending',
+  `approved_price` decimal(10,2) DEFAULT NULL,
+  `admin_id` int DEFAULT NULL,
+  `admin_note` text,
+  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `unique_res_addon` (`booking_id`,`addon_id`)
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- --------------------------------------------------------
@@ -203,7 +249,7 @@ CREATE TABLE IF NOT EXISTS `branches` (
   PRIMARY KEY (`branch_id`),
   KEY `manager_id` (`manager_id`),
   KEY `branches_host_id_index` (`host_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 --
 -- Dumping data for table `branches`
@@ -215,7 +261,8 @@ INSERT INTO `branches` (`branch_id`, `branch_name`, `address`, `city`, `contact_
 (3, 'BookIT Ortigas', '789 Ortigas Center', 'Pasig', NULL, NULL, NULL, 1, '2026-01-21 01:45:52', NULL, NULL, NULL),
 (4, 'BookIT Caloocan', '199 Gen Malvar Ext, Bagong Barrio West, Caloocan, Metro Manila', 'caloocan', '123456789', 'jackiepascual@bookit.com', NULL, 1, '2026-03-22 03:07:02', NULL, NULL, NULL),
 (5, 'BookIT manila', 'n/A', 'manila', '', '', 13, 1, '2026-03-22 06:05:25', NULL, NULL, NULL),
-(6, 'BookIT malabon', '153 sanciangco street', 'malabon', '', '', NULL, 1, '2026-03-23 06:48:49', NULL, NULL, NULL);
+(6, 'BookIT malabon', '153 sanciangco street', 'malabon', '', '', NULL, 1, '2026-03-23 06:48:49', NULL, NULL, NULL),
+(7, 'bulacan', 'Yakal Street\r\n303', 'Quezon City', '', 'monkeydluffy@gmail.com', NULL, 1, '2026-04-19 16:53:40', NULL, NULL, 24);
 
 -- --------------------------------------------------------
 
@@ -255,6 +302,25 @@ CREATE TABLE IF NOT EXISTS `conversations` (
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`conversation_id`)
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `geocoding_cache`
+--
+
+DROP TABLE IF EXISTS `geocoding_cache`;
+CREATE TABLE IF NOT EXISTS `geocoding_cache` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `address` varchar(500) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `address_hash` char(64) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `latitude` decimal(10,8) NOT NULL,
+  `longitude` decimal(11,8) NOT NULL,
+  `provider` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT 'nominatim',
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `idx_address_hash` (`address_hash`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
 
@@ -305,6 +371,66 @@ INSERT INTO `host_applications` (`application_id`, `user_id`, `condo_name`, `bra
 (8, 22, 'MarkHerras Condo City', 'Makati', '159 Makati Sanciangco street catmon', '', 'Passport', '122323232', '../uploads/host_applications/1776346158_6709_valid_id1.jpg', '../uploads/host_applications/1776346158_5858_valid_id2.jpg', '', '../uploads/host_applications/1776346158_2890_proof_ownership.jpg', '../uploads/host_applications/1776346158_8211_utility_bill.jpg', 'GCash', 'mark herras', '09090909', '', 'rejected', 'panget mo', 1, '2026-04-16 21:30:25', '2026-04-16 13:29:18'),
 (9, 24, 'Mugiwara Homes', 'Antonio', '32 Cabajar St., Brgy. Caliuag, Antonio City', '', 'Passport', '2022-07-00321', '../uploads/host_applications/1776409519_1845_valid_id1.jpg', '../uploads/host_applications/1776409519_8893_valid_id2.jpg', '../uploads/host_applications/1776409519_9545_selfie_with_id.jpg', '../uploads/host_applications/1776409519_4676_proof_ownership.jpg', '../uploads/host_applications/1776409519_9579_utility_bill.jpg', 'GCash', 'Monkey D. Luffy', '56', 'GWash', 'approved', 'you are welcome to our system, king of the pirates!', 1, '2026-04-17 15:06:50', '2026-04-17 07:05:19');
 
+--
+-- Triggers `host_applications`
+--
+DROP TRIGGER IF EXISTS `trg_host_applications_audit`;
+DELIMITER $$
+CREATE TRIGGER `trg_host_applications_audit` AFTER UPDATE ON `host_applications` FOR EACH ROW BEGIN
+    IF OLD.status <> NEW.status THEN
+        INSERT INTO audit_logs (user_id, action_type, entity_type, entity_id, from_status, to_status, details)
+        VALUES (NEW.reviewed_by, 'application_status_change', 'host_application', NEW.application_id, OLD.status, NEW.status, CONCAT('Host application status changed from ', OLD.status, ' to ', NEW.status));
+    END IF;
+END
+$$
+DELIMITER ;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `host_earnings`
+--
+
+DROP TABLE IF EXISTS `host_earnings`;
+CREATE TABLE IF NOT EXISTS `host_earnings` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `host_id` int NOT NULL,
+  `reservation_id` int NOT NULL,
+  `total_booking_amount` decimal(10,2) NOT NULL,
+  `platform_fee` decimal(10,2) NOT NULL,
+  `host_amount` decimal(10,2) NOT NULL,
+  `status` enum('pending_review','pending_release','available','paid_out','cancelled') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'pending_review',
+  `available_at` timestamp NULL DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `host_id` (`host_id`),
+  KEY `reservation_id` (`reservation_id`),
+  KEY `status` (`status`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Triggers `host_earnings`
+--
+DROP TRIGGER IF EXISTS `prevent_earnings_delete`;
+DELIMITER $$
+CREATE TRIGGER `prevent_earnings_delete` BEFORE DELETE ON `host_earnings` FOR EACH ROW BEGIN
+            IF OLD.status = 'paid_out' THEN
+                SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'FINANCIAL INTEGRITY ERROR: Cannot delete paid out logs.';
+            END IF;
+        END
+$$
+DELIMITER ;
+DROP TRIGGER IF EXISTS `protect_host_earnings_paid_out`;
+DELIMITER $$
+CREATE TRIGGER `protect_host_earnings_paid_out` BEFORE UPDATE ON `host_earnings` FOR EACH ROW BEGIN
+            IF OLD.status = 'paid_out' THEN
+                SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'FINANCIAL INTEGRITY ERROR: Paid out earnings are immutable.';
+            END IF;
+        END
+$$
+DELIMITER ;
+
 -- --------------------------------------------------------
 
 --
@@ -325,6 +451,27 @@ CREATE TABLE IF NOT EXISTS `host_payment_methods` (
   PRIMARY KEY (`payment_method_id`),
   KEY `host_id` (`host_id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `idempotency_keys`
+--
+
+DROP TABLE IF EXISTS `idempotency_keys`;
+CREATE TABLE IF NOT EXISTS `idempotency_keys` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `key_id` varchar(100) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `user_id` int NOT NULL,
+  `action` varchar(100) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `payload_hash` varchar(64) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `expires_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `unique_key_action` (`key_id`,`action`),
+  KEY `idx_user_key` (`user_id`,`key_id`),
+  KEY `idx_expiry` (`expires_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
 
@@ -469,7 +616,7 @@ CREATE TABLE IF NOT EXISTS `notifications` (
   KEY `idx_priority` (`priority`),
   KEY `idx_is_read` (`is_read`),
   KEY `idx_created_at` (`created_at`)
-) ENGINE=InnoDB AUTO_INCREMENT=71 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=78 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 --
 -- Dumping data for table `notifications`
@@ -495,22 +642,22 @@ INSERT INTO `notifications` (`notification_id`, `user_id`, `title`, `message`, `
 (17, 21, '❌ Host Application Rejected', 'Your application was not approved. Please check the reason below.', 'im sorry but im busted', 'rejected', 'system', 0, '2026-04-13 06:12:28', NULL, NULL, 'normal', 0, NULL, 0, 0, 0, NULL),
 (18, 21, '❌ Host Application Rejected', 'Your application was not approved. Please check the reason below.', 'im sorry but im busted', 'rejected', 'system', 0, '2026-04-13 06:12:32', NULL, NULL, 'normal', 0, NULL, 0, 0, 0, NULL),
 (19, 21, '🎉 Host Application Approved', 'Your application has been approved. You can now start listing your property.', 'approve', 'approved', 'system', 0, '2026-04-13 06:21:43', NULL, NULL, 'normal', 0, NULL, 0, 0, 0, NULL),
-(20, 10, 'New Message from Antonio, Paul Lexxus B.', 'You have received a secure message. Check your inbox.', NULL, 'info', 'system', 0, '2026-04-15 16:24:18', NULL, NULL, 'normal', 0, NULL, 0, 0, 0, NULL),
-(21, 10, 'New Message from Antonio, Paul Lexxus B.', 'You have received a secure message. Check your inbox.', NULL, 'info', 'system', 0, '2026-04-15 16:33:06', NULL, NULL, 'normal', 0, NULL, 0, 0, 0, NULL),
+(20, 10, 'New Message from Antonio, Paul Lexxus B.', 'You have received a secure message. Check your inbox.', NULL, 'info', 'system', 1, '2026-04-15 16:24:18', NULL, NULL, 'normal', 0, NULL, 0, 0, 0, NULL),
+(21, 10, 'New Message from Antonio, Paul Lexxus B.', 'You have received a secure message. Check your inbox.', NULL, 'info', 'system', 1, '2026-04-15 16:33:06', NULL, NULL, 'normal', 0, NULL, 0, 0, 0, NULL),
 (22, 1, 'New Unit Pending Approval', 'Host (ID: 10) added unit \'faf\' and it is waiting for your review.', NULL, 'info', '', 1, '2026-04-16 11:56:07', 33, 'pending_units.php?unit_id=33', 'normal', 0, NULL, 0, 0, 0, NULL),
 (23, 8, 'New Unit Pending Approval', 'Host (ID: 10) added unit \'faf\' and it is waiting for your review.', NULL, 'info', '', 0, '2026-04-16 11:56:07', 33, 'pending_units.php?unit_id=33', 'normal', 0, NULL, 0, 0, 0, NULL),
-(24, 10, 'Unit Approved', 'Your unit \'faf\' has been approved and is now live.', NULL, 'info', 'system', 0, '2026-04-16 11:57:31', 33, 'unit_management.php', 'normal', 0, NULL, 0, 0, 0, NULL),
+(24, 10, 'Unit Approved', 'Your unit \'faf\' has been approved and is now live.', NULL, 'info', 'system', 1, '2026-04-16 11:57:31', 33, 'unit_management.php', 'normal', 0, NULL, 0, 0, 0, NULL),
 (25, 22, 'Application Submitted', 'Thank you for applying! Your application is under review.', NULL, 'info', 'system', 0, '2026-04-16 13:29:18', NULL, NULL, 'normal', 0, NULL, 0, 0, 0, NULL),
 (26, 22, '❌ Host Application Rejected', 'Your application was not approved. Please check the reason below.', 'panget mo', 'rejected', 'system', 0, '2026-04-16 13:30:25', NULL, NULL, 'normal', 0, NULL, 0, 0, 0, NULL),
 (27, 22, '❌ Host Application Rejected', 'Your application was not approved. Please check the reason below.', 'panget mo', 'rejected', 'system', 0, '2026-04-16 13:30:29', NULL, NULL, 'normal', 0, NULL, 0, 0, 0, NULL),
-(28, 10, 'New File from Antonio, Paul Lexxus B.', 'You have received a secure message. Check your inbox.', NULL, 'info', 'system', 0, '2026-04-16 13:39:08', NULL, NULL, 'normal', 0, NULL, 0, 0, 0, NULL),
+(28, 10, 'New File from Antonio, Paul Lexxus B.', 'You have received a secure message. Check your inbox.', NULL, 'info', 'system', 1, '2026-04-16 13:39:08', NULL, NULL, 'normal', 0, NULL, 0, 0, 0, NULL),
 (29, 9, 'New Message from jackie', 'You have received a secure message. Check your inbox.', NULL, 'info', 'system', 0, '2026-04-16 13:39:48', NULL, NULL, 'normal', 0, NULL, 0, 0, 0, NULL),
-(30, 10, 'New Booking Request - Awaiting Approval', 'New reservation #8 needs your approval. Please review in your dashboard.', NULL, 'info', 'booking', 0, '2026-04-16 13:41:15', NULL, NULL, 'normal', 0, NULL, 0, 0, 0, NULL),
+(30, 10, 'New Booking Request - Awaiting Approval', 'New reservation #8 needs your approval. Please review in your dashboard.', NULL, 'info', 'booking', 1, '2026-04-16 13:41:15', NULL, NULL, 'normal', 0, NULL, 0, 0, 0, NULL),
 (31, 9, 'Booking Submitted for Approval', 'Your reservation #8 has been submitted and is awaiting host approval.', NULL, 'info', 'booking', 0, '2026-04-16 13:41:15', NULL, NULL, 'normal', 0, NULL, 0, 0, 0, NULL),
 (32, 9, 'Reservation Created', 'Your reservation for Unit f20 has been created successfully. Reservation ID: 8', NULL, 'info', 'booking', 0, '2026-04-16 13:41:15', NULL, NULL, 'normal', 0, NULL, 0, 0, 0, NULL),
 (33, 9, 'Reservation Approved', 'Your reservation #8 has been approved by the host! You can now proceed to payment.', NULL, 'info', 'booking', 0, '2026-04-16 13:41:34', NULL, NULL, 'normal', 0, NULL, 0, 0, 0, NULL),
 (34, 9, 'Checked In', 'You have been checked in to reservation #8.', NULL, 'info', 'booking', 0, '2026-04-16 13:41:46', NULL, NULL, 'normal', 0, NULL, 0, 0, 0, NULL),
-(35, 10, 'New Booking Request - Awaiting Approval', 'New reservation #9 needs your approval. Please review in your dashboard.', NULL, 'info', 'booking', 0, '2026-04-16 16:12:46', NULL, NULL, 'normal', 0, NULL, 0, 0, 0, NULL),
+(35, 10, 'New Booking Request - Awaiting Approval', 'New reservation #9 needs your approval. Please review in your dashboard.', NULL, 'info', 'booking', 1, '2026-04-16 16:12:46', NULL, NULL, 'normal', 0, NULL, 0, 0, 0, NULL),
 (36, 9, 'Booking Submitted for Approval', 'Your reservation #9 has been submitted and is awaiting host approval.', NULL, 'info', 'booking', 0, '2026-04-16 16:12:46', NULL, NULL, 'normal', 0, NULL, 0, 0, 0, NULL),
 (37, 9, 'Reservation Created', 'Your reservation for Unit gsgsgs has been created successfully. Reservation ID: 9', NULL, 'info', 'booking', 0, '2026-04-16 16:12:46', NULL, NULL, 'normal', 0, NULL, 0, 0, 0, NULL),
 (38, 9, 'Booking Submitted for Approval', 'Your reservation #10 has been submitted and is awaiting host approval.', NULL, 'info', 'booking', 0, '2026-04-16 16:30:32', NULL, NULL, 'normal', 0, NULL, 0, 0, 0, NULL),
@@ -524,28 +671,35 @@ INSERT INTO `notifications` (`notification_id`, `user_id`, `title`, `message`, `
 (46, 23, 'Reservation Created', 'Your reservation for Unit m307 has been created successfully. Reservation ID: 12', NULL, 'info', 'booking', 0, '2026-04-17 03:11:13', NULL, NULL, 'normal', 0, NULL, 0, 0, 0, NULL),
 (47, 23, 'Booking Submitted for Approval', 'Your reservation #13 has been submitted and is awaiting host approval.', NULL, 'info', 'booking', 0, '2026-04-17 03:16:25', NULL, NULL, 'normal', 0, NULL, 0, 0, 0, NULL),
 (48, 23, 'Reservation Created', 'Your reservation for Unit m307 has been created successfully. Reservation ID: 13', NULL, 'info', 'booking', 0, '2026-04-17 03:16:25', NULL, NULL, 'normal', 0, NULL, 0, 0, 0, NULL),
-(49, 10, 'New Booking Request - Awaiting Approval', 'New reservation #14 needs your approval. Please review in your dashboard.', NULL, 'info', 'booking', 0, '2026-04-17 03:18:08', NULL, NULL, 'normal', 0, NULL, 0, 0, 0, NULL),
+(49, 10, 'New Booking Request - Awaiting Approval', 'New reservation #14 needs your approval. Please review in your dashboard.', NULL, 'info', 'booking', 1, '2026-04-17 03:18:08', NULL, NULL, 'normal', 0, NULL, 0, 0, 0, NULL),
 (50, 23, 'Booking Submitted for Approval', 'Your reservation #14 has been submitted and is awaiting host approval.', NULL, 'info', 'booking', 0, '2026-04-17 03:18:08', NULL, NULL, 'normal', 0, NULL, 0, 0, 0, NULL),
 (51, 23, 'Reservation Created', 'Your reservation for Unit gsgsgs has been created successfully. Reservation ID: 14', NULL, 'info', 'booking', 0, '2026-04-17 03:18:08', NULL, NULL, 'normal', 0, NULL, 0, 0, 0, NULL),
-(52, 10, 'New Booking Request - Awaiting Payment', 'New reservation #14 has been created and is awaiting payment confirmation.', NULL, 'info', 'booking', 0, '2026-04-17 03:18:08', NULL, NULL, 'normal', 0, NULL, 0, 0, 0, NULL),
-(53, 24, 'Application Submitted', 'Thank you for applying! Your application is under review.', NULL, 'info', 'system', 0, '2026-04-17 07:05:19', NULL, NULL, 'normal', 0, NULL, 0, 0, 0, NULL),
-(54, 24, '🎉 Host Application Approved', 'Your application has been approved. You can now start listing your property.', 'you are welcome to our system, king of the pirates!', 'approved', 'system', 0, '2026-04-17 07:06:55', NULL, NULL, 'normal', 0, NULL, 0, 0, 0, NULL),
+(52, 10, 'New Booking Request - Awaiting Payment', 'New reservation #14 has been created and is awaiting payment confirmation.', NULL, 'info', 'booking', 1, '2026-04-17 03:18:08', NULL, NULL, 'normal', 0, NULL, 0, 0, 0, NULL),
+(53, 24, 'Application Submitted', 'Thank you for applying! Your application is under review.', NULL, 'info', 'system', 1, '2026-04-17 07:05:19', NULL, NULL, 'normal', 0, NULL, 0, 0, 0, NULL),
+(54, 24, '🎉 Host Application Approved', 'Your application has been approved. You can now start listing your property.', 'you are welcome to our system, king of the pirates!', 'approved', 'system', 1, '2026-04-17 07:06:55', NULL, NULL, 'normal', 0, NULL, 0, 0, 0, NULL),
 (55, 1, 'New Unit Pending Approval', 'Host (ID: 24) added unit \'Unit\' and it is waiting for your review.', NULL, 'info', '', 0, '2026-04-17 07:10:12', 34, 'pending_units.php?unit_id=34', 'normal', 0, NULL, 0, 0, 0, NULL),
 (56, 8, 'New Unit Pending Approval', 'Host (ID: 24) added unit \'Unit\' and it is waiting for your review.', NULL, 'info', '', 0, '2026-04-17 07:10:12', 34, 'pending_units.php?unit_id=34', 'normal', 0, NULL, 0, 0, 0, NULL),
-(57, 24, 'Unit Approved', 'Your unit \'Unit\' has been approved and is now live.', NULL, 'info', 'system', 0, '2026-04-17 07:13:04', 34, 'unit_management.php', 'normal', 0, NULL, 0, 0, 0, NULL),
-(58, 24, 'New Booking Request - Awaiting Approval', 'New reservation #15 needs your approval. Please review in your dashboard.', NULL, 'info', 'booking', 0, '2026-04-17 07:14:00', NULL, NULL, 'normal', 0, NULL, 0, 0, 0, NULL),
+(57, 24, 'Unit Approved', 'Your unit \'Unit\' has been approved and is now live.', NULL, 'info', 'system', 1, '2026-04-17 07:13:04', 34, 'unit_management.php', 'normal', 0, NULL, 0, 0, 0, NULL),
+(58, 24, 'New Booking Request - Awaiting Approval', 'New reservation #15 needs your approval. Please review in your dashboard.', NULL, 'info', 'booking', 1, '2026-04-17 07:14:00', NULL, NULL, 'normal', 0, NULL, 0, 0, 0, NULL),
 (59, 23, 'Booking Submitted for Approval', 'Your reservation #15 has been submitted and is awaiting host approval.', NULL, 'info', 'booking', 0, '2026-04-17 07:14:00', NULL, NULL, 'normal', 0, NULL, 0, 0, 0, NULL),
 (60, 23, 'Reservation Created', 'Your reservation for Unit 303 has been created successfully. Reservation ID: 15', NULL, 'info', 'booking', 0, '2026-04-17 07:14:00', NULL, NULL, 'normal', 0, NULL, 0, 0, 0, NULL),
-(61, 24, 'New Booking Request - Awaiting Payment', 'New reservation #15 has been created and is awaiting payment confirmation.', NULL, 'info', 'booking', 0, '2026-04-17 07:14:00', NULL, NULL, 'normal', 0, NULL, 0, 0, 0, NULL),
+(61, 24, 'New Booking Request - Awaiting Payment', 'New reservation #15 has been created and is awaiting payment confirmation.', NULL, 'info', 'booking', 1, '2026-04-17 07:14:00', NULL, NULL, 'normal', 0, NULL, 0, 0, 0, NULL),
 (62, 23, 'New Message from Monkey D. Luffy', 'You have received a secure message. Check your inbox.', NULL, 'info', 'system', 1, '2026-04-17 07:15:39', NULL, NULL, 'normal', 0, NULL, 0, 0, 0, NULL),
-(63, 24, 'New Message from Antonio, Paul Lexxus B.', 'You have received a secure message. Check your inbox.', NULL, 'info', 'system', 0, '2026-04-17 07:16:06', NULL, NULL, 'normal', 0, NULL, 0, 0, 0, NULL),
+(63, 24, 'New Message from Antonio, Paul Lexxus B.', 'You have received a secure message. Check your inbox.', NULL, 'info', 'system', 1, '2026-04-17 07:16:06', NULL, NULL, 'normal', 0, NULL, 0, 0, 0, NULL),
 (64, 23, 'Reservation Approved', 'Your reservation #15 has been approved by the host! You can now proceed to payment.', NULL, 'info', 'booking', 0, '2026-04-17 07:16:33', NULL, NULL, 'normal', 0, NULL, 0, 0, 0, NULL),
-(65, 24, 'New Booking Request - Awaiting Approval', 'New reservation #16 needs your approval. Please review in your dashboard.', NULL, 'info', 'booking', 0, '2026-04-17 07:18:12', NULL, NULL, 'normal', 0, NULL, 0, 0, 0, NULL),
+(65, 24, 'New Booking Request - Awaiting Approval', 'New reservation #16 needs your approval. Please review in your dashboard.', NULL, 'info', 'booking', 1, '2026-04-17 07:18:12', NULL, NULL, 'normal', 0, NULL, 0, 0, 0, NULL),
 (66, 9, 'Booking Submitted for Approval', 'Your reservation #16 has been submitted and is awaiting host approval.', NULL, 'info', 'booking', 0, '2026-04-17 07:18:12', NULL, NULL, 'normal', 0, NULL, 0, 0, 0, NULL),
 (67, 9, 'Reservation Created', 'Your reservation for Unit 303 has been created successfully. Reservation ID: 16', NULL, 'info', 'booking', 0, '2026-04-17 07:18:12', NULL, NULL, 'normal', 0, NULL, 0, 0, 0, NULL),
-(68, 24, 'New Booking Request - Awaiting Payment', 'New reservation #16 has been created and is awaiting payment confirmation.', NULL, 'info', 'booking', 0, '2026-04-17 07:18:12', NULL, NULL, 'normal', 0, NULL, 0, 0, 0, NULL),
+(68, 24, 'New Booking Request - Awaiting Payment', 'New reservation #16 has been created and is awaiting payment confirmation.', NULL, 'info', 'booking', 1, '2026-04-17 07:18:12', NULL, NULL, 'normal', 0, NULL, 0, 0, 0, NULL),
 (69, 9, 'New Message from Monkey D. Luffy', 'You have received a secure message. Check your inbox.', NULL, 'info', 'system', 0, '2026-04-17 07:18:41', NULL, NULL, 'normal', 0, NULL, 0, 0, 0, NULL),
-(70, 9, 'Reservation Cancelled', 'Your reservation #16 has been cancelled. Reason: di ka pasok sa standards ko.', NULL, 'info', 'booking', 0, '2026-04-17 07:19:21', NULL, NULL, 'normal', 0, NULL, 0, 0, 0, NULL);
+(70, 9, 'Reservation Cancelled', 'Your reservation #16 has been cancelled. Reason: di ka pasok sa standards ko.', NULL, 'info', 'booking', 0, '2026-04-17 07:19:21', NULL, NULL, 'normal', 0, NULL, 0, 0, 0, NULL),
+(71, 1, 'New Unit Pending Approval', 'Host (ID: 10) added unit \'unit506\' and it is waiting for your review.', NULL, 'info', '', 0, '2026-04-19 11:52:37', 35, 'pending_units.php?unit_id=35', 'normal', 0, NULL, 0, 0, 0, NULL),
+(72, 8, 'New Unit Pending Approval', 'Host (ID: 10) added unit \'unit506\' and it is waiting for your review.', NULL, 'info', '', 0, '2026-04-19 11:52:37', 35, 'pending_units.php?unit_id=35', 'normal', 0, NULL, 0, 0, 0, NULL),
+(73, 10, 'Unit Approved', 'Your unit \'unit506\' has been approved and is now live.', NULL, 'info', 'system', 1, '2026-04-19 11:53:05', 35, 'unit_management.php', 'normal', 0, NULL, 0, 0, 0, NULL),
+(74, 1, 'Unit Edited - Pending Approval', 'Host (ID: 10) updated unit \'unit506\' and it requires re-approval.', NULL, 'info', '', 0, '2026-04-19 14:01:17', 35, 'pending_units.php?unit_id=35', 'normal', 0, NULL, 0, 0, 0, NULL),
+(75, 8, 'Unit Edited - Pending Approval', 'Host (ID: 10) updated unit \'unit506\' and it requires re-approval.', NULL, 'info', '', 0, '2026-04-19 14:01:17', 35, 'pending_units.php?unit_id=35', 'normal', 0, NULL, 0, 0, 0, NULL),
+(76, 1, 'Unit Edited - Pending Approval', 'Host (ID: 10) updated unit \'unit506\' and it requires re-approval.', NULL, 'info', '', 0, '2026-04-19 16:10:19', 35, 'pending_units.php?unit_id=35', 'normal', 0, NULL, 0, 0, 0, NULL),
+(77, 8, 'Unit Edited - Pending Approval', 'Host (ID: 10) updated unit \'unit506\' and it requires re-approval.', NULL, 'info', '', 0, '2026-04-19 16:10:19', 35, 'pending_units.php?unit_id=35', 'normal', 0, NULL, 0, 0, 0, NULL);
 
 -- --------------------------------------------------------
 
@@ -664,18 +818,98 @@ CREATE TABLE IF NOT EXISTS `payments` (
 DROP TABLE IF EXISTS `payouts`;
 CREATE TABLE IF NOT EXISTS `payouts` (
   `payout_id` int NOT NULL AUTO_INCREMENT,
-  `host_id` int NOT NULL,
+  `user_id` int NOT NULL,
   `reservation_id` int DEFAULT NULL,
   `payment_id` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `amount` decimal(10,2) NOT NULL,
+  `account_details` text COLLATE utf8mb4_unicode_ci,
   `method` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `status` enum('pending','released','failed') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT 'pending',
   `released_at` datetime DEFAULT NULL,
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`payout_id`),
-  KEY `host_id` (`host_id`),
+  KEY `host_id` (`user_id`),
   KEY `reservation_id` (`reservation_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Triggers `payouts`
+--
+DROP TRIGGER IF EXISTS `trg_payouts_audit`;
+DELIMITER $$
+CREATE TRIGGER `trg_payouts_audit` AFTER UPDATE ON `payouts` FOR EACH ROW BEGIN
+    IF OLD.status <> NEW.status THEN
+        INSERT INTO audit_logs (user_id, action_type, entity_type, entity_id, from_status, to_status, details)
+        VALUES (NEW.host_id, 'payout_status_change', 'payout', NEW.payout_id, OLD.status, NEW.status, CONCAT('Payout status changed from ', OLD.status, ' to ', NEW.status));
+    END IF;
+END
+$$
+DELIMITER ;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `payout_accounts`
+--
+
+DROP TABLE IF EXISTS `payout_accounts`;
+CREATE TABLE IF NOT EXISTS `payout_accounts` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `user_id` int NOT NULL,
+  `method` enum('GCash','PayMaya','PayPal','Bank') NOT NULL,
+  `account_name` varchar(100) NOT NULL,
+  `account_details` varchar(255) NOT NULL,
+  `is_default` tinyint(1) DEFAULT '0',
+  `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `user_id` (`user_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `payout_requests`
+--
+
+DROP TABLE IF EXISTS `payout_requests`;
+CREATE TABLE IF NOT EXISTS `payout_requests` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `host_id` int NOT NULL,
+  `payout_account_id` int NOT NULL,
+  `amount` decimal(10,2) NOT NULL,
+  `status` enum('pending','approved','rejected','paid') COLLATE utf8mb4_unicode_ci DEFAULT 'pending',
+  `admin_notes` text COLLATE utf8mb4_unicode_ci,
+  `idempotency_key` varchar(100) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `processed_at` timestamp NULL DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `idempotency_key` (`idempotency_key`),
+  KEY `host_id` (`host_id`),
+  KEY `status` (`status`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `platform_settings`
+--
+
+DROP TABLE IF EXISTS `platform_settings`;
+CREATE TABLE IF NOT EXISTS `platform_settings` (
+  `setting_key` varchar(50) NOT NULL,
+  `setting_value` text NOT NULL,
+  `description` varchar(255) DEFAULT NULL,
+  `updated_at` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`setting_key`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+--
+-- Dumping data for table `platform_settings`
+--
+
+INSERT INTO `platform_settings` (`setting_key`, `setting_value`, `description`, `updated_at`) VALUES
+('platform_fee_percent', '10', 'Percentage taken by the platform per booking', '2026-04-19 12:06:06');
 
 -- --------------------------------------------------------
 
@@ -845,6 +1079,62 @@ CREATE TABLE IF NOT EXISTS `refunds` (
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `request_throttles`
+--
+
+DROP TABLE IF EXISTS `request_throttles`;
+CREATE TABLE IF NOT EXISTS `request_throttles` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `ip_address` varchar(45) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `user_id` int DEFAULT NULL,
+  `endpoint` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `hits` int DEFAULT '1',
+  `first_hit` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `last_hit` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_ip_endpoint` (`ip_address`,`endpoint`),
+  KEY `idx_user_endpoint` (`user_id`,`endpoint`)
+) ENGINE=InnoDB AUTO_INCREMENT=57 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Dumping data for table `request_throttles`
+--
+
+INSERT INTO `request_throttles` (`id`, `ip_address`, `user_id`, `endpoint`, `hits`, `first_hit`, `last_hit`) VALUES
+(27, '::1', NULL, 'login', 2, '2026-04-19 17:25:34', '2026-04-19 17:31:07'),
+(28, '::1', 24, 'messaging_api', 8, '2026-04-19 17:41:41', '2026-04-19 17:42:00'),
+(29, '::1', 10, 'messaging_api', 2, '2026-04-19 17:42:14', '2026-04-19 17:42:14'),
+(30, '::1', 10, 'messaging_api', 2, '2026-04-19 17:47:05', '2026-04-19 17:47:05'),
+(31, '::1', 24, 'messaging_api', 2, '2026-04-19 17:47:25', '2026-04-19 17:47:25'),
+(32, '::1', 10, 'messaging_api', 13, '2026-04-19 17:50:11', '2026-04-19 17:51:33'),
+(33, '::1', 24, 'messaging_api', 2, '2026-04-19 17:52:41', '2026-04-19 17:52:41'),
+(34, '::1', NULL, 'login', 1, '2026-04-19 18:08:30', '2026-04-19 18:08:30'),
+(35, '::1', 9, 'messaging_api', 38, '2026-04-19 18:08:33', '2026-04-19 18:11:55'),
+(36, '::1', 9, 'messaging_api', 1, '2026-04-19 18:12:55', '2026-04-19 18:12:55'),
+(37, '::1', 9, 'messaging_api', 1, '2026-04-19 18:13:55', '2026-04-19 18:13:55'),
+(38, '::1', 9, 'messaging_api', 1, '2026-04-19 18:14:55', '2026-04-19 18:14:55'),
+(39, '::1', 9, 'messaging_api', 1, '2026-04-19 18:15:55', '2026-04-19 18:15:55'),
+(40, '::1', 9, 'messaging_api', 1, '2026-04-19 18:16:55', '2026-04-19 18:16:55'),
+(41, '::1', 9, 'messaging_api', 1, '2026-04-19 18:17:55', '2026-04-19 18:17:55'),
+(42, '::1', 9, 'messaging_api', 1, '2026-04-19 18:18:55', '2026-04-19 18:18:55'),
+(43, '::1', 9, 'messaging_api', 1, '2026-04-19 18:19:55', '2026-04-19 18:19:55'),
+(44, '::1', NULL, 'login', 1, '2026-04-19 18:20:06', '2026-04-19 18:20:06'),
+(45, '::1', 9, 'messaging_api', 1, '2026-04-19 18:20:55', '2026-04-19 18:20:55'),
+(46, '::1', 9, 'messaging_api', 2, '2026-04-19 18:22:07', '2026-04-19 18:22:55'),
+(47, '::1', 9, 'messaging_api', 1, '2026-04-19 18:23:55', '2026-04-19 18:23:55'),
+(48, '::1', 9, 'messaging_api', 1, '2026-04-19 18:24:55', '2026-04-19 18:24:55'),
+(49, '::1', 9, 'messaging_api', 1, '2026-04-19 18:25:55', '2026-04-19 18:25:55'),
+(50, '::1', 9, 'messaging_api', 1, '2026-04-19 18:26:55', '2026-04-19 18:26:55'),
+(51, '::1', 9, 'messaging_api', 1, '2026-04-19 18:27:55', '2026-04-19 18:27:55'),
+(52, '::1', 10, 'messaging_api', 4, '2026-04-19 18:28:06', '2026-04-19 18:28:11'),
+(53, '::1', 9, 'messaging_api', 1, '2026-04-19 18:28:55', '2026-04-19 18:28:55'),
+(54, '::1', 9, 'messaging_api', 4, '2026-04-19 18:29:55', '2026-04-19 18:30:47'),
+(55, '::1', NULL, 'login', 2, '2026-04-20 00:32:46', '2026-04-20 00:33:12'),
+(56, '::1', NULL, 'login', 1, '2026-04-20 00:43:41', '2026-04-20 00:43:41');
+
+-- --------------------------------------------------------
+
+--
 -- Table structure for table `reservations`
 --
 
@@ -875,6 +1165,11 @@ CREATE TABLE IF NOT EXISTS `reservations` (
   `government_id_path` varchar(500) DEFAULT NULL,
   `promo_code` varchar(50) DEFAULT NULL,
   `discount_amount` decimal(10,2) DEFAULT '0.00',
+  `base_amount_snapshot` decimal(10,2) NOT NULL DEFAULT '0.00',
+  `amenities_amount_snapshot` decimal(10,2) NOT NULL DEFAULT '0.00',
+  `extra_guest_amount_snapshot` decimal(10,2) NOT NULL DEFAULT '0.00',
+  `platform_fee_snapshot` decimal(10,2) NOT NULL DEFAULT '0.00',
+  `host_amount_snapshot` decimal(10,2) NOT NULL DEFAULT '0.00',
   PRIMARY KEY (`reservation_id`),
   KEY `user_id` (`user_id`),
   KEY `unit_id` (`unit_id`)
@@ -884,22 +1179,41 @@ CREATE TABLE IF NOT EXISTS `reservations` (
 -- Dumping data for table `reservations`
 --
 
-INSERT INTO `reservations` (`reservation_id`, `user_id`, `unit_id`, `branch_id`, `check_in_date`, `check_out_date`, `total_amount`, `partial_payment_amount`, `security_deposit`, `status`, `hold_expiry`, `payment_status`, `special_requests`, `created_at`, `updated_at`, `host_notes`, `admin_notes`, `cancellation_reason`, `approved_by`, `approved_at`, `renter_rating`, `renter_feedback`, `government_id_path`, `promo_code`, `discount_amount`) VALUES
-(1, 9, 29, 6, '2026-03-25', '2026-03-26', 5000.00, 0.00, 0.00, 'cancelled', NULL, 'pending', '', '2026-03-23 06:56:45', '2026-03-31 09:57:47', NULL, NULL, 'Host cancelled', NULL, NULL, NULL, NULL, NULL, NULL, 0.00),
-(2, 9, 29, 6, '2026-04-01', '2026-04-13', 60000.00, 0.00, 0.00, 'confirmed', NULL, 'pending', '', '2026-03-31 10:04:15', '2026-04-02 05:34:51', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0.00),
-(3, 9, 30, 6, '2026-04-04', '2026-04-06', 8000.00, 0.00, 0.00, 'pending', NULL, 'pending', '', '2026-04-02 10:27:35', '2026-04-02 10:27:35', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0.00),
-(4, 9, 30, 6, '2026-04-09', '2026-04-11', 8000.00, 0.00, 0.00, 'confirmed', NULL, 'pending', '', '2026-04-08 16:58:56', '2026-04-12 15:18:05', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0.00),
-(5, 19, 32, 6, '2026-04-13', '2026-04-21', 266.67, 0.00, 0.00, 'checked_in', NULL, 'pending', '', '2026-04-13 02:30:47', '2026-04-13 02:33:04', NULL, NULL, NULL, 10, '2026-04-13 10:31:02', NULL, NULL, NULL, NULL, 0.00),
-(6, 9, 30, 6, '2026-04-13', '2026-04-22', 1200.00, 0.00, 0.00, 'pending', NULL, 'pending', '', '2026-04-13 05:01:24', '2026-04-13 05:01:24', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0.00),
-(8, 9, 29, 6, '2026-04-17', '2026-04-28', 1833.33, 0.00, 0.00, 'confirmed', NULL, 'pending', '', '2026-04-16 13:41:15', '2026-04-16 13:41:34', NULL, NULL, NULL, 10, '2026-04-16 21:41:34', NULL, NULL, NULL, NULL, 0.00),
-(9, 9, 33, 6, '2026-04-22', '2026-04-23', 123.00, 0.00, 0.00, 'confirmed', NULL, 'pending', '', '2026-04-16 16:12:46', '2026-04-17 02:23:19', NULL, NULL, NULL, 10, '2026-04-17 10:23:19', NULL, NULL, NULL, NULL, 0.00),
-(10, 9, 31, 6, '2026-04-22', '2026-04-29', 14000.00, 0.00, 100.00, 'cancelled', '2026-04-16 16:40:32', 'pending', '', '2026-04-16 16:30:32', '2026-04-17 02:20:58', NULL, NULL, 'Automated: Payment hold expired (10-minute limit exceeded)', NULL, NULL, NULL, NULL, NULL, NULL, 0.00),
-(11, 9, 31, 6, '2026-04-22', '2026-04-23', 2000.00, 0.00, 100.00, 'cancelled', '2026-04-17 02:31:48', 'pending', '', '2026-04-17 02:21:48', '2026-04-17 03:11:02', NULL, NULL, 'Automated: Payment hold expired (10-minute limit exceeded)', NULL, NULL, NULL, NULL, NULL, NULL, 0.00),
-(12, 23, 31, 6, '2026-04-22', '2026-04-23', 2000.00, 0.00, 100.00, 'cancelled', '2026-04-17 03:21:13', 'pending', '', '2026-04-17 03:11:13', '2026-04-17 07:13:42', NULL, NULL, 'Automated: Payment hold expired (10-minute limit exceeded)', NULL, NULL, NULL, NULL, NULL, NULL, 0.00),
-(13, 23, 31, 6, '2026-04-18', '2026-04-19', 2000.00, 0.00, 100.00, 'cancelled', '2026-04-17 03:26:25', 'pending', '', '2026-04-17 03:16:25', '2026-04-17 07:13:42', NULL, NULL, 'Automated: Payment hold expired (10-minute limit exceeded)', NULL, NULL, NULL, NULL, NULL, NULL, 0.00),
-(14, 23, 33, 6, '2026-04-18', '2026-04-19', 123.00, 0.00, 0.00, 'cancelled', '2026-04-17 03:28:08', 'pending', '', '2026-04-17 03:18:08', '2026-04-17 07:13:42', NULL, NULL, 'Automated: Payment hold expired (10-minute limit exceeded)', NULL, NULL, NULL, NULL, NULL, NULL, 0.00),
-(15, 23, 34, 4, '2026-04-17', '2026-04-18', 5000.00, 0.00, 0.00, 'confirmed', '2026-04-17 07:24:00', 'pending', '', '2026-04-17 07:14:00', '2026-04-17 07:18:23', NULL, NULL, NULL, 24, '2026-04-17 15:18:23', NULL, NULL, NULL, NULL, 0.00),
-(16, 9, 34, 4, '2026-04-18', '2026-04-19', 5000.00, 0.00, 0.00, 'cancelled', '2026-04-17 07:28:12', 'pending', '', '2026-04-17 07:18:12', '2026-04-17 07:19:21', NULL, NULL, 'di ka pasok sa standards ko.', NULL, NULL, NULL, NULL, NULL, NULL, 0.00);
+INSERT INTO `reservations` (`reservation_id`, `user_id`, `unit_id`, `branch_id`, `check_in_date`, `check_out_date`, `total_amount`, `partial_payment_amount`, `security_deposit`, `status`, `hold_expiry`, `payment_status`, `special_requests`, `created_at`, `updated_at`, `host_notes`, `admin_notes`, `cancellation_reason`, `approved_by`, `approved_at`, `renter_rating`, `renter_feedback`, `government_id_path`, `promo_code`, `discount_amount`, `base_amount_snapshot`, `amenities_amount_snapshot`, `extra_guest_amount_snapshot`, `platform_fee_snapshot`, `host_amount_snapshot`) VALUES
+(1, 9, 29, 6, '2026-03-25', '2026-03-26', 5000.00, 0.00, 0.00, 'cancelled', NULL, 'pending', '', '2026-03-23 06:56:45', '2026-03-31 09:57:47', NULL, NULL, 'Host cancelled', NULL, NULL, NULL, NULL, NULL, NULL, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00),
+(2, 9, 29, 6, '2026-04-01', '2026-04-13', 60000.00, 0.00, 0.00, 'confirmed', NULL, 'pending', '', '2026-03-31 10:04:15', '2026-04-02 05:34:51', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00),
+(3, 9, 30, 6, '2026-04-04', '2026-04-06', 8000.00, 0.00, 0.00, 'pending', NULL, 'pending', '', '2026-04-02 10:27:35', '2026-04-02 10:27:35', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00),
+(4, 9, 30, 6, '2026-04-09', '2026-04-11', 8000.00, 0.00, 0.00, 'confirmed', NULL, 'pending', '', '2026-04-08 16:58:56', '2026-04-12 15:18:05', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00),
+(5, 19, 32, 6, '2026-04-13', '2026-04-21', 266.67, 0.00, 0.00, 'checked_in', NULL, 'pending', '', '2026-04-13 02:30:47', '2026-04-13 02:33:04', NULL, NULL, NULL, 10, '2026-04-13 10:31:02', NULL, NULL, NULL, NULL, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00),
+(6, 9, 30, 6, '2026-04-13', '2026-04-22', 1200.00, 0.00, 0.00, 'pending', NULL, 'pending', '', '2026-04-13 05:01:24', '2026-04-13 05:01:24', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00),
+(8, 9, 29, 6, '2026-04-17', '2026-04-28', 1833.33, 0.00, 0.00, 'confirmed', NULL, 'pending', '', '2026-04-16 13:41:15', '2026-04-16 13:41:34', NULL, NULL, NULL, 10, '2026-04-16 21:41:34', NULL, NULL, NULL, NULL, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00),
+(9, 9, 33, 6, '2026-04-22', '2026-04-23', 123.00, 0.00, 0.00, 'confirmed', NULL, 'pending', '', '2026-04-16 16:12:46', '2026-04-17 02:23:19', NULL, NULL, NULL, 10, '2026-04-17 10:23:19', NULL, NULL, NULL, NULL, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00),
+(10, 9, 31, 6, '2026-04-22', '2026-04-29', 14000.00, 0.00, 100.00, 'cancelled', '2026-04-16 16:40:32', 'pending', '', '2026-04-16 16:30:32', '2026-04-17 02:20:58', NULL, NULL, 'Automated: Payment hold expired (10-minute limit exceeded)', NULL, NULL, NULL, NULL, NULL, NULL, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00),
+(11, 9, 31, 6, '2026-04-22', '2026-04-23', 2000.00, 0.00, 100.00, 'cancelled', '2026-04-17 02:31:48', 'pending', '', '2026-04-17 02:21:48', '2026-04-17 03:11:02', NULL, NULL, 'Automated: Payment hold expired (10-minute limit exceeded)', NULL, NULL, NULL, NULL, NULL, NULL, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00),
+(12, 23, 31, 6, '2026-04-22', '2026-04-23', 2000.00, 0.00, 100.00, 'cancelled', '2026-04-17 03:21:13', 'pending', '', '2026-04-17 03:11:13', '2026-04-17 07:13:42', NULL, NULL, 'Automated: Payment hold expired (10-minute limit exceeded)', NULL, NULL, NULL, NULL, NULL, NULL, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00),
+(13, 23, 31, 6, '2026-04-18', '2026-04-19', 2000.00, 0.00, 100.00, 'cancelled', '2026-04-17 03:26:25', 'pending', '', '2026-04-17 03:16:25', '2026-04-17 07:13:42', NULL, NULL, 'Automated: Payment hold expired (10-minute limit exceeded)', NULL, NULL, NULL, NULL, NULL, NULL, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00),
+(14, 23, 33, 6, '2026-04-18', '2026-04-19', 123.00, 0.00, 0.00, 'cancelled', '2026-04-17 03:28:08', 'pending', '', '2026-04-17 03:18:08', '2026-04-17 07:13:42', NULL, NULL, 'Automated: Payment hold expired (10-minute limit exceeded)', NULL, NULL, NULL, NULL, NULL, NULL, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00),
+(15, 23, 34, 4, '2026-04-17', '2026-04-18', 5000.00, 0.00, 0.00, 'confirmed', '2026-04-17 07:24:00', 'pending', '', '2026-04-17 07:14:00', '2026-04-17 07:18:23', NULL, NULL, NULL, 24, '2026-04-17 15:18:23', NULL, NULL, NULL, NULL, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00),
+(16, 9, 34, 4, '2026-04-18', '2026-04-19', 5000.00, 0.00, 0.00, 'cancelled', '2026-04-17 07:28:12', 'pending', '', '2026-04-17 07:18:12', '2026-04-17 07:19:21', NULL, NULL, 'di ka pasok sa standards ko.', NULL, NULL, NULL, NULL, NULL, NULL, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00);
+
+--
+-- Triggers `reservations`
+--
+DROP TRIGGER IF EXISTS `trg_reservations_audit`;
+DELIMITER $$
+CREATE TRIGGER `trg_reservations_audit` AFTER UPDATE ON `reservations` FOR EACH ROW BEGIN
+    IF OLD.status <> NEW.status THEN
+        INSERT INTO audit_logs (user_id, action_type, entity_type, entity_id, from_status, to_status, details)
+        VALUES (NULL, 'status_change', 'reservation', NEW.reservation_id, OLD.status, NEW.status, CONCAT('Reservation status changed from ', OLD.status, ' to ', NEW.status));
+    END IF;
+    
+    IF OLD.payment_status <> NEW.payment_status THEN
+        INSERT INTO audit_logs (user_id, action_type, entity_type, entity_id, from_status, to_status, details)
+        VALUES (NULL, 'payment_status_change', 'reservation', NEW.reservation_id, OLD.payment_status, NEW.payment_status, CONCAT('Payment status changed from ', OLD.payment_status, ' to ', NEW.payment_status));
+    END IF;
+END
+$$
+DELIMITER ;
 
 -- --------------------------------------------------------
 
@@ -943,6 +1257,101 @@ CREATE TABLE IF NOT EXISTS `reviews` (
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `search_logs`
+--
+
+DROP TABLE IF EXISTS `search_logs`;
+CREATE TABLE IF NOT EXISTS `search_logs` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `user_id` int DEFAULT NULL,
+  `ip_address` varchar(45) NOT NULL,
+  `search_query` text,
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `ip_address` (`ip_address`,`created_at`),
+  KEY `user_id` (`user_id`,`created_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `seasons`
+--
+
+DROP TABLE IF EXISTS `seasons`;
+CREATE TABLE IF NOT EXISTS `seasons` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `unit_id` int NOT NULL,
+  `name` varchar(100) NOT NULL,
+  `type` enum('weekend','holiday','custom') NOT NULL DEFAULT 'custom',
+  `start_date` date DEFAULT NULL,
+  `end_date` date DEFAULT NULL,
+  `adjustment_type` enum('fixed','percentage') NOT NULL,
+  `adjustment_value` decimal(10,2) NOT NULL,
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `unit_id` (`unit_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `system_cache`
+--
+
+DROP TABLE IF EXISTS `system_cache`;
+CREATE TABLE IF NOT EXISTS `system_cache` (
+  `cache_key` varchar(100) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `cache_value` longtext COLLATE utf8mb4_unicode_ci NOT NULL,
+  `expires_at` timestamp NOT NULL,
+  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`cache_key`),
+  KEY `idx_expiry` (`expires_at`),
+  KEY `idx_expiry_tag` (`expires_at`,`cache_key`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Dumping data for table `system_cache`
+--
+
+INSERT INTO `system_cache` (`cache_key`, `cache_value`, `expires_at`, `updated_at`) VALUES
+('admin_dashboard_stats', 'a:7:{s:10:\"totalUsers\";i:23;s:13:\"totalBranches\";i:7;s:10:\"totalUnits\";i:20;s:17:\"totalReservations\";i:15;s:12:\"totalRevenue\";d:75223;s:11:\"bookedUnits\";i:5;s:11:\"bookingRate\";d:25;}', '2026-04-20 01:01:04', '2026-04-20 01:00:34');
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `system_errors`
+--
+
+DROP TABLE IF EXISTS `system_errors`;
+CREATE TABLE IF NOT EXISTS `system_errors` (
+  `error_id` int NOT NULL AUTO_INCREMENT,
+  `user_id` int DEFAULT NULL,
+  `error_type` varchar(100) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `message` text COLLATE utf8mb4_unicode_ci NOT NULL,
+  `file_context` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `line_number` int DEFAULT NULL,
+  `stack_trace` text COLLATE utf8mb4_unicode_ci,
+  `ip_address` varchar(45) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `user_agent` text COLLATE utf8mb4_unicode_ci,
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `severity` enum('low','medium','high','critical') COLLATE utf8mb4_unicode_ci DEFAULT 'medium',
+  `is_resolved` tinyint(1) DEFAULT '0',
+  PRIMARY KEY (`error_id`),
+  KEY `idx_severity` (`severity`),
+  KEY `idx_created` (`created_at`)
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Dumping data for table `system_errors`
+--
+
+INSERT INTO `system_errors` (`error_id`, `user_id`, `error_type`, `message`, `file_context`, `line_number`, `stack_trace`, `ip_address`, `user_agent`, `created_at`, `severity`, `is_resolved`) VALUES
+(1, NULL, 'Application Error', 'RATE LIMIT LOCKOUT: User/IP throttled on login', NULL, NULL, '{\"ip\":\"::1\",\"user_id\":null,\"limit\":5}', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36', '2026-04-19 13:43:43', 'high', 0);
+
+-- --------------------------------------------------------
+
+--
 -- Table structure for table `system_settings`
 --
 
@@ -956,7 +1365,7 @@ CREATE TABLE IF NOT EXISTS `system_settings` (
   `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`setting_id`),
   UNIQUE KEY `setting_key` (`setting_key`)
-) ENGINE=InnoDB AUTO_INCREMENT=42 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=68 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 --
 -- Dumping data for table `system_settings`
@@ -985,8 +1394,8 @@ INSERT INTO `system_settings` (`setting_id`, `setting_key`, `setting_value`, `se
 (20, 'session_timeout', '60', 'number', 'Session timeout in minutes', '2025-11-13 07:59:41'),
 (21, 'force_https', '1', 'boolean', 'Force HTTPS connection', '2025-11-13 07:59:41'),
 (22, 'two_factor_auth', '0', 'boolean', 'Enable 2FA for admin', '2025-11-13 07:59:41'),
-(23, 'primary_color', '#3498db', 'color', 'Primary theme color', '2025-11-13 07:59:41'),
-(24, 'secondary_color', '#2c3e50', 'color', 'Secondary theme color', '2025-11-13 07:59:41'),
+(23, 'primary_color', '#09324e', 'color', 'Primary theme color', '2026-04-19 13:58:11'),
+(24, 'secondary_color', '#b5cfe8', 'color', 'Secondary theme color', '2026-04-19 13:58:11'),
 (25, 'success_color', '#27ae60', 'color', 'Success status color', '2025-11-13 07:59:41'),
 (26, 'danger_color', '#e74c3c', 'color', 'Danger status color', '2025-11-13 07:59:41'),
 (27, 'logo_path', '/assets/images/logo.png', 'text', 'Logo file path', '2025-11-13 07:59:41'),
@@ -997,7 +1406,44 @@ INSERT INTO `system_settings` (`setting_id`, `setting_key`, `setting_value`, `se
 (32, 'footer_copyright', '© 2025 BookIT. All rights reserved.', 'text', 'Footer copyright text', '2025-11-13 07:59:41'),
 (33, 'payment_methods', '[\"gcash\", \"bank_transfer\"]', 'json', 'Enabled payment methods', '2025-11-13 07:59:41'),
 (34, 'notification_settings', '{\"reservation\": true, \"payment\": true, \"review\": true, \"system\": true}', 'json', 'Notification preferences', '2025-11-13 07:59:41'),
-(35, 'custom_message', '', NULL, NULL, '2026-02-01 00:50:21');
+(35, 'custom_message', 'welcome to our system', NULL, NULL, '2026-04-19 13:58:11'),
+(42, 'revenue_share_host', '90', 'number', 'Percentage of total amount that goes to the host', '2026-04-19 01:58:59'),
+(43, 'revenue_share_admin', '10', 'number', 'Percentage of total amount that stays as platform fee', '2026-04-19 01:58:59'),
+(44, 'min_downpayment_pct', '50', 'number', 'Minimum downpayment percentage required to hold a booking', '2026-04-19 01:58:59'),
+(45, 'last_cron_run', '2026-04-19 09:58:59', 'datetime', 'Timestamp of the last successful automation run', '2026-04-19 01:58:59'),
+(46, 'system_defense_level', 'high', 'select', 'Current security posture (low/medium/high)', '2026-04-19 01:58:59'),
+(47, 'min_search_length', '3', 'number', 'Minimum characters required for search queries', '2026-04-19 02:01:41'),
+(48, 'max_search_results', '50', 'number', 'Pagination limit for search to prevent memory exhaustion', '2026-04-19 02:01:41'),
+(49, 'admin_health_threshold', '95', 'number', 'Percentage of uptime/success required for Green health status', '2026-04-19 02:01:41');
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `throttling`
+--
+
+DROP TABLE IF EXISTS `throttling`;
+CREATE TABLE IF NOT EXISTS `throttling` (
+  `throttle_id` int NOT NULL AUTO_INCREMENT,
+  `type` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `identifier` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `hits` int DEFAULT '1',
+  `last_hit` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `lockout_until` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`throttle_id`),
+  UNIQUE KEY `type_identifier` (`type`,`identifier`)
+) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Dumping data for table `throttling`
+--
+
+INSERT INTO `throttling` (`throttle_id`, `type`, `identifier`, `hits`, `last_hit`, `lockout_until`) VALUES
+(1, 'search', 'ip_', 6, '2026-04-19 02:18:55', '2026-04-19 02:28:55'),
+(2, 'search', 'user_23', 1, '2026-04-19 11:55:57', NULL),
+(3, 'search', 'ip_::1', 1, '2026-04-19 16:03:29', NULL),
+(4, 'search', 'user_17', 3, '2026-04-19 17:25:26', NULL),
+(5, 'search', 'user_9', 1, '2026-04-19 17:52:16', NULL);
 
 -- --------------------------------------------------------
 
@@ -1009,11 +1455,25 @@ DROP TABLE IF EXISTS `units`;
 CREATE TABLE IF NOT EXISTS `units` (
   `unit_id` int NOT NULL AUTO_INCREMENT,
   `branch_id` int NOT NULL,
+  `property_type` varchar(50) DEFAULT 'Condo',
+  `bed_config` varchar(50) DEFAULT 'Studio',
+  `bed_details` text,
+  `bathroom_count` decimal(3,1) DEFAULT '1.0',
+  `floor_area` decimal(10,2) DEFAULT NULL,
+  `check_in_time` time DEFAULT '14:00:00',
+  `check_out_time` time DEFAULT '12:00:00',
+  `min_stay` int DEFAULT '1',
+  `max_stay` int DEFAULT '30',
   `unit_number` varchar(20) NOT NULL,
   `unit_type` varchar(50) NOT NULL,
   `floor_number` int DEFAULT NULL,
   `monthly_rate` decimal(10,2) NOT NULL,
   `security_deposit` decimal(10,2) DEFAULT '0.00',
+  `house_rules` text,
+  `utility_info` text,
+  `parking_info` varchar(100) DEFAULT 'None',
+  `booking_type` enum('instant','manual') DEFAULT 'instant',
+  `status_visibility` enum('active','hidden','maintenance') DEFAULT 'active',
   `is_available` tinyint(1) DEFAULT '1',
   `description` text,
   `price_per_night` decimal(10,2) NOT NULL DEFAULT '0.00',
@@ -1040,33 +1500,39 @@ CREATE TABLE IF NOT EXISTS `units` (
   `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   `updated_by_role` varchar(20) DEFAULT NULL,
   `updated_by_id` int DEFAULT NULL,
+  `extra_guests_allowed` int DEFAULT '0',
+  `extra_guest_fee` decimal(10,2) DEFAULT '0.00',
+  `max_capacity` int DEFAULT '2',
   PRIMARY KEY (`unit_id`),
-  KEY `branch_id` (`branch_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=35 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+  KEY `branch_id` (`branch_id`),
+  KEY `idx_unit_name` (`unit_name`)
+) ENGINE=InnoDB AUTO_INCREMENT=37 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 --
 -- Dumping data for table `units`
 --
 
-INSERT INTO `units` (`unit_id`, `branch_id`, `unit_number`, `unit_type`, `floor_number`, `monthly_rate`, `security_deposit`, `is_available`, `description`, `price_per_night`, `price_per_month`, `building_name`, `street_address`, `city`, `address_hash`, `latitude`, `longitude`, `max_occupancy`, `created_at`, `bedrooms`, `host_id`, `unit_name`, `instant_booking`, `approval_status`, `rejection_reason`, `sqm`, `bed_type`, `num_beds`, `num_bathrooms`, `pricing_type`, `updated_at`, `updated_by_role`, `updated_by_id`) VALUES
-(1, 1, 'A101', 'Studio', NULL, 15000.00, 0.00, 0, NULL, 0.00, 15000.00, NULL, NULL, NULL, NULL, NULL, NULL, 2, '2026-01-21 01:45:52', NULL, NULL, NULL, 1, 'approved', NULL, NULL, NULL, 1, 1, 'monthly', '2026-04-12 19:01:21', NULL, NULL),
-(2, 2, 'B101', 'Studio', NULL, 18000.00, 0.00, 0, NULL, 0.00, 18000.00, NULL, NULL, NULL, NULL, NULL, NULL, 2, '2026-01-21 01:45:52', NULL, NULL, NULL, 0, 'approved', NULL, NULL, NULL, 1, 1, 'monthly', '2026-04-12 19:01:21', NULL, NULL),
-(3, 1, '142', '3 Bedrooms', 6, 2500.00, 15.00, 0, '', 0.00, 2500.00, NULL, NULL, NULL, NULL, NULL, NULL, 4, '2026-03-10 11:32:02', NULL, NULL, NULL, 0, 'approved', NULL, NULL, NULL, 1, 1, 'monthly', '2026-04-12 19:01:21', NULL, NULL),
-(4, 1, '142', '3 Bedrooms', 6, 2500.00, 15.00, 0, '', 0.00, 2500.00, NULL, NULL, NULL, NULL, NULL, NULL, 4, '2026-03-10 11:35:19', NULL, NULL, NULL, 0, 'approved', NULL, NULL, NULL, 1, 1, 'monthly', '2026-04-12 19:01:21', NULL, NULL),
-(5, 2, 'w202', '3 Bedrooms', 1, 422.00, 600.01, 0, '', 0.00, 422.00, NULL, NULL, NULL, NULL, NULL, NULL, 5, '2026-03-10 11:50:57', NULL, NULL, NULL, 0, 'approved', NULL, NULL, NULL, 1, 1, 'monthly', '2026-04-12 19:01:21', NULL, NULL),
-(6, 2, 'w202', '3 Bedrooms', 1, 422.00, 600.01, 0, '', 0.00, 422.00, NULL, NULL, NULL, NULL, NULL, NULL, 5, '2026-03-10 11:51:10', NULL, NULL, NULL, 0, 'approved', NULL, NULL, NULL, 1, 1, 'monthly', '2026-04-12 19:01:21', NULL, NULL),
-(7, 2, 'w202', '3 Bedrooms', 1, 422.00, 600.01, 0, '', 0.00, 422.00, NULL, NULL, NULL, NULL, NULL, NULL, 5, '2026-03-10 11:51:56', NULL, NULL, NULL, 0, 'approved', NULL, NULL, NULL, 1, 1, 'monthly', '2026-04-12 19:01:21', NULL, NULL),
-(8, 2, 'w202', '3 Bedrooms', 1, 422.00, 600.01, 0, '', 0.00, 422.00, NULL, NULL, NULL, NULL, NULL, NULL, 5, '2026-03-10 12:09:18', NULL, NULL, NULL, 0, 'approved', NULL, NULL, NULL, 1, 1, 'monthly', '2026-04-12 19:01:21', NULL, NULL),
-(9, 2, 'w202', '3 Bedrooms', 1, 422.00, 600.01, 0, '', 0.00, 422.00, NULL, NULL, NULL, NULL, NULL, NULL, 5, '2026-03-10 12:13:09', NULL, NULL, NULL, 0, 'approved', NULL, NULL, NULL, 1, 1, 'monthly', '2026-04-12 19:01:21', NULL, NULL),
-(10, 2, 'w202', '3 Bedrooms', 1, 422.00, 600.01, 0, '', 0.00, 422.00, NULL, NULL, NULL, NULL, NULL, NULL, 5, '2026-03-10 12:13:29', NULL, NULL, NULL, 0, 'approved', NULL, NULL, NULL, 1, 1, 'monthly', '2026-04-12 19:01:21', NULL, NULL),
-(11, 2, 'w202', '3 Bedrooms', 1, 422.00, 600.01, 0, '', 0.00, 422.00, NULL, NULL, NULL, NULL, NULL, NULL, 5, '2026-03-10 12:13:55', NULL, NULL, NULL, 0, 'approved', NULL, NULL, NULL, 1, 1, 'monthly', '2026-04-12 19:01:21', NULL, NULL),
-(12, 2, 'w202', '3 Bedrooms', 1, 422.00, 600.01, 0, '', 0.00, 422.00, NULL, NULL, NULL, NULL, NULL, NULL, 5, '2026-03-10 12:29:43', NULL, NULL, NULL, 0, 'approved', NULL, NULL, NULL, 1, 1, 'monthly', '2026-04-12 19:01:21', NULL, NULL),
-(29, 6, 'f20', '', NULL, 5000.00, 0.00, 1, '', 0.00, 5000.00, NULL, '153 sanciangco street', 'malabon', NULL, 14.67087800, 120.96074500, 4, '2026-03-23 06:55:09', NULL, 10, 'Penthouse', 0, 'approved', NULL, 80.00, 'double deck', 4, 10, 'monthly', '2026-04-13 04:59:42', NULL, NULL),
-(30, 6, 'suite10', '', NULL, 4000.00, 0.00, 1, '', 0.00, 4000.00, NULL, '555 sanciangco street, catmon', 'malabon city', NULL, 14.66819300, 120.95915300, 11, '2026-04-02 10:25:32', NULL, 10, 'Unit 101', 0, 'approved', NULL, 40.00, 'double deck', 4, 2, 'monthly', '2026-04-12 19:01:21', NULL, NULL),
-(31, 6, 'm307', 'Executive Suite', 5, 2000.00, 100.00, 1, 'lklklkl', 2000.00, 4000.00, NULL, 'Balut', 'Malabón', NULL, 14.65740300, 120.95914500, 5, '2026-04-09 13:17:24', NULL, 0, 'unit302', 0, 'approved', NULL, 60.00, 'queen', 2, 2, 'nightly', '2026-04-12 19:34:50', 'admin', 1),
-(32, 6, 'unit 103', 'Studio', 2, 0.00, 0.00, 1, '', 0.00, 1000.00, NULL, 'Emerald Avenue', 'Pásig', NULL, 14.58926500, 121.06258500, 11, '2026-04-12 19:42:35', NULL, 10, 'equiste exclusive unit', 0, 'approved', NULL, 35.00, 'queen', 1, 1, 'monthly', '2026-04-13 06:03:35', NULL, NULL),
-(33, 6, 'gsgsgs', '', NULL, 0.00, 0.00, 1, '', 123.00, 0.00, NULL, 'Doctor Lucio Chua Tan Senior Avenue', 'Pásig', NULL, 14.60049500, 121.08351600, 6, '2026-04-16 11:56:07', NULL, 10, 'faf', 0, 'approved', NULL, 15.00, 'single', 1, 1, 'nightly', '2026-04-16 11:57:31', NULL, NULL),
-(34, 4, '303', '', NULL, 0.00, 0.00, 1, '', 5000.00, 0.00, NULL, 'Yakal Street', 'Quezon City', NULL, 14.62328500, 121.01177200, 15, '2026-04-17 07:10:12', NULL, 24, 'Unit', 0, 'approved', NULL, 34.50, 'single', 1, 1, 'nightly', '2026-04-17 07:13:04', NULL, NULL);
+INSERT INTO `units` (`unit_id`, `branch_id`, `property_type`, `bed_config`, `bed_details`, `bathroom_count`, `floor_area`, `check_in_time`, `check_out_time`, `min_stay`, `max_stay`, `unit_number`, `unit_type`, `floor_number`, `monthly_rate`, `security_deposit`, `house_rules`, `utility_info`, `parking_info`, `booking_type`, `status_visibility`, `is_available`, `description`, `price_per_night`, `price_per_month`, `building_name`, `street_address`, `city`, `address_hash`, `latitude`, `longitude`, `max_occupancy`, `created_at`, `bedrooms`, `host_id`, `unit_name`, `instant_booking`, `approval_status`, `rejection_reason`, `sqm`, `bed_type`, `num_beds`, `num_bathrooms`, `pricing_type`, `updated_at`, `updated_by_role`, `updated_by_id`, `extra_guests_allowed`, `extra_guest_fee`, `max_capacity`) VALUES
+(1, 1, 'Condo', 'Studio', NULL, 1.0, NULL, '14:00:00', '12:00:00', 1, 30, 'A101', 'Studio', NULL, 15000.00, 0.00, NULL, NULL, 'None', 'instant', 'active', 0, NULL, 0.00, 15000.00, NULL, NULL, NULL, NULL, NULL, NULL, 2, '2026-01-21 01:45:52', NULL, NULL, NULL, 1, 'approved', NULL, NULL, NULL, 1, 1, 'monthly', '2026-04-12 19:01:21', NULL, NULL, 0, 0.00, 2),
+(2, 2, 'Condo', 'Studio', NULL, 1.0, NULL, '14:00:00', '12:00:00', 1, 30, 'B101', 'Studio', NULL, 18000.00, 0.00, NULL, NULL, 'None', 'instant', 'active', 0, NULL, 0.00, 18000.00, NULL, NULL, NULL, NULL, NULL, NULL, 2, '2026-01-21 01:45:52', NULL, NULL, NULL, 0, 'approved', NULL, NULL, NULL, 1, 1, 'monthly', '2026-04-12 19:01:21', NULL, NULL, 0, 0.00, 2),
+(3, 1, 'Condo', 'Studio', NULL, 1.0, NULL, '14:00:00', '12:00:00', 1, 30, '142', '3 Bedrooms', 6, 2500.00, 15.00, NULL, NULL, 'None', 'instant', 'active', 0, '', 0.00, 2500.00, NULL, NULL, NULL, NULL, NULL, NULL, 4, '2026-03-10 11:32:02', NULL, NULL, NULL, 0, 'approved', NULL, NULL, NULL, 1, 1, 'monthly', '2026-04-12 19:01:21', NULL, NULL, 0, 0.00, 2),
+(4, 1, 'Condo', 'Studio', NULL, 1.0, NULL, '14:00:00', '12:00:00', 1, 30, '142', '3 Bedrooms', 6, 2500.00, 15.00, NULL, NULL, 'None', 'instant', 'active', 0, '', 0.00, 2500.00, NULL, NULL, NULL, NULL, NULL, NULL, 4, '2026-03-10 11:35:19', NULL, NULL, NULL, 0, 'approved', NULL, NULL, NULL, 1, 1, 'monthly', '2026-04-12 19:01:21', NULL, NULL, 0, 0.00, 2),
+(5, 2, 'Condo', 'Studio', NULL, 1.0, NULL, '14:00:00', '12:00:00', 1, 30, 'w202', '3 Bedrooms', 1, 422.00, 600.01, NULL, NULL, 'None', 'instant', 'active', 0, '', 0.00, 422.00, NULL, NULL, NULL, NULL, NULL, NULL, 5, '2026-03-10 11:50:57', NULL, NULL, NULL, 0, 'approved', NULL, NULL, NULL, 1, 1, 'monthly', '2026-04-12 19:01:21', NULL, NULL, 0, 0.00, 2),
+(6, 2, 'Condo', 'Studio', NULL, 1.0, NULL, '14:00:00', '12:00:00', 1, 30, 'w202', '3 Bedrooms', 1, 422.00, 600.01, NULL, NULL, 'None', 'instant', 'active', 0, '', 0.00, 422.00, NULL, NULL, NULL, NULL, NULL, NULL, 5, '2026-03-10 11:51:10', NULL, NULL, NULL, 0, 'approved', NULL, NULL, NULL, 1, 1, 'monthly', '2026-04-12 19:01:21', NULL, NULL, 0, 0.00, 2),
+(7, 2, 'Condo', 'Studio', NULL, 1.0, NULL, '14:00:00', '12:00:00', 1, 30, 'w202', '3 Bedrooms', 1, 422.00, 600.01, NULL, NULL, 'None', 'instant', 'active', 0, '', 0.00, 422.00, NULL, NULL, NULL, NULL, NULL, NULL, 5, '2026-03-10 11:51:56', NULL, NULL, NULL, 0, 'approved', NULL, NULL, NULL, 1, 1, 'monthly', '2026-04-12 19:01:21', NULL, NULL, 0, 0.00, 2),
+(8, 2, 'Condo', 'Studio', NULL, 1.0, NULL, '14:00:00', '12:00:00', 1, 30, 'w202', '3 Bedrooms', 1, 422.00, 600.01, NULL, NULL, 'None', 'instant', 'active', 0, '', 0.00, 422.00, NULL, NULL, NULL, NULL, NULL, NULL, 5, '2026-03-10 12:09:18', NULL, NULL, NULL, 0, 'approved', NULL, NULL, NULL, 1, 1, 'monthly', '2026-04-12 19:01:21', NULL, NULL, 0, 0.00, 2),
+(9, 2, 'Condo', 'Studio', NULL, 1.0, NULL, '14:00:00', '12:00:00', 1, 30, 'w202', '3 Bedrooms', 1, 422.00, 600.01, NULL, NULL, 'None', 'instant', 'active', 0, '', 0.00, 422.00, NULL, NULL, NULL, NULL, NULL, NULL, 5, '2026-03-10 12:13:09', NULL, NULL, NULL, 0, 'approved', NULL, NULL, NULL, 1, 1, 'monthly', '2026-04-12 19:01:21', NULL, NULL, 0, 0.00, 2),
+(10, 2, 'Condo', 'Studio', NULL, 1.0, NULL, '14:00:00', '12:00:00', 1, 30, 'w202', '3 Bedrooms', 1, 422.00, 600.01, NULL, NULL, 'None', 'instant', 'active', 0, '', 0.00, 422.00, NULL, NULL, NULL, NULL, NULL, NULL, 5, '2026-03-10 12:13:29', NULL, NULL, NULL, 0, 'approved', NULL, NULL, NULL, 1, 1, 'monthly', '2026-04-12 19:01:21', NULL, NULL, 0, 0.00, 2),
+(11, 2, 'Condo', 'Studio', NULL, 1.0, NULL, '14:00:00', '12:00:00', 1, 30, 'w202', '3 Bedrooms', 1, 422.00, 600.01, NULL, NULL, 'None', 'instant', 'active', 0, '', 0.00, 422.00, NULL, NULL, NULL, NULL, NULL, NULL, 5, '2026-03-10 12:13:55', NULL, NULL, NULL, 0, 'approved', NULL, NULL, NULL, 1, 1, 'monthly', '2026-04-12 19:01:21', NULL, NULL, 0, 0.00, 2),
+(12, 2, 'Condo', 'Studio', NULL, 1.0, NULL, '14:00:00', '12:00:00', 1, 30, 'w202', '3 Bedrooms', 1, 422.00, 600.01, NULL, NULL, 'None', 'instant', 'active', 0, '', 0.00, 422.00, NULL, NULL, NULL, NULL, NULL, NULL, 5, '2026-03-10 12:29:43', NULL, NULL, NULL, 0, 'approved', NULL, NULL, NULL, 1, 1, 'monthly', '2026-04-12 19:01:21', NULL, NULL, 0, 0.00, 2),
+(29, 6, 'Condo', 'Studio', NULL, 10.0, 80.00, '14:00:00', '12:00:00', 1, 30, 'f20', '', NULL, 5000.00, 0.00, NULL, NULL, 'None', 'instant', 'active', 1, '', 0.00, 5000.00, NULL, '153 sanciangco street', 'malabon', NULL, 14.67087800, 120.96074500, 4, '2026-03-23 06:55:09', NULL, 10, 'Penthouse', 0, 'approved', NULL, 80.00, 'double deck', 4, 10, 'monthly', '2026-04-20 00:37:59', NULL, NULL, 0, 0.00, 2),
+(30, 6, 'Condo', 'Studio', NULL, 2.0, 40.00, '14:00:00', '12:00:00', 1, 30, 'suite10', '', NULL, 4000.00, 0.00, NULL, NULL, 'None', 'instant', 'active', 1, '', 0.00, 4000.00, NULL, '555 sanciangco street, catmon', 'malabon city', NULL, 14.66819300, 120.95915300, 11, '2026-04-02 10:25:32', NULL, 10, 'Unit 101', 0, 'approved', NULL, 40.00, 'double deck', 4, 2, 'monthly', '2026-04-20 00:37:59', NULL, NULL, 0, 0.00, 2),
+(31, 6, 'Condo', 'Studio', NULL, 2.0, 60.00, '14:00:00', '12:00:00', 1, 30, 'm307', 'Executive Suite', 5, 2000.00, 100.00, NULL, NULL, 'None', 'instant', 'active', 1, 'lklklkl', 2000.00, 4000.00, NULL, 'Balut', 'Malabón', NULL, 14.65740300, 120.95914500, 5, '2026-04-09 13:17:24', NULL, 0, 'unit302', 0, 'approved', NULL, 60.00, 'queen', 2, 2, 'nightly', '2026-04-20 00:37:59', 'admin', 1, 0, 0.00, 2),
+(32, 6, 'Condo', 'Studio', NULL, 1.0, 35.00, '14:00:00', '12:00:00', 1, 30, 'unit 103', 'Studio', 2, 0.00, 0.00, NULL, NULL, 'None', 'instant', 'active', 1, '', 0.00, 1000.00, NULL, 'Emerald Avenue', 'Pásig', NULL, 14.58926500, 121.06258500, 11, '2026-04-12 19:42:35', NULL, 10, 'equiste exclusive unit', 0, 'approved', NULL, 35.00, 'queen', 1, 1, 'monthly', '2026-04-20 00:37:59', NULL, NULL, 0, 0.00, 2),
+(33, 6, 'Condo', 'Studio', NULL, 1.0, 15.00, '14:00:00', '12:00:00', 1, 30, 'gsgsgs', '', NULL, 0.00, 0.00, NULL, NULL, 'None', 'instant', 'active', 1, '', 123.00, 0.00, NULL, 'Doctor Lucio Chua Tan Senior Avenue', 'Pásig', NULL, 14.60049500, 121.08351600, 6, '2026-04-16 11:56:07', NULL, 10, 'faf', 0, 'approved', NULL, 15.00, 'single', 1, 1, 'nightly', '2026-04-20 00:37:59', NULL, NULL, 0, 0.00, 2),
+(34, 4, 'Condo', 'Studio', NULL, 1.0, 34.50, '14:00:00', '12:00:00', 1, 30, '303', '', NULL, 0.00, 0.00, NULL, NULL, 'None', 'instant', 'active', 1, '', 5000.00, 0.00, NULL, 'Yakal Street', 'Quezon City', NULL, 14.62328500, 121.01177200, 15, '2026-04-17 07:10:12', NULL, 24, 'Unit', 0, 'approved', NULL, 34.50, 'single', 1, 1, 'nightly', '2026-04-20 00:37:59', NULL, NULL, 0, 0.00, 2),
+(35, 6, 'Condo', 'Studio', NULL, 1.0, 56.00, '14:00:00', '12:00:00', 1, 30, '506', '', NULL, 0.00, 0.00, NULL, NULL, 'None', 'instant', 'active', 0, '0', 5600.00, 0.00, NULL, '0', '', NULL, 14.59800300, 121.06275600, 8, '2026-04-19 11:52:37', NULL, 10, 'unit506', 0, 'pending', NULL, 56.00, '0', 8, 1, '', '2026-04-20 00:37:59', NULL, NULL, 0, 0.00, 2),
+(36, 1, 'Room', 'Shared', '1', 1.0, NULL, '14:00:00', '12:00:00', 1, 30, '5g', '', NULL, 0.00, 0.00, '', '', 'None', 'manual', 'active', 1, 'n', 0.00, 0.00, NULL, 'san nicolas', '', NULL, 14.59903307, 120.97085381, 1, '2026-04-20 00:46:34', NULL, 10, 'sample terminal', 0, 'pending', NULL, NULL, NULL, 1, 1, 'nightly', '2026-04-20 00:46:34', NULL, NULL, 0, 0.00, 2);
 
 -- --------------------------------------------------------
 
@@ -1085,7 +1551,14 @@ CREATE TABLE IF NOT EXISTS `unit_addons` (
   PRIMARY KEY (`addon_id`),
   KEY `unit_addons_unit_id_index` (`unit_id`),
   KEY `unit_addons_active_index` (`is_active`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Dumping data for table `unit_addons`
+--
+
+INSERT INTO `unit_addons` (`addon_id`, `unit_id`, `name`, `price`, `is_active`, `created_at`) VALUES
+(1, 29, 'pins', 50.00, 1, '2026-04-19 18:34:33');
 
 -- --------------------------------------------------------
 
@@ -1101,7 +1574,7 @@ CREATE TABLE IF NOT EXISTS `unit_amenities` (
   PRIMARY KEY (`id`),
   KEY `unit_id` (`unit_id`),
   KEY `amenity_id` (`amenity_id`)
-) ENGINE=MyISAM AUTO_INCREMENT=28 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=MyISAM AUTO_INCREMENT=48 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 --
 -- Dumping data for table `unit_amenities`
@@ -1129,7 +1602,17 @@ INSERT INTO `unit_amenities` (`id`, `unit_id`, `amenity_id`) VALUES
 (24, 34, 2),
 (25, 34, 3),
 (26, 34, 4),
-(27, 34, 5);
+(27, 34, 5),
+(42, 35, 5),
+(41, 35, 4),
+(40, 35, 3),
+(39, 35, 2),
+(38, 35, 1),
+(43, 36, 1),
+(44, 36, 2),
+(45, 36, 3),
+(46, 36, 4),
+(47, 36, 5);
 
 -- --------------------------------------------------------
 
@@ -1148,14 +1631,34 @@ CREATE TABLE IF NOT EXISTS `unit_blackouts` (
   PRIMARY KEY (`blackout_id`),
   KEY `unit_blackouts_unit_id_index` (`unit_id`),
   KEY `unit_blackouts_dates_index` (`unit_id`,`start_date`,`end_date`)
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Dumping data for table `unit_blackouts`
 --
 
 INSERT INTO `unit_blackouts` (`blackout_id`, `unit_id`, `start_date`, `end_date`, `reason`, `created_at`) VALUES
-(1, 31, '2026-04-09', '2026-04-25', 'maintenance', '2026-04-09 13:20:01');
+(1, 31, '2026-04-09', '2026-04-25', 'maintenance', '2026-04-09 13:20:01'),
+(2, 29, '2026-04-01', '2026-04-24', '', '2026-04-19 18:33:50'),
+(3, 29, '2026-04-01', '2026-04-25', 'maintenance', '2026-04-19 18:34:13');
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `unit_blocked_dates`
+--
+
+DROP TABLE IF EXISTS `unit_blocked_dates`;
+CREATE TABLE IF NOT EXISTS `unit_blocked_dates` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `unit_id` int NOT NULL,
+  `start_date` date NOT NULL,
+  `end_date` date NOT NULL,
+  `reason` varchar(255) DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `unit_id` (`unit_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- --------------------------------------------------------
 
@@ -1204,7 +1707,7 @@ CREATE TABLE IF NOT EXISTS `unit_images` (
   PRIMARY KEY (`image_id`),
   KEY `unit_id` (`unit_id`),
   KEY `image_hash` (`image_hash`)
-) ENGINE=InnoDB AUTO_INCREMENT=118 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=123 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 --
 -- Dumping data for table `unit_images`
@@ -1275,7 +1778,12 @@ INSERT INTO `unit_images` (`image_id`, `unit_id`, `image_path`, `image_hash`, `r
 (114, 34, '../uploads/unit_images/unit_34_1776409812_4956.jpg', NULL, NULL, '2026-04-17 07:10:12', 0, NULL, '2026-04-17 07:10:12'),
 (115, 34, '../uploads/unit_images/unit_34_1776409812_9474.jpg', NULL, NULL, '2026-04-17 07:10:12', 0, NULL, '2026-04-17 07:10:12'),
 (116, 34, '../uploads/unit_images/unit_34_1776409812_7531.jpg', NULL, NULL, '2026-04-17 07:10:12', 0, NULL, '2026-04-17 07:10:12'),
-(117, 34, '../uploads/unit_images/unit_34_1776409812_1215.jpg', NULL, NULL, '2026-04-17 07:10:12', 0, NULL, '2026-04-17 07:10:12');
+(117, 34, '../uploads/unit_images/unit_34_1776409812_1215.jpg', NULL, NULL, '2026-04-17 07:10:12', 0, NULL, '2026-04-17 07:10:12'),
+(118, 35, '../uploads/unit_images/unit_35_1776599557_5196.jpg', NULL, NULL, '2026-04-19 11:52:37', 0, NULL, '2026-04-19 11:52:37'),
+(119, 35, '../uploads/unit_images/unit_35_1776599557_5415.jpg', NULL, NULL, '2026-04-19 11:52:37', 0, NULL, '2026-04-19 11:52:37'),
+(120, 35, '../uploads/unit_images/unit_35_1776599557_9162.jpg', NULL, NULL, '2026-04-19 11:52:37', 0, NULL, '2026-04-19 11:52:37'),
+(121, 35, '../uploads/unit_images/unit_35_1776599557_6698.jpg', NULL, NULL, '2026-04-19 11:52:37', 0, NULL, '2026-04-19 11:52:37'),
+(122, 35, '../uploads/unit_images/unit_35_1776599557_5653.jpg', NULL, NULL, '2026-04-19 11:52:37', 0, NULL, '2026-04-19 11:52:37');
 
 -- --------------------------------------------------------
 
@@ -1352,38 +1860,42 @@ CREATE TABLE IF NOT EXISTS `users` (
   `verification_status` enum('none','pending','verified','rejected') DEFAULT 'none',
   `can_message` tinyint(1) DEFAULT '1',
   `last_urgent_popup_shown` timestamp NULL DEFAULT NULL,
+  `message_window_start` timestamp NULL DEFAULT NULL,
+  `message_window_count` int DEFAULT '0',
   PRIMARY KEY (`user_id`),
-  UNIQUE KEY `email` (`email`)
-) ENGINE=InnoDB AUTO_INCREMENT=25 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+  UNIQUE KEY `email` (`email`),
+  KEY `idx_full_name` (`full_name`)
+) ENGINE=InnoDB AUTO_INCREMENT=26 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 --
 -- Dumping data for table `users`
 --
 
-INSERT INTO `users` (`user_id`, `full_name`, `email`, `password`, `phone`, `role`, `branch_id`, `is_active`, `created_at`, `last_login`, `updated_at`, `address`, `profile_picture`, `login_method`, `reset_token`, `token_expiry`, `verification_status`, `can_message`, `last_urgent_popup_shown`) VALUES
-(1, 'System Administrator', 'admin@bookit.com', '$2y$12$AYpgLYJaWCzNyNyL.2lbDeJcOi/TkaTfmOywIDemsndYSb2p8SYaC', NULL, 'admin', NULL, 1, '2026-01-21 01:45:52', NULL, '2026-01-21 01:45:52', NULL, NULL, 'email', NULL, NULL, 'none', 1, NULL),
-(3, 'Test User 1', 'jersonedanao2002@gmail.com', '$2y$10$tAebel8lIeI8nR9nyyslCOF6LlZpqMUflF28lG758Wsm.dElN5a6S', '09123456789', 'renter', NULL, 1, '2026-01-21 03:43:59', NULL, '2026-01-24 07:31:35', NULL, NULL, 'email', NULL, NULL, 'none', 1, NULL),
-(4, 'Test 1', 'onedummy53@gmail.com', '$2y$10$bWTCGqvDp0mZAY6bf8uinuLBFX7ydNAI6okAHSKQEKJdjIUx99JRi', '09123456789', '', 1, 0, '2026-01-21 04:29:27', NULL, '2026-01-31 14:54:00', NULL, NULL, 'email', NULL, NULL, 'none', 1, NULL),
-(5, 'Host 1', 'host1@bookit.com', '$2y$10$tmltabYVkk02FcKKuiMAXutUN3innt69rU9nom9x8Jtjy0gOkvZZO', '09123456789', 'host', 1, 1, '2026-01-27 14:52:17', NULL, '2026-03-22 10:10:42', NULL, NULL, 'email', NULL, NULL, 'none', 1, NULL),
-(6, 'jackie lou pascual', 'jackieloupascual@gmail.com', '$2y$10$Vd.k0JLQJ4yW/QpdoBAY7.6rUsqljPdESD.7KfUUuUjC2npgMPHh.', '09054289264', '', NULL, 1, '2026-02-01 01:31:27', NULL, '2026-02-01 10:43:01', NULL, NULL, 'email', NULL, NULL, 'none', 1, NULL),
-(7, 'jackie lou pascual', 'paullexxusantonio@gmail.com', '$2y$10$fbAw5Z0N1L60gTrG52DZI.dwcQS.OkXrnKDpmj78tAZCYNEXX2Q5W', '09054289264', '', 2, 1, '2026-02-01 10:45:19', NULL, '2026-03-23 07:03:40', NULL, NULL, 'email', NULL, NULL, 'none', 1, NULL),
-(8, 'jackie lou pascual', 'paullexxusantonio20@gmail.com', '$2y$10$64n0KiFSYsJ6sTGQw1aycOoVihENSLYqvrdie9L4QSf4FxKFUZwny', '09054289264', 'admin', NULL, 1, '2026-02-01 10:45:50', NULL, '2026-02-22 02:23:36', NULL, NULL, 'email', NULL, NULL, 'none', 1, NULL),
-(9, 'Antonio, Paul Lexxus B.', 'p2235361@gmail.com', '$2y$10$fAZ.R874fvFM/re280G85uf9FRapmj9ZFxhgYo7zFxVLNnKx0B4wm', '1230456789', 'renter', NULL, 1, '2026-02-22 02:25:58', NULL, '2026-04-16 13:46:46', '', 'profile_9_69e0e8420ec0c.jpg', 'email', NULL, NULL, 'none', 1, NULL),
-(10, 'jackie', 'jackiepascual@bookit.com', '$2y$10$ymI/EQN2g1UnX.naHJYJhuTKMDjymtdUAac5EdZsfqI4UN6U8DiO2', '123456789', 'host', 6, 1, '2026-02-22 04:14:49', NULL, '2026-04-14 15:29:56', NULL, NULL, 'email', NULL, NULL, 'none', 1, NULL),
-(11, 'jackie', 'jackie@bookit.com', '$2y$10$gFE7a8xZ5NiGCsgd1CWOfu/4Ez1cjpIq.mB1LnB1v5eHfttg..vim', '789456123', 'host', 2, 1, '2026-02-22 04:15:32', NULL, '2026-03-22 03:56:39', NULL, NULL, 'email', NULL, NULL, 'none', 1, NULL),
-(12, 'paul', 'paul1234@bookit.com', '$2y$10$T9Oezy91p2mRVjT73miy7u6L80/koJ5H97IdNylqYaUWgUNMx/k4G', '88944556456', 'host', 3, 1, '2026-03-07 06:54:39', NULL, '2026-03-22 04:03:20', NULL, NULL, 'email', NULL, NULL, 'none', 1, NULL),
-(13, 'kunwari lang', 'adminhost@bookit.com', '$2y$10$TMg3x.zSqVLr8axCTIdUMuhv5lEmej6J4WUcxTicisG6M5COLx6T.', '0908543307762', 'host', 5, 1, '2026-03-22 06:08:56', NULL, '2026-03-22 10:10:55', NULL, NULL, 'email', NULL, NULL, 'none', 1, NULL),
-(14, 'Caps Of all trades', 'capsofalltrades@gmail.com', '$2y$10$L60Z3IlGB3nqfiMDbW0oaOyWNvmCIKVW1HWNvjvlfU7PYKsUpOM3W', '09123456789', 'renter', NULL, 1, '2026-04-08 17:16:01', NULL, '2026-04-08 17:16:01', NULL, NULL, 'email', NULL, NULL, 'none', 1, NULL),
-(15, 'Vanessa Hudges', 'vanessahudges@gmail.com', '$2y$10$ypu0GnWV5Yb1fgFDQBN87OwFq9UW60T48qs7pqqcWMQQB0FzKftY.', '09054289261', 'host', NULL, 1, '2026-04-09 18:02:56', NULL, '2026-04-09 18:03:49', NULL, NULL, 'email', NULL, NULL, 'none', 1, NULL),
-(16, 'Peter Benjamin Parker', 'peterparker@gmail.com', '$2y$10$n.k9Nn.XAyBw99HOgHHA1.20fb1fIDhjhCA2mUaVoVelg1GLGsHl.', '09876543210', 'host', NULL, 1, '2026-04-09 18:22:12', NULL, '2026-04-10 02:56:58', NULL, NULL, 'email', NULL, NULL, 'none', 1, NULL),
-(17, 'Antonio, Paul Lexxus B.', 'pao@gmail.com', '$2y$10$7ld2f6.Fog.yZH0vMsmcUevqX.DPNmduTNPNpe8G0HBmaAscC108u', '89456', 'host', NULL, 1, '2026-04-09 19:13:52', NULL, '2026-04-09 19:14:20', NULL, NULL, 'email', NULL, NULL, 'none', 1, NULL),
-(18, 'Antonio, Paul Lexxus B.', 'yg@gmail.com', '$2y$10$FtKrd13hZtEFurMdqi4EGOowxesvioYFKTC9cZ2iXrDN3Z2z4n7eC', '09054289264', 'host', NULL, 1, '2026-04-09 19:38:12', NULL, '2026-04-09 19:39:43', NULL, NULL, 'email', NULL, NULL, 'none', 1, NULL),
-(19, 'Anthony Stark', 'tonystark@gmail.com', '$2y$10$kRFmYdr/ZXhdRBVMrNGv/el82bU5VyEN8yXK7fqC4nmckGHIZFvtC', '09123457698', 'renter', NULL, 1, '2026-04-10 03:01:35', NULL, '2026-04-10 03:01:35', NULL, NULL, 'email', NULL, NULL, 'none', 1, NULL),
-(20, 'founder of all', 'founnder@gmail.com', '$2y$10$jd49h1oTnkxlWR.HaPE6AOhoO1PBbsiVOEQDHiPaTxnntmGr1rU3u', '09616613640', 'host', NULL, 1, '2026-04-11 16:00:15', NULL, '2026-04-11 16:03:11', NULL, NULL, 'email', NULL, NULL, 'none', 1, NULL),
-(21, 'Leonardo Cabajar', 'cabajar@gmail.com', '$2y$10$aDvHx2.J4DfHuhDxwBw4du35WM36kPQCKdPtO6JOs55LSTuE2EXvy', '0987654321', 'host', NULL, 1, '2026-04-13 06:09:33', NULL, '2026-04-13 06:21:39', NULL, NULL, 'email', NULL, NULL, 'none', 1, NULL),
-(22, 'Mark Herras', 'caliuagking@gmail.com', '$2y$10$r6eReMPensaSbhj2JN/yHuW4IwjFV/pT6VSdTAbZmLNFzHpE66Rwa', '09271402822', 'renter', NULL, 1, '2026-04-16 13:29:18', NULL, '2026-04-16 13:29:18', NULL, NULL, 'email', NULL, NULL, 'none', 1, NULL),
-(23, 'Antonio, Paul Lexxus B.', 'p261@gmail.com', '$2y$10$h.0VEFtoruueb4laxsRCfeu0u9mNoZVOy6Q4aNc6mS8wRvzeuTJvm', '88944556456', 'renter', NULL, 1, '2026-04-17 03:09:17', NULL, '2026-04-17 03:09:17', NULL, NULL, 'email', NULL, NULL, 'none', 1, NULL),
-(24, 'Monkey D. Luffy', 'monkeydluffy@gmail.com', '$2y$10$DDBtsIky1/tQiIEG0TqV1.Qzy8shkYheiJ0dHuXYqSv2qv2Uxwfbi', '09123456789', 'host', NULL, 1, '2026-04-17 07:05:19', NULL, '2026-04-17 07:06:50', NULL, NULL, 'email', NULL, NULL, 'none', 1, NULL);
+INSERT INTO `users` (`user_id`, `full_name`, `email`, `password`, `phone`, `role`, `branch_id`, `is_active`, `terms_accepted`, `is_suspended`, `created_at`, `last_login`, `updated_at`, `address`, `profile_picture`, `login_method`, `reset_token`, `token_expiry`, `verification_status`, `can_message`, `last_urgent_popup_shown`, `message_window_start`, `message_window_count`) VALUES
+(1, 'System Administrator', 'admin@bookit.com', '$2y$12$AYpgLYJaWCzNyNyL.2lbDeJcOi/TkaTfmOywIDemsndYSb2p8SYaC', NULL, 'admin', NULL, 1, 0, 0, '2026-01-21 01:45:52', NULL, '2026-01-21 01:45:52', NULL, NULL, 'email', NULL, NULL, 'none', 1, NULL, NULL, 0),
+(3, 'Test User 1', 'jersonedanao2002@gmail.com', '$2y$10$tAebel8lIeI8nR9nyyslCOF6LlZpqMUflF28lG758Wsm.dElN5a6S', '09123456789', 'renter', NULL, 1, 0, 0, '2026-01-21 03:43:59', NULL, '2026-01-24 07:31:35', NULL, NULL, 'email', NULL, NULL, 'none', 1, NULL, NULL, 0),
+(4, 'Test 1', 'onedummy53@gmail.com', '$2y$10$bWTCGqvDp0mZAY6bf8uinuLBFX7ydNAI6okAHSKQEKJdjIUx99JRi', '09123456789', '', 1, 0, 0, 0, '2026-01-21 04:29:27', NULL, '2026-01-31 14:54:00', NULL, NULL, 'email', NULL, NULL, 'none', 1, NULL, NULL, 0),
+(5, 'Host 1', 'host1@bookit.com', '$2y$10$tmltabYVkk02FcKKuiMAXutUN3innt69rU9nom9x8Jtjy0gOkvZZO', '09123456789', 'host', 1, 1, 0, 0, '2026-01-27 14:52:17', NULL, '2026-03-22 10:10:42', NULL, NULL, 'email', NULL, NULL, 'none', 1, NULL, NULL, 0),
+(6, 'jackie lou pascual', 'jackieloupascual@gmail.com', '$2y$10$Vd.k0JLQJ4yW/QpdoBAY7.6rUsqljPdESD.7KfUUuUjC2npgMPHh.', '09054289264', '', NULL, 1, 0, 0, '2026-02-01 01:31:27', NULL, '2026-02-01 10:43:01', NULL, NULL, 'email', NULL, NULL, 'none', 1, NULL, NULL, 0),
+(7, 'jackie lou pascual', 'paullexxusantonio@gmail.com', '$2y$10$fbAw5Z0N1L60gTrG52DZI.dwcQS.OkXrnKDpmj78tAZCYNEXX2Q5W', '09054289264', '', 2, 1, 0, 0, '2026-02-01 10:45:19', NULL, '2026-03-23 07:03:40', NULL, NULL, 'email', NULL, NULL, 'none', 1, NULL, NULL, 0),
+(8, 'jackie lou pascual', 'paullexxusantonio20@gmail.com', '$2y$10$64n0KiFSYsJ6sTGQw1aycOoVihENSLYqvrdie9L4QSf4FxKFUZwny', '09054289264', 'admin', NULL, 1, 0, 0, '2026-02-01 10:45:50', NULL, '2026-02-22 02:23:36', NULL, NULL, 'email', NULL, NULL, 'none', 1, NULL, NULL, 0),
+(9, 'Antonio, Paul Lexxus B.', 'p2235361@gmail.com', '$2y$10$fAZ.R874fvFM/re280G85uf9FRapmj9ZFxhgYo7zFxVLNnKx0B4wm', '1230456789', 'renter', NULL, 1, 0, 0, '2026-02-22 02:25:58', NULL, '2026-04-16 13:46:46', '', 'profile_9_69e0e8420ec0c.jpg', 'email', NULL, NULL, 'none', 1, NULL, NULL, 0),
+(10, 'jackie', 'jackiepascual@bookit.com', '$2y$10$ymI/EQN2g1UnX.naHJYJhuTKMDjymtdUAac5EdZsfqI4UN6U8DiO2', '123456789', 'host', 6, 1, 0, 0, '2026-02-22 04:14:49', NULL, '2026-04-19 17:54:53', NULL, 'host_10_69e516ed93212.jpg', 'email', NULL, NULL, 'none', 1, NULL, NULL, 0),
+(11, 'jackie', 'jackie@bookit.com', '$2y$10$gFE7a8xZ5NiGCsgd1CWOfu/4Ez1cjpIq.mB1LnB1v5eHfttg..vim', '789456123', 'host', 2, 1, 0, 0, '2026-02-22 04:15:32', NULL, '2026-03-22 03:56:39', NULL, NULL, 'email', NULL, NULL, 'none', 1, NULL, NULL, 0),
+(12, 'paul', 'paul1234@bookit.com', '$2y$10$T9Oezy91p2mRVjT73miy7u6L80/koJ5H97IdNylqYaUWgUNMx/k4G', '88944556456', 'host', 3, 1, 0, 0, '2026-03-07 06:54:39', NULL, '2026-03-22 04:03:20', NULL, NULL, 'email', NULL, NULL, 'none', 1, NULL, NULL, 0),
+(13, 'kunwari lang', 'adminhost@bookit.com', '$2y$10$TMg3x.zSqVLr8axCTIdUMuhv5lEmej6J4WUcxTicisG6M5COLx6T.', '0908543307762', 'host', 5, 1, 0, 0, '2026-03-22 06:08:56', NULL, '2026-03-22 10:10:55', NULL, NULL, 'email', NULL, NULL, 'none', 1, NULL, NULL, 0),
+(14, 'Caps Of all trades', 'capsofalltrades@gmail.com', '$2y$10$L60Z3IlGB3nqfiMDbW0oaOyWNvmCIKVW1HWNvjvlfU7PYKsUpOM3W', '09123456789', 'renter', NULL, 1, 0, 0, '2026-04-08 17:16:01', NULL, '2026-04-08 17:16:01', NULL, NULL, 'email', NULL, NULL, 'none', 1, NULL, NULL, 0),
+(15, 'Vanessa Hudges', 'vanessahudges@gmail.com', '$2y$10$ypu0GnWV5Yb1fgFDQBN87OwFq9UW60T48qs7pqqcWMQQB0FzKftY.', '09054289261', 'host', NULL, 1, 0, 0, '2026-04-09 18:02:56', NULL, '2026-04-09 18:03:49', NULL, NULL, 'email', NULL, NULL, 'none', 1, NULL, NULL, 0),
+(16, 'Peter Benjamin Parker', 'peterparker@gmail.com', '$2y$10$n.k9Nn.XAyBw99HOgHHA1.20fb1fIDhjhCA2mUaVoVelg1GLGsHl.', '09876543210', 'host', NULL, 1, 0, 0, '2026-04-09 18:22:12', NULL, '2026-04-10 02:56:58', NULL, NULL, 'email', NULL, NULL, 'none', 1, NULL, NULL, 0),
+(17, 'Antonio, Paul Lexxus B.', 'pao@gmail.com', '$2y$10$7ld2f6.Fog.yZH0vMsmcUevqX.DPNmduTNPNpe8G0HBmaAscC108u', '89456', 'renter', NULL, 1, 0, 0, '2026-04-09 19:13:52', NULL, '2026-04-19 13:43:28', NULL, NULL, 'email', NULL, NULL, 'none', 1, NULL, NULL, 0),
+(18, 'Antonio, Paul Lexxus B.', 'yg@gmail.com', '$2y$10$FtKrd13hZtEFurMdqi4EGOowxesvioYFKTC9cZ2iXrDN3Z2z4n7eC', '09054289264', 'host', NULL, 1, 0, 0, '2026-04-09 19:38:12', NULL, '2026-04-09 19:39:43', NULL, NULL, 'email', NULL, NULL, 'none', 1, NULL, NULL, 0),
+(19, 'Anthony Stark', 'tonystark@gmail.com', '$2y$10$kRFmYdr/ZXhdRBVMrNGv/el82bU5VyEN8yXK7fqC4nmckGHIZFvtC', '09123457698', 'renter', NULL, 1, 0, 0, '2026-04-10 03:01:35', NULL, '2026-04-10 03:01:35', NULL, NULL, 'email', NULL, NULL, 'none', 1, NULL, NULL, 0),
+(20, 'founder of all', 'founnder@gmail.com', '$2y$10$jd49h1oTnkxlWR.HaPE6AOhoO1PBbsiVOEQDHiPaTxnntmGr1rU3u', '09616613640', 'host', NULL, 1, 0, 0, '2026-04-11 16:00:15', NULL, '2026-04-11 16:03:11', NULL, NULL, 'email', NULL, NULL, 'none', 1, NULL, NULL, 0),
+(21, 'Leonardo Cabajar', 'cabajar@gmail.com', '$2y$10$aDvHx2.J4DfHuhDxwBw4du35WM36kPQCKdPtO6JOs55LSTuE2EXvy', '0987654321', 'host', NULL, 1, 0, 0, '2026-04-13 06:09:33', NULL, '2026-04-13 06:21:39', NULL, NULL, 'email', NULL, NULL, 'none', 1, NULL, NULL, 0),
+(22, 'Mark Herras', 'caliuagking@gmail.com', '$2y$10$r6eReMPensaSbhj2JN/yHuW4IwjFV/pT6VSdTAbZmLNFzHpE66Rwa', '09271402822', 'renter', NULL, 1, 0, 0, '2026-04-16 13:29:18', NULL, '2026-04-16 13:29:18', NULL, NULL, 'email', NULL, NULL, 'none', 1, NULL, NULL, 0),
+(23, 'Antonio, Paul Lexxus B.', 'p261@gmail.com', '$2y$10$h.0VEFtoruueb4laxsRCfeu0u9mNoZVOy6Q4aNc6mS8wRvzeuTJvm', '88944556456', 'renter', NULL, 1, 0, 0, '2026-04-17 03:09:17', NULL, '2026-04-17 03:09:17', NULL, NULL, 'email', NULL, NULL, 'none', 1, NULL, NULL, 0),
+(24, 'Monkey D. Luffy', 'monkeydluffy@gmail.com', '$2y$10$DDBtsIky1/tQiIEG0TqV1.Qzy8shkYheiJ0dHuXYqSv2qv2Uxwfbi', '09123456789', 'host', NULL, 1, 0, 0, '2026-04-17 07:05:19', NULL, '2026-04-17 07:06:50', NULL, NULL, 'email', NULL, NULL, 'none', 1, NULL, NULL, 0),
+(25, 'Test User', 'testuser99@test.com', '$2y$10$dMwKSXQ1jmzT.21Hxr2k4OMBnEIZ3ZVGKZusrgB39FXjR33hYUHtG', '091111111111', 'renter', NULL, 1, 1, 0, '2026-04-19 12:22:07', NULL, '2026-04-19 12:22:07', NULL, NULL, 'email', NULL, NULL, 'none', 1, NULL, NULL, 0);
 
 -- --------------------------------------------------------
 
@@ -1503,124 +2015,24 @@ ALTER TABLE `reviews`
   ADD CONSTRAINT `fk_review_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE;
 
 --
+-- Constraints for table `seasons`
+--
+ALTER TABLE `seasons`
+  ADD CONSTRAINT `fk_seasons_unit` FOREIGN KEY (`unit_id`) REFERENCES `units` (`unit_id`) ON DELETE CASCADE;
+
+--
 -- Constraints for table `units`
 --
 ALTER TABLE `units`
   ADD CONSTRAINT `fk_unit_branch` FOREIGN KEY (`branch_id`) REFERENCES `branches` (`branch_id`) ON DELETE CASCADE;
 
 --
--- Indexes and Triggers for Elite Hardening
+-- Constraints for table `unit_blocked_dates`
 --
-
-ALTER TABLE `users` ADD INDEX `idx_full_name` (`full_name`);
-ALTER TABLE `units` ADD INDEX `idx_unit_name` (`unit_name`);
-
--- --------------------------------------------------------
-
---
--- Table structure for table `idempotency_keys`
---
-
-CREATE TABLE IF NOT EXISTS `idempotency_keys` (
-    `id` INT NOT NULL AUTO_INCREMENT,
-    `key_id` VARCHAR(100) NOT NULL,
-    `user_id` INT NOT NULL,
-    `action` VARCHAR(100) NOT NULL,
-    `payload_hash` VARCHAR(64) DEFAULT NULL,
-    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    `expires_at` TIMESTAMP NULL DEFAULT NULL,
-    PRIMARY KEY (`id`),
-    UNIQUE KEY `unique_key_action` (`key_id`, `action`),
-    KEY `idx_user_key` (`user_id`, `key_id`),
-    KEY `idx_expiry` (`expires_at`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- --------------------------------------------------------
-
---
--- Table structure for table `request_throttles`
---
-
-CREATE TABLE IF NOT EXISTS `request_throttles` (
-    `id` INT NOT NULL AUTO_INCREMENT,
-    `ip_address` VARCHAR(45) NOT NULL,
-    `user_id` INT DEFAULT NULL,
-    `endpoint` VARCHAR(255) NOT NULL,
-    `hits` INT DEFAULT 1,
-    `first_hit` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    `last_hit` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    PRIMARY KEY (`id`),
-    KEY `idx_ip_endpoint` (`ip_address`, `endpoint`),
-    KEY `idx_user_endpoint` (`user_id`, `endpoint`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- --------------------------------------------------------
-
---
--- Table structure for table `system_errors`
---
-
-CREATE TABLE IF NOT EXISTS `system_errors` (
-    `error_id` INT NOT NULL AUTO_INCREMENT,
-    `user_id` INT DEFAULT NULL,
-    `error_type` VARCHAR(100) NOT NULL,
-    `message` TEXT NOT NULL,
-    `file_context` VARCHAR(255) DEFAULT NULL,
-    `line_number` INT DEFAULT NULL,
-    `stack_trace` TEXT DEFAULT NULL,
-    `ip_address` VARCHAR(45) DEFAULT NULL,
-    `user_agent` TEXT DEFAULT NULL,
-    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    `severity` ENUM('low', 'medium', 'high', 'critical') DEFAULT 'medium',
-    `is_resolved` TINYINT(1) DEFAULT 0,
-    PRIMARY KEY (`error_id`),
-    KEY `idx_severity` (`severity`),
-    KEY `idx_created` (`created_at`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- --------------------------------------------------------
-
---
--- Table structure for table `system_cache`
---
-
-CREATE TABLE IF NOT EXISTS `system_cache` (
-    `cache_key` VARCHAR(100) NOT NULL,
-    `cache_value` LONGTEXT NOT NULL,
-    `expires_at` TIMESTAMP NOT NULL,
-    `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    PRIMARY KEY (`cache_key`),
-    KEY `idx_expiry` (`expires_at`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- --------------------------------------------------------
-
---
--- Table structure for table `audit_logs` Triggers
---
-
-DELIMITER //
-
-CREATE TRIGGER `audit_logs_protect_update` 
-BEFORE UPDATE ON `audit_logs`
-FOR EACH ROW 
-BEGIN
-    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'DATA INTEGRITY VIOLATION: Audit logs are immutable and cannot be updated.';
-END; //
-
-CREATE TRIGGER `audit_logs_protect_delete` 
-BEFORE DELETE ON `audit_logs`
-FOR EACH ROW 
-BEGIN
-    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'DATA INTEGRITY VIOLATION: Audit logs are immutable and cannot be deleted.';
-END; //
-
-DELIMITER ;
-
+ALTER TABLE `unit_blocked_dates`
+  ADD CONSTRAINT `fk_blocked_unit` FOREIGN KEY (`unit_id`) REFERENCES `units` (`unit_id`) ON DELETE CASCADE;
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
 /*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
-
-
